@@ -163,7 +163,7 @@ func _build_ui() -> void:
 	var bg := TextureRect.new()
 	bg.texture = load(ASSETS + "battle/battle_screen.png")
 	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg.expand_mode = TextureRect.EXPAND_KEEP_SIZE
 	bg.position = Vector2.ZERO
 	bg.size = Vector2(SCREEN_W, SCREEN_H)
 	add_child(bg)
@@ -171,7 +171,7 @@ func _build_ui() -> void:
 	var pergamena := TextureRect.new()
 	pergamena.texture = load(ASSETS + "battle/battle_pergamena.png")
 	pergamena.stretch_mode = TextureRect.STRETCH_SCALE
-	pergamena.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pergamena.expand_mode = TextureRect.EXPAND_KEEP_SIZE
 	pergamena.position = Vector2(0, 4)
 	pergamena.size = Vector2(280, 282)
 	add_child(pergamena)
@@ -179,7 +179,7 @@ func _build_ui() -> void:
 	var marmo := TextureRect.new()
 	marmo.texture = load(ASSETS + "battle/battle_marmo.png")
 	marmo.stretch_mode = TextureRect.STRETCH_SCALE
-	marmo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	marmo.expand_mode = TextureRect.EXPAND_KEEP_SIZE
 	marmo.position = Vector2(14, 282)
 	marmo.size = Vector2(248, 256)
 	add_child(marmo)
@@ -187,7 +187,7 @@ func _build_ui() -> void:
 	turn_cursor = TextureRect.new()
 	turn_cursor.texture = load(ASSETS + "battle/battle_cursor.png")
 	turn_cursor.stretch_mode = TextureRect.STRETCH_SCALE
-	turn_cursor.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	turn_cursor.expand_mode = TextureRect.EXPAND_KEEP_SIZE
 	turn_cursor.position = Vector2(12, 23)
 	turn_cursor.size = Vector2(48, 48)
 	turn_cursor.visible = false
@@ -300,7 +300,7 @@ func _build_board() -> void:
 			var block := TextureRect.new()
 			block.texture = load(ASSETS + "battle/battle_block.png")
 			block.stretch_mode = TextureRect.STRETCH_SCALE
-			block.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			block.expand_mode = TextureRect.EXPAND_KEEP_SIZE
 			block.position = pos
 			block.size = Vector2(CARD_W, CARD_H)
 			block.visible = false
@@ -311,7 +311,7 @@ func _build_board() -> void:
 			var target := TextureRect.new()
 			target.texture = load(ASSETS + "cards/card_sel_target.png")
 			target.stretch_mode = TextureRect.STRETCH_SCALE
-			target.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			target.expand_mode = TextureRect.EXPAND_KEEP_SIZE
 			target.position = pos
 			target.size = Vector2(CARD_W, CARD_H)
 			target.visible = false
@@ -327,7 +327,7 @@ func _build_board() -> void:
 	board_hover_glow = TextureRect.new()
 	board_hover_glow.texture = load(ASSETS + "cards/card_sel_glow.png")
 	board_hover_glow.stretch_mode = TextureRect.STRETCH_SCALE
-	board_hover_glow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	board_hover_glow.expand_mode = TextureRect.EXPAND_KEEP_SIZE
 	board_hover_glow.size = Vector2(CARD_W, CARD_H)
 	board_hover_glow.visible = false
 	board_hover_glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -434,7 +434,7 @@ func _build_end_panel() -> void:
 	end_bkg = TextureRect.new()
 	end_bkg.texture = load(ASSETS + "common_bkg_clean.png")
 	end_bkg.stretch_mode = TextureRect.STRETCH_SCALE
-	end_bkg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	end_bkg.expand_mode = TextureRect.EXPAND_KEEP_SIZE
 	end_bkg.size = Vector2(SCREEN_W, SCREEN_H)
 	end_bkg.position = Vector2(0, -SCREEN_H)
 	end_panel.add_child(end_bkg)
@@ -508,7 +508,7 @@ func _refresh_hands() -> void:
 		var back := TextureRect.new()
 		back.texture = back_tex
 		back.stretch_mode = TextureRect.STRETCH_SCALE
-		back.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		back.expand_mode = TextureRect.EXPAND_KEEP_SIZE
 		# quadPlayer1Cards uses flagSetTransformPivotAtCenter() in the
 		# original, i.e. X/Y is the card's CENTER, not its top-left corner.
 		back.position = OPPONENT_STACK_POS + Vector2(i * OPPONENT_STACK_STEP, 0) - back_size / 2.0
@@ -721,7 +721,7 @@ func gsCPUTurn_Set() -> void:
 	var ghost := TextureRect.new()
 	ghost.texture = load(ASSETS + "cards/card_back.png")
 	ghost.stretch_mode = TextureRect.STRETCH_SCALE
-	ghost.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ghost.expand_mode = TextureRect.EXPAND_KEEP_SIZE
 	var ghost_size := Vector2(CARD_W, CARD_H) * OPPONENT_CARD_SCALE
 	ghost.position = OPPONENT_STACK_POS + Vector2((idle_count - 1) * OPPONENT_STACK_STEP, 0) - ghost_size / 2.0
 	ghost.size = ghost_size
