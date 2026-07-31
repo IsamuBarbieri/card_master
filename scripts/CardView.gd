@@ -81,7 +81,7 @@ func _make_layer() -> TextureRect:
 	var t := TextureRect.new()
 	t.set_anchors_preset(Control.PRESET_FULL_RECT)
 	t.stretch_mode = TextureRect.STRETCH_SCALE
-	t.expand_mode = TextureRect.EXPAND_KEEP_SIZE
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(t)
 	return t
@@ -122,7 +122,7 @@ func setup(new_card: Card) -> void:
 		var arrow_rect := TextureRect.new()
 		arrow_rect.texture = atlas
 		arrow_rect.stretch_mode = TextureRect.STRETCH_SCALE
-		arrow_rect.expand_mode = TextureRect.EXPAND_KEEP_SIZE
+		arrow_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		arrow_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		arrow_rect.position = Vector2(rect.position.x * CARD_W, rect.position.y * CARD_H)
 		arrow_rect.size = Vector2(rect.size.x * CARD_W, rect.size.y * CARD_H)
