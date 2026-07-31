@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://bqfnq4mdkhegg"
+
+[deps]
+
+files=["res://assets/cards/ai_table.Name.translation", "res://assets/cards/ai_table.Image ID.translation", "res://assets/cards/ai_table.Level.translation", "res://assets/cards/ai_table.First Set.translation", "res://assets/cards/ai_table.Other Set.translation"]
+
+source_file="res://assets/cards/ai_table.csv"
+dest_files=["res://assets/cards/ai_table.Name.translation", "res://assets/cards/ai_table.Image ID.translation", "res://assets/cards/ai_table.Level.translation", "res://assets/cards/ai_table.First Set.translation", "res://assets/cards/ai_table.Other Set.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

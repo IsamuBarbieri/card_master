@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://bqq26f1i510cq"
+
+[deps]
+
+files=["res://assets/cards/gen_table.Name.translation", "res://assets/cards/gen_table.Image.translation", "res://assets/cards/gen_table.Attack Power.translation", "res://assets/cards/gen_table.Attack Type.translation", "res://assets/cards/gen_table.Physical Defense.translation", "res://assets/cards/gen_table.Magical Defense.translation", "res://assets/cards/gen_table.MAX Attack Power.translation", "res://assets/cards/gen_table.MAX Attack Type.translation", "res://assets/cards/gen_table.MAX Physical Defense.translation", "res://assets/cards/gen_table.MAX Magical Defense.translation", "res://assets/cards/gen_table.N.translation", "res://assets/cards/gen_table.NE.translation", "res://assets/cards/gen_table.E.translation", "res://assets/cards/gen_table.SE.translation", "res://assets/cards/gen_table.S.translation", "res://assets/cards/gen_table.SW.translation", "res://assets/cards/gen_table.W.translation", "res://assets/cards/gen_table.NW.translation"]
+
+source_file="res://assets/cards/gen_table.csv"
+dest_files=["res://assets/cards/gen_table.Name.translation", "res://assets/cards/gen_table.Image.translation", "res://assets/cards/gen_table.Attack Power.translation", "res://assets/cards/gen_table.Attack Type.translation", "res://assets/cards/gen_table.Physical Defense.translation", "res://assets/cards/gen_table.Magical Defense.translation", "res://assets/cards/gen_table.MAX Attack Power.translation", "res://assets/cards/gen_table.MAX Attack Type.translation", "res://assets/cards/gen_table.MAX Physical Defense.translation", "res://assets/cards/gen_table.MAX Magical Defense.translation", "res://assets/cards/gen_table.N.translation", "res://assets/cards/gen_table.NE.translation", "res://assets/cards/gen_table.E.translation", "res://assets/cards/gen_table.SE.translation", "res://assets/cards/gen_table.S.translation", "res://assets/cards/gen_table.SW.translation", "res://assets/cards/gen_table.W.translation", "res://assets/cards/gen_table.NW.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true
