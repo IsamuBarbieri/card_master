@@ -8,6 +8,15 @@ const CARD_W := 96
 const CARD_H := 128
 const ASSETS_DIR := "res://assets/cards/"
 
+# Widest possible 4-char stat_text() ("F"/hex digit x3 + widest attack-type
+# letter) is ~65px at size 22 in font_stylish.ttf, comfortably inside
+# card_border.png's ~79px-wide inner clear area (x=8..87) with room for the
+# outline stroke. STAT_AREA_BOTTOM is where that inner area stops being
+# clipped by the border's bottom trim (measured on the actual asset).
+const STAT_FONT_SIZE := 22
+const STAT_FONT_SIZE_HEIGHT := 25
+const STAT_AREA_BOTTOM := 119
+
 # Normalized (0..1) rects, in arrow order N,NE,E,SE,S,SW,W,NW - matches
 # CardManager.cs's dirsVertices/dirsTexcoords (same rect used for position
 # and for the UV lookup into card_arrows.png).
@@ -50,10 +59,14 @@ func _init() -> void:
 	_stat_label.bbcode_enabled = true
 	_stat_label.fit_content = true
 	_stat_label.scroll_active = false
-	_stat_label.position = Vector2(0, CARD_H - 20)
-	_stat_label.size = Vector2(CARD_W, 20)
+	# card_border.png's inner (non-frame) area at the bottom-center only
+	# starts clearing up at y=119 of the 96x128 card (measured against the
+	# actual asset), so the stat text must sit fully above that line - not
+	# flush with the card's bottom edge - or the frame's bottom trim covers it.
+	_stat_label.position = Vector2(0, STAT_AREA_BOTTOM - STAT_FONT_SIZE_HEIGHT)
+	_stat_label.size = Vector2(CARD_W, STAT_FONT_SIZE_HEIGHT)
 	_stat_label.add_theme_font_override("normal_font", _stylish_font)
-	_stat_label.add_theme_font_size_override("normal_font_size", 15)
+	_stat_label.add_theme_font_size_override("normal_font_size", STAT_FONT_SIZE)
 	_stat_label.add_theme_constant_override("outline_size", 3)
 	_stat_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	_stat_label.mouse_filter = Control.MOUSE_FILTER_IGNORE

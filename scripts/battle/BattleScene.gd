@@ -32,8 +32,10 @@ const HAND_POSITIONS := [
 	Vector2(718, 283), Vector2(826, 348),
 ]
 
-# BattleScene.cs's small opponent-hand stack (quadPlayer1Cards).
-const OPPONENT_STACK_POS := Vector2(25, 240)
+# BattleScene.cs's small opponent-hand stack (quadPlayer1Cards). Centered
+# in the empty gap between the pergamena panel's bottom edge (y=4+282=286)
+# and the card-stats panel's top (info_name.position.y=340) -> y=313.
+const OPPONENT_STACK_POS := Vector2(70, 305)
 const OPPONENT_STACK_STEP := 35.0
 const OPPONENT_CARD_SCALE := 0.45
 
@@ -41,6 +43,14 @@ const OPPONENT_CARD_SCALE := 0.45
 const BATTLE_RUMBLE_TIME := 0.6
 const BATTLE_COUNTDOWN_TIME := 1.5
 const BATTLE_RUMBLE_DISTANCE := 16.0
+
+# Battle countdown number: centered in the vertical space between
+# card_border.png's top inner edge (y=9) and the top of the stat text
+# (CardView.STAT_AREA_BOTTOM - STAT_FONT_SIZE_HEIGHT = 94). Sized with margin
+# to avoid collision with approaching opponent card during rumble.
+const BATTLE_VALUE_FONT_SIZE := 46
+const BATTLE_VALUE_AREA_TOP := 9.0
+const BATTLE_VALUE_AREA_BOTTOM := 94.0
 
 # captureCardProcedure's flip time.
 const CAPTURE_FLIP_TIME := 0.4
@@ -86,7 +96,6 @@ var opponent_stack: Control
 var turn_cursor: TextureRect
 var name_labels: Array = []
 var score_value_labels: Array = []
-var status_label: Label
 
 var info_name: Label
 var info_attack_val: Label
@@ -96,7 +105,6 @@ var info_mdef_val: Label
 
 var combo_label: Label
 var battle_value_labels: Array = []  # 2 Labels
-var blink_labels: Array = []         # 2 Labels
 var vfx_sprites := {}                # Card.AttackType -> AnimatedSprite2D
 var coin_sprite: TextureRect
 var coin_blue_tex: Texture2D
@@ -143,7 +151,6 @@ func start_new_game() -> void:
 	_show_card_info(null)
 	_refresh_hands()
 	_refresh_scores()
-	status_label.text = ""
 
 	music.play()
 	gsCoinToss_Set()
@@ -155,24 +162,32 @@ func _build_ui() -> void:
 
 	var bg := TextureRect.new()
 	bg.texture = load(ASSETS + "battle/battle_screen.png")
+	bg.stretch_mode = TextureRect.STRETCH_SCALE
+	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bg.position = Vector2.ZERO
 	bg.size = Vector2(SCREEN_W, SCREEN_H)
 	add_child(bg)
 
 	var pergamena := TextureRect.new()
 	pergamena.texture = load(ASSETS + "battle/battle_pergamena.png")
+	pergamena.stretch_mode = TextureRect.STRETCH_SCALE
+	pergamena.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	pergamena.position = Vector2(0, 4)
 	pergamena.size = Vector2(280, 282)
 	add_child(pergamena)
 
 	var marmo := TextureRect.new()
 	marmo.texture = load(ASSETS + "battle/battle_marmo.png")
+	marmo.stretch_mode = TextureRect.STRETCH_SCALE
+	marmo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	marmo.position = Vector2(14, 282)
 	marmo.size = Vector2(248, 256)
 	add_child(marmo)
 
 	turn_cursor = TextureRect.new()
 	turn_cursor.texture = load(ASSETS + "battle/battle_cursor.png")
+	turn_cursor.stretch_mode = TextureRect.STRETCH_SCALE
+	turn_cursor.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	turn_cursor.position = Vector2(12, 23)
 	turn_cursor.size = Vector2(48, 48)
 	turn_cursor.visible = false
@@ -184,7 +199,6 @@ func _build_ui() -> void:
 	_build_board()
 	_build_hand()
 	_build_opponent_stack()
-	_build_status_label()
 	_build_battle_overlay()
 	_build_end_panel()
 	_build_audio()
@@ -193,7 +207,7 @@ func _build_player_panel(idx: int, y: int, color: Color) -> void:
 	var name_label := Label.new()
 	name_label.position = Vector2(60, y)
 	name_label.add_theme_font_override("font", font_stylish)
-	name_label.add_theme_font_size_override("font_size", 26)
+	name_label.add_theme_font_size_override("font_size", 36)
 	name_label.add_theme_color_override("font_color", color)
 	name_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 	name_label.add_theme_constant_override("shadow_offset_x", 1)
@@ -205,16 +219,20 @@ func _build_player_panel(idx: int, y: int, color: Color) -> void:
 	var score_caption := Label.new()
 	score_caption.position = Vector2(82, y + 51)
 	score_caption.add_theme_font_override("font", font_stylish)
-	score_caption.add_theme_font_size_override("font_size", 18)
+	score_caption.add_theme_font_size_override("font_size", 36)
 	score_caption.add_theme_color_override("font_color", color)
+	score_caption.add_theme_color_override("font_outline_color", Color.BLACK)
+	score_caption.add_theme_constant_override("outline_size", 3)
 	score_caption.text = "Score"
 	add_child(score_caption)
 
 	var score_value := Label.new()
 	score_value.position = Vector2(184, y + 51)
 	score_value.add_theme_font_override("font", font_stylish)
-	score_value.add_theme_font_size_override("font_size", 18)
+	score_value.add_theme_font_size_override("font_size", 36)
 	score_value.add_theme_color_override("font_color", color)
+	score_value.add_theme_color_override("font_outline_color", Color.BLACK)
+	score_value.add_theme_constant_override("outline_size", 3)
 	score_value.text = "0"
 	add_child(score_value)
 	score_value_labels.append(score_value)
@@ -226,8 +244,8 @@ func _build_card_info_panel() -> void:
 	info_name.position = Vector2(14, 340)
 	info_name.size = Vector2(248, 24)
 	info_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	info_name.add_theme_font_override("font", font_info)
-	info_name.add_theme_font_size_override("font_size", 18)
+	info_name.add_theme_font_override("font", font_stylish)
+	info_name.add_theme_font_size_override("font_size", 24)
 	info_name.add_theme_color_override("font_color", black)
 	add_child(info_name)
 
@@ -238,16 +256,16 @@ func _build_card_info_panel() -> void:
 	for row in rows:
 		var caption := Label.new()
 		caption.position = Vector2(32, row[1])
-		caption.add_theme_font_override("font", font_info)
-		caption.add_theme_font_size_override("font_size", 15)
+		caption.add_theme_font_override("font", font_stylish)
+		caption.add_theme_font_size_override("font_size", 24)
 		caption.add_theme_color_override("font_color", black)
 		caption.text = row[0]
 		add_child(caption)
 
 		var value := Label.new()
 		value.position = Vector2(200, row[1])
-		value.add_theme_font_override("font", font_info)
-		value.add_theme_font_size_override("font_size", 15)
+		value.add_theme_font_override("font", font_stylish)
+		value.add_theme_font_size_override("font_size", 24)
 		value.add_theme_color_override("font_color", black)
 		add_child(value)
 		value_labels.append(value)
@@ -281,6 +299,8 @@ func _build_board() -> void:
 
 			var block := TextureRect.new()
 			block.texture = load(ASSETS + "battle/battle_block.png")
+			block.stretch_mode = TextureRect.STRETCH_SCALE
+			block.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			block.position = pos
 			block.size = Vector2(CARD_W, CARD_H)
 			block.visible = false
@@ -290,6 +310,8 @@ func _build_board() -> void:
 
 			var target := TextureRect.new()
 			target.texture = load(ASSETS + "cards/card_sel_target.png")
+			target.stretch_mode = TextureRect.STRETCH_SCALE
+			target.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			target.position = pos
 			target.size = Vector2(CARD_W, CARD_H)
 			target.visible = false
@@ -304,6 +326,8 @@ func _build_board() -> void:
 
 	board_hover_glow = TextureRect.new()
 	board_hover_glow.texture = load(ASSETS + "cards/card_sel_glow.png")
+	board_hover_glow.stretch_mode = TextureRect.STRETCH_SCALE
+	board_hover_glow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	board_hover_glow.size = Vector2(CARD_W, CARD_H)
 	board_hover_glow.visible = false
 	board_hover_glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -323,18 +347,6 @@ func _build_opponent_stack() -> void:
 	opponent_stack = Control.new()
 	add_child(opponent_stack)
 
-func _build_status_label() -> void:
-	status_label = Label.new()
-	status_label.position = Vector2(282, 500)
-	status_label.size = Vector2(404, 30)
-	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	status_label.add_theme_font_override("font", font_info)
-	status_label.add_theme_font_size_override("font_size", 16)
-	status_label.add_theme_color_override("font_color", Color.WHITE)
-	status_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	status_label.add_theme_constant_override("outline_size", 3)
-	add_child(status_label)
-
 func _build_battle_overlay() -> void:
 	# combo text (textCombo)
 	combo_label = Label.new()
@@ -347,23 +359,18 @@ func _build_battle_overlay() -> void:
 	combo_label.visible = false
 	add_child(combo_label)
 
-	# battle numbers + blinking attack-type letter (textCardBattleValues / textCardBlinkLetters)
+	# battle numbers (textCardBattleValues), styled like CardView's stat
+	# text (ochre yellow + black outline) so they're readable over the cards.
 	for i in 2:
 		var value_label := Label.new()
 		value_label.add_theme_font_override("font", font_stylish)
-		value_label.add_theme_font_size_override("font_size", 20)
-		value_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.9))
+		value_label.add_theme_font_size_override("font_size", BATTLE_VALUE_FONT_SIZE)
+		value_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.1))
+		value_label.add_theme_color_override("font_outline_color", Color.BLACK)
+		value_label.add_theme_constant_override("outline_size", 3)
 		value_label.visible = false
 		add_child(value_label)
 		battle_value_labels.append(value_label)
-
-		var blink_label := Label.new()
-		blink_label.add_theme_font_override("font", font_stylish)
-		blink_label.add_theme_font_size_override("font_size", 15)
-		blink_label.add_theme_color_override("font_color", Color(1, 0, 0))
-		blink_label.visible = false
-		add_child(blink_label)
-		blink_labels.append(blink_label)
 
 	# battle VFX (animAssault/animPhysical/animMagical/animFlexible)
 	vfx_sprites[Card.AttackType.ASSAULT] = _make_vfx(ASSETS + "battle/effect_assault.png")
@@ -426,6 +433,8 @@ func _build_end_panel() -> void:
 
 	end_bkg = TextureRect.new()
 	end_bkg.texture = load(ASSETS + "common_bkg_clean.png")
+	end_bkg.stretch_mode = TextureRect.STRETCH_SCALE
+	end_bkg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	end_bkg.size = Vector2(SCREEN_W, SCREEN_H)
 	end_bkg.position = Vector2(0, -SCREEN_H)
 	end_panel.add_child(end_bkg)
@@ -494,11 +503,16 @@ func _refresh_hands() -> void:
 		if c != null:
 			idle_count += 1
 	var back_tex: Texture2D = load(ASSETS + "cards/card_back.png")
+	var back_size := Vector2(CARD_W, CARD_H) * OPPONENT_CARD_SCALE
 	for i in idle_count:
 		var back := TextureRect.new()
 		back.texture = back_tex
-		back.position = OPPONENT_STACK_POS + Vector2(i * OPPONENT_STACK_STEP, 0)
-		back.size = Vector2(CARD_W, CARD_H) * OPPONENT_CARD_SCALE
+		back.stretch_mode = TextureRect.STRETCH_SCALE
+		back.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		# quadPlayer1Cards uses flagSetTransformPivotAtCenter() in the
+		# original, i.e. X/Y is the card's CENTER, not its top-left corner.
+		back.position = OPPONENT_STACK_POS + Vector2(i * OPPONENT_STACK_STEP, 0) - back_size / 2.0
+		back.size = back_size
 		opponent_stack.add_child(back)
 
 func _refresh_board_blocks() -> void:
@@ -549,7 +563,6 @@ func _show_card_info(card: Card) -> void:
 	info_type_val.text = CardManager.attack_type_to_letter(card.attack_type)
 	info_pdef_val.text = str(card.physical_defense)
 	info_mdef_val.text = str(card.magical_defense)
-	info_name.add_theme_color_override("font_color", COLOR_P0 if card.owner == 0 else COLOR_P1)
 
 # --------------------------------------------------------------- coin toss
 
@@ -599,7 +612,6 @@ func gsCoinToss_Set() -> void:
 func gsPlayerTurn_Set() -> void:
 	active_player = 0
 	busy = false
-	status_label.text = "Your turn"
 	turn_cursor.visible = true
 	var tw := create_tween()
 	tw.tween_property(turn_cursor, "position:y", 23.0, 0.35) \
@@ -690,7 +702,6 @@ func gsCardPicking_Release(mouse_pos: Vector2) -> void:
 func gsCPUTurn_Set() -> void:
 	active_player = 1
 	busy = true
-	status_label.text = "CPU's turn"
 	var tw := create_tween()
 	tw.tween_property(turn_cursor, "position:y", 125.0, 0.35) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -709,8 +720,11 @@ func gsCPUTurn_Set() -> void:
 	var idle_count := live_cpu_hand.size()
 	var ghost := TextureRect.new()
 	ghost.texture = load(ASSETS + "cards/card_back.png")
-	ghost.position = OPPONENT_STACK_POS + Vector2((idle_count - 1) * OPPONENT_STACK_STEP, 0)
-	ghost.size = Vector2(CARD_W, CARD_H) * OPPONENT_CARD_SCALE
+	ghost.stretch_mode = TextureRect.STRETCH_SCALE
+	ghost.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	var ghost_size := Vector2(CARD_W, CARD_H) * OPPONENT_CARD_SCALE
+	ghost.position = OPPONENT_STACK_POS + Vector2((idle_count - 1) * OPPONENT_STACK_STEP, 0) - ghost_size / 2.0
+	ghost.size = ghost_size
 	ghost.pivot_offset = ghost.size / 2.0
 	add_child(ghost)
 
@@ -762,7 +776,6 @@ func gsBattleSelTarget_Set(last_placed: Card, candidates: Array) -> Card:
 
 	var chosen: Card
 	if last_placed.owner == 0:
-		status_label.text = "Choose a card to battle"
 		target_mode = true
 		target_candidates = candidates
 		chosen = await target_chosen
@@ -785,7 +798,6 @@ func _on_slot_pressed(row: int, col: int) -> void:
 
 func gsBattle_Set(card0: Card, card1: Card) -> void:
 	var result := GsBattle.resolve_battle(card0, card1)
-	status_label.text = ""
 
 	await gsBattle_StartRumble(card0, card1, result)
 	await gsBattle_Countdown(card0, card1, result)
@@ -798,13 +810,11 @@ func gsBattle_StartRumble(card0: Card, card1: Card, result: Dictionary) -> void:
 	var pos1 := _board_cell_pos(card1.row, card1.col)
 	var vec := (pos1 - pos0).normalized()
 
-	# battle values + blinking letters
+	# battle values - parented to their card so they ride along with the
+	# rumble tween below instead of staying fixed on the board.
 	for i in 2:
 		battle_value_labels[i].visible = true
-	blink_labels[0].text = card0.stat_text()[result["letter0"]]
-	blink_labels[1].text = card1.stat_text()[result["letter1"]]
-	_position_battle_labels(pos0, pos1)
-	_blink_loop_start()
+	_position_battle_labels(view0, view1)
 
 	# vfx effect at the midpoint
 	var vfx: AnimatedSprite2D = vfx_sprites[card0.attack_type]
@@ -828,25 +838,20 @@ func gsBattle_StartRumble(card0: Card, card1: Card, result: Dictionary) -> void:
 
 	vfx.visible = false
 
-func _position_battle_labels(pos0: Vector2, pos1: Vector2) -> void:
-	battle_value_labels[0].position = pos0 + Vector2(CARD_W, CARD_H) / 2.0 - Vector2(10, 30)
-	battle_value_labels[1].position = pos1 + Vector2(CARD_W, CARD_H) / 2.0 - Vector2(10, 30)
-	blink_labels[0].position = pos0 + Vector2(8, CARD_H - 22)
-	blink_labels[1].position = pos1 + Vector2(8, CARD_H - 22)
-
-var _blinking := false
-
-func _blink_loop_start() -> void:
-	_blinking = true
-	_blink_loop()
-
-func _blink_loop() -> void:
-	var on := true
-	while _blinking:
-		blink_labels[0].visible = on
-		blink_labels[1].visible = on
-		on = not on
-		await get_tree().create_timer(0.1).timeout
+func _position_battle_labels(view0: CardView, view1: CardView) -> void:
+	# Big and centered in the card's upper area, above the stat text and
+	# below the frame's top edge. Reparented onto the card itself (in local
+	# coordinates) so it rides along when the card rumbles toward its
+	# opponent instead of staying fixed on the board underneath it.
+	var views := [view0, view1]
+	for i in 2:
+		var label: Label = battle_value_labels[i]
+		if label.get_parent() != views[i]:
+			label.reparent(views[i], false)
+		label.position = Vector2(0, BATTLE_VALUE_AREA_TOP)
+		label.size = Vector2(CARD_W, BATTLE_VALUE_AREA_BOTTOM - BATTLE_VALUE_AREA_TOP)
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
 func gsBattle_Countdown(card0: Card, card1: Card, result: Dictionary) -> void:
 	await get_tree().create_timer(0.15).timeout
@@ -861,10 +866,12 @@ func gsBattle_Countdown(card0: Card, card1: Card, result: Dictionary) -> void:
 	await tw.finished
 
 func gsBattle_End(card0: Card, card1: Card, result: Dictionary) -> void:
-	_blinking = false
 	for i in 2:
 		battle_value_labels[i].visible = false
-		blink_labels[i].visible = false
+		# unparent before the capture flip below can free the CardView
+		# they were riding on.
+		if battle_value_labels[i].get_parent() != self:
+			battle_value_labels[i].reparent(self, false)
 
 	var view0: CardView = board_card_views[card0.row][card0.col]
 	var view1: CardView = board_card_views[card1.row][card1.col]
@@ -875,7 +882,6 @@ func gsBattle_End(card0: Card, card1: Card, result: Dictionary) -> void:
 
 	var winner: Card = result["winner"]
 	if winner == null:
-		status_label.text = "Draw!"
 		await get_tree().create_timer(0.3).timeout
 		return
 
@@ -884,13 +890,41 @@ func gsBattle_End(card0: Card, card1: Card, result: Dictionary) -> void:
 
 	var last_placed: Card = card0
 	if winner == last_placed:
-		var combo := board.get_combo_cards(loser)
-		if not combo.is_empty():
+		var levels := _collect_combo_levels(loser, winner.owner)
+		if not levels.is_empty():
 			if winner.original_owner == 0:
-				await _show_combo_text(winner, combo.size())
-			for c in combo:
-				await captureCardProcedure(winner, c, true)
+				var total := 0
+				for level in levels:
+					total += level.size()
+				await _show_combo_text(winner, total)
+			# Direct arrows of the just-captured card go first (together, if
+			# more than one), then each further level cascades the same way.
+			for level in levels:
+				await _capture_batch(winner, level)
 		await gsBattleCheck_Set(last_placed)
+
+# Each combo card can itself chain into further combo cards through its own
+# arrows (e.g. a captured card pointing at another enemy card also captures
+# it, bumping the combo to x3, x4, ...). Returns the chain as levels (BFS
+# depth) so the caller can animate one level at a time, in parallel within
+# a level, cascading to the next.
+func _collect_combo_levels(start: Card, winner_owner: int) -> Array:
+	var levels := []
+	var seen := {start.unique_id: true}
+	var frontier := [start]
+	while not frontier.is_empty():
+		var next_level := []
+		for card in frontier:
+			for c in board.get_combo_cards(card, winner_owner):
+				if seen.has(c.unique_id):
+					continue
+				seen[c.unique_id] = true
+				next_level.append(c)
+		if next_level.is_empty():
+			break
+		levels.append(next_level)
+		frontier = next_level
+	return levels
 
 # --------------------------------------------------------------- captures
 
@@ -925,6 +959,43 @@ func captureCardProcedure(attacker: Card, captured: Card, from_battle: bool) -> 
 	var tw2 := create_tween()
 	tw2.tween_property(new_view, "scale:x", 1.0, CAPTURE_FLIP_TIME / 2.0)
 	await tw2.finished
+
+# Same flip as captureCardProcedure but for a whole combo level at once,
+# all cards shrinking/growing in parallel instead of one after another.
+func _capture_batch(attacker: Card, cards: Array) -> void:
+	var animated: Array = []
+	for c in cards:
+		var view: CardView = board_card_views[c.row][c.col]
+		if is_instance_valid(view):
+			view.pivot_offset = Vector2(CARD_W, CARD_H) / 2.0
+			animated.append(c)
+		else:
+			board.capture(c, attacker.owner)
+			_update_slot_visual(c.row, c.col)
+
+	if not animated.is_empty():
+		var tw := create_tween()
+		tw.set_parallel(true)
+		for c in animated:
+			tw.tween_property(board_card_views[c.row][c.col], "scale:x", 0.0, CAPTURE_FLIP_TIME / 2.0)
+		await tw.finished
+
+	var growing: Array = []
+	for c in animated:
+		board.capture(c, attacker.owner)
+		_update_slot_visual(c.row, c.col)
+		var new_view: CardView = board_card_views[c.row][c.col]
+		new_view.pivot_offset = Vector2(CARD_W, CARD_H) / 2.0
+		new_view.scale.x = 0.0
+		growing.append(new_view)
+	_refresh_scores()
+
+	if not growing.is_empty():
+		var tw2 := create_tween()
+		tw2.set_parallel(true)
+		for view in growing:
+			tw2.tween_property(view, "scale:x", 1.0, CAPTURE_FLIP_TIME / 2.0)
+		await tw2.finished
 
 func _show_combo_text(winner: Card, count: int) -> void:
 	var pos := _board_cell_pos(winner.row, winner.col) + Vector2(CARD_W, CARD_H) / 2.0
@@ -963,7 +1034,6 @@ enum BattleResult { PLAYER_WINS, PLAYER_PERFECT, CPU_WINS, CPU_PERFECT, DRAW }
 func gsEndStart_Set() -> void:
 	busy = true
 	turn_cursor.visible = false
-	status_label.text = ""
 
 	var p0 := board.count_cards(0)
 	var p1 := board.count_cards(1)

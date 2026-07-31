@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b5leao647lqvr"
-path="res://.godot/imported/ginger.png-7416bdc78c4f41a080a5508d087c0932.ctex"
+uid="uid://70jux8rt45c1"
+path="res://.godot/imported/ginger.png-3b440b94847f84153a540a725d8da6a2.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/ginger.png"
-dest_files=["res://.godot/imported/ginger.png-7416bdc78c4f41a080a5508d087c0932.ctex"]
+source_file="res://prj_psvita/assets/cards_big/ginger.png"
+dest_files=["res://.godot/imported/ginger.png-3b440b94847f84153a540a725d8da6a2.ctex"]
 
 [params]
 

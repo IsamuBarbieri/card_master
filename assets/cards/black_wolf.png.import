@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://drljr4km4378m"
-path="res://.godot/imported/black_wolf.png-5f11d8af908cef4af44a2ec75b7dee61.ctex"
+uid="uid://hg1o05acr1dv"
+path="res://.godot/imported/black_wolf.png-ced12229084699b83f028cc5516926e4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/black_wolf.png"
-dest_files=["res://.godot/imported/black_wolf.png-5f11d8af908cef4af44a2ec75b7dee61.ctex"]
+source_file="res://prj_psvita/assets/cards_big/black_wolf.png"
+dest_files=["res://.godot/imported/black_wolf.png-ced12229084699b83f028cc5516926e4.ctex"]
 
 [params]
 

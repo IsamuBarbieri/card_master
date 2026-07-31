@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cxxn6xk03j5p2"
-path="res://.godot/imported/elementals.png-0adaef880e14f3b083a849b239fbfffb.ctex"
+uid="uid://c3osiobuw2qd4"
+path="res://.godot/imported/elementals.png-5f77bd2977c8bc82fb35af0eff127370.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/elementals.png"
-dest_files=["res://.godot/imported/elementals.png-0adaef880e14f3b083a849b239fbfffb.ctex"]
+source_file="res://prj_psvita/assets/cards_big/elementals.png"
+dest_files=["res://.godot/imported/elementals.png-5f77bd2977c8bc82fb35af0eff127370.ctex"]
 
 [params]
 

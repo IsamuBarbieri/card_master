@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b546vfo52kdgg"
-path="res://.godot/imported/nymph.png-69b60635507e47bc16761b067eca0c8b.ctex"
+uid="uid://bmsx5pucexiyu"
+path="res://.godot/imported/nymph.png-ccf5a709c9ceda79f0e594c819f00bf3.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/nymph.png"
-dest_files=["res://.godot/imported/nymph.png-69b60635507e47bc16761b067eca0c8b.ctex"]
+source_file="res://prj_psvita/assets/cards_big/nymph.png"
+dest_files=["res://.godot/imported/nymph.png-ccf5a709c9ceda79f0e594c819f00bf3.ctex"]
 
 [params]
 

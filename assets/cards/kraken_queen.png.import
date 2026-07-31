@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bx6qi8pa4nw7x"
-path="res://.godot/imported/kraken_queen.png-27c45deaa56cb22a54a0602692aab0d4.ctex"
+uid="uid://cq4er4pstcf01"
+path="res://.godot/imported/kraken_queen.png-8607adf254c5668b27ddd32982a17983.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/kraken_queen.png"
-dest_files=["res://.godot/imported/kraken_queen.png-27c45deaa56cb22a54a0602692aab0d4.ctex"]
+source_file="res://prj_psvita/assets/cards_big/kraken_queen.png"
+dest_files=["res://.godot/imported/kraken_queen.png-8607adf254c5668b27ddd32982a17983.ctex"]
 
 [params]
 

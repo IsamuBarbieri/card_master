@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://5dxeve1edds7"
-path="res://.godot/imported/zombie.png-b706ce755a669e5ac15daebc74f2ebf4.ctex"
+uid="uid://dpsrww1ujggh0"
+path="res://.godot/imported/zombie.png-b1189d064ee22380d159370c976343ef.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/zombie.png"
-dest_files=["res://.godot/imported/zombie.png-b706ce755a669e5ac15daebc74f2ebf4.ctex"]
+source_file="res://prj_psvita/assets/cards_big/zombie.png"
+dest_files=["res://.godot/imported/zombie.png-b1189d064ee22380d159370c976343ef.ctex"]
 
 [params]
 

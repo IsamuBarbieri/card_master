@@ -100,18 +100,22 @@ func get_capturable_cards(card: Card) -> Array:
 			result.append(other)
 	return result
 
-# Adjacent cards owned by the same owner as a just-defeated card -> combo capture.
-func get_combo_cards(defeated_card: Card) -> Array:
+# Adjacent cards (along `card`'s own arrows) still owned by the loser's side
+# -> combo capture. `winner_owner` is passed explicitly (rather than read
+# from `card.owner`) so this works uniformly whether `card` has already been
+# flipped to the winner or not, which lets chained combo capture collect the
+# whole chain before any of it is actually captured.
+func get_combo_cards(card: Card, winner_owner: int) -> Array:
 	var result := []
 	for i in 8:
-		if not defeated_card.arrows[i]:
+		if not card.arrows[i]:
 			continue
-		var row: int = defeated_card.row + SLOT_OFFSETS[i][0]
-		var col: int = defeated_card.col + SLOT_OFFSETS[i][1]
+		var row: int = card.row + SLOT_OFFSETS[i][0]
+		var col: int = card.col + SLOT_OFFSETS[i][1]
 		if not has_card(row, col):
 			continue
 		var other: Card = slots[row][col]
-		if other.owner != defeated_card.owner:
+		if other.owner == winner_owner:
 			continue
 		result.append(other)
 	return result

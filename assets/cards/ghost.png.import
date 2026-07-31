@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bgg3h6ur0ajy"
-path="res://.godot/imported/ghost.png-bbfebff45413ff348bed6c9d45031dc8.ctex"
+uid="uid://bjdusd2ef5g1d"
+path="res://.godot/imported/ghost.png-a4644ca11acaf9761b50ff910f2accc8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/ghost.png"
-dest_files=["res://.godot/imported/ghost.png-bbfebff45413ff348bed6c9d45031dc8.ctex"]
+source_file="res://prj_psvita/assets/cards_big/ghost.png"
+dest_files=["res://.godot/imported/ghost.png-a4644ca11acaf9761b50ff910f2accc8.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bwhxoh23cxw4u"
-path="res://.godot/imported/lich.png-9c340b16fae056c08fe9f3938042d6bd.ctex"
+uid="uid://cw5w72wtrt6gd"
+path="res://.godot/imported/lich.png-c33952cb911cd56592a64d7b33ed45db.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/lich.png"
-dest_files=["res://.godot/imported/lich.png-9c340b16fae056c08fe9f3938042d6bd.ctex"]
+source_file="res://prj_psvita/assets/cards_big/lich.png"
+dest_files=["res://.godot/imported/lich.png-c33952cb911cd56592a64d7b33ed45db.ctex"]
 
 [params]
 

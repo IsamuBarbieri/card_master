@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://g8fqc73g8kl"
-path="res://.godot/imported/the_void.png-a2dc550d167cce150f3f441b89e8d6f0.ctex"
+uid="uid://c2cwx1ggpqky7"
+path="res://.godot/imported/the_void.png-4d8b08f2962bdc4585c6e3010e239f70.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/the_void.png"
-dest_files=["res://.godot/imported/the_void.png-a2dc550d167cce150f3f441b89e8d6f0.ctex"]
+source_file="res://prj_psvita/assets/cards_big/the_void.png"
+dest_files=["res://.godot/imported/the_void.png-4d8b08f2962bdc4585c6e3010e239f70.ctex"]
 
 [params]
 

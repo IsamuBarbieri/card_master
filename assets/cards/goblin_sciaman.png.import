@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bv7o4rbmw0fhp"
-path="res://.godot/imported/goblin_sciaman.png-11aaadf232c9eee5180755ee9f96cc35.ctex"
+uid="uid://hgcup1afyjgi"
+path="res://.godot/imported/goblin_sciaman.png-40fbe46cc0ac12bff7408598ad2e0777.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/goblin_sciaman.png"
-dest_files=["res://.godot/imported/goblin_sciaman.png-11aaadf232c9eee5180755ee9f96cc35.ctex"]
+source_file="res://prj_psvita/assets/cards_big/goblin_sciaman.png"
+dest_files=["res://.godot/imported/goblin_sciaman.png-40fbe46cc0ac12bff7408598ad2e0777.ctex"]
 
 [params]
 

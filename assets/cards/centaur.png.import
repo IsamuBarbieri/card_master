@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b8h4kmgvmaiwm"
-path="res://.godot/imported/centaur.png-9e4c1a45a00bb1afbbd172d6b89d6913.ctex"
+uid="uid://dfoph5t04pf2c"
+path="res://.godot/imported/centaur.png-d2294c566572257c0456649f8a64df0b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/centaur.png"
-dest_files=["res://.godot/imported/centaur.png-9e4c1a45a00bb1afbbd172d6b89d6913.ctex"]
+source_file="res://prj_psvita/assets/cards_big/centaur.png"
+dest_files=["res://.godot/imported/centaur.png-d2294c566572257c0456649f8a64df0b.ctex"]
 
 [params]
 

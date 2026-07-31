@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bbuk8ntmcb35"
-path="res://.godot/imported/card_arrows.png-339646dc64aa1c66946f34588d412a3c.ctex"
+uid="uid://btfvdfexojvss"
+path="res://.godot/imported/card_arrows.png-3a35591c2e9d35159951fd5ec1961cf6.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/card_arrows.png"
-dest_files=["res://.godot/imported/card_arrows.png-339646dc64aa1c66946f34588d412a3c.ctex"]
+source_file="res://prj_psvita/assets/cards_big/card_arrows.png"
+dest_files=["res://.godot/imported/card_arrows.png-3a35591c2e9d35159951fd5ec1961cf6.ctex"]
 
 [params]
 

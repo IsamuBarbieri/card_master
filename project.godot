@@ -13,7 +13,7 @@ config_version=5
 config/name="Card Master"
 run/main_scene="res://scenes/battle/BattleScene.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
-config/icon="res://icon.svg"
+config/icon="res://icon.png"
 
 [autoload]
 
