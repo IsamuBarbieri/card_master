@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://gyhl3uj8frs"
-path="res://.godot/imported/dragon.png-efc4f72d2ad787479b062f2017e62f3d.ctex"
+path="res://.godot/imported/dragon.png-729df73d9472babe196257f1273518fd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://prj_psvita/assets/cards_big/dragon.png"
-dest_files=["res://.godot/imported/dragon.png-efc4f72d2ad787479b062f2017e62f3d.ctex"]
+source_file="res://assets/cards/dragon.png"
+dest_files=["res://.godot/imported/dragon.png-729df73d9472babe196257f1273518fd.ctex"]
 
 [params]
 

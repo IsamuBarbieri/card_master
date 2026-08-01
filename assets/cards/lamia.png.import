@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://wlilk8rr6jk1"
-path="res://.godot/imported/lamia.png-846cd80904b3ca55c796bb263e44adf3.ctex"
+path="res://.godot/imported/lamia.png-c15df40b06e7b7cfa57d752a7b540ddd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://prj_psvita/assets/cards_big/lamia.png"
-dest_files=["res://.godot/imported/lamia.png-846cd80904b3ca55c796bb263e44adf3.ctex"]
+source_file="res://assets/cards/lamia.png"
+dest_files=["res://.godot/imported/lamia.png-c15df40b06e7b7cfa57d752a7b540ddd.ctex"]
 
 [params]
 

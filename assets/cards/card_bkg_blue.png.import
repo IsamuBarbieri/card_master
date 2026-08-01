@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://6jx7clsnqqcs"
-path="res://.godot/imported/card_bkg_blue.png-5caaa6e704265884fa4a74d037114cb3.ctex"
+path="res://.godot/imported/card_bkg_blue.png-800a4304ddefff55208ad5dee6d7bce8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://prj_psvita/assets/cards_big/card_bkg_blue.png"
-dest_files=["res://.godot/imported/card_bkg_blue.png-5caaa6e704265884fa4a74d037114cb3.ctex"]
+source_file="res://assets/cards/card_bkg_blue.png"
+dest_files=["res://.godot/imported/card_bkg_blue.png-800a4304ddefff55208ad5dee6d7bce8.ctex"]
 
 [params]
 

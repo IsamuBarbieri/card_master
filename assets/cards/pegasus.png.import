@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://tdalp1jg6g6s"
-path="res://.godot/imported/pegasus.png-f4e5f6d80a004a6c66042d588f1d5513.ctex"
+path="res://.godot/imported/pegasus.png-87a76606d5c41c570d1a8f92c41e9ed3.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://prj_psvita/assets/cards_big/pegasus.png"
-dest_files=["res://.godot/imported/pegasus.png-f4e5f6d80a004a6c66042d588f1d5513.ctex"]
+source_file="res://assets/cards/pegasus.png"
+dest_files=["res://.godot/imported/pegasus.png-87a76606d5c41c570d1a8f92c41e9ed3.ctex"]
 
 [params]
 
