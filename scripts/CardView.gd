@@ -86,7 +86,10 @@ func _make_layer() -> TextureRect:
 	add_child(t)
 	return t
 
-func setup(new_card: Card) -> void:
+## show_stats/show_arrows port Card.cs's RenderFlag.Stats/RenderFlag.Arrows -
+## e.g. UIOpponents.cs sets renderFlags=0 for its AI portraits, so those
+## show plain art with no stat text or arrows.
+func setup(new_card: Card, show_stats := true, show_arrows := true) -> void:
 	card = new_card
 	var def: CardManager.CardDef = CardManager.defs[card.def_id]
 	var color_name := "blue" if card.owner == 0 else "red"
@@ -95,16 +98,20 @@ func setup(new_card: Card) -> void:
 	_art.texture = load(ASSETS_DIR + def.image)
 	_border.texture = load(ASSETS_DIR + "card_border.png")
 
-	var text := card.stat_text()
-	var bbcode := "[center]"
-	for i in text.length():
-		var color := stat_color(CardManager.stat_delta(card, i))
-		bbcode += "[color=#%s]%s[/color]" % [color.to_html(false), text[i]]
-	bbcode += "[/center]"
-	_stat_label.text = bbcode
+	_stat_label.visible = show_stats
+	if show_stats:
+		var text := card.stat_text()
+		var bbcode := "[center]"
+		for i in text.length():
+			var color := stat_color(CardManager.stat_delta(card, i))
+			bbcode += "[color=#%s]%s[/color]" % [color.to_html(false), text[i]]
+		bbcode += "[/center]"
+		_stat_label.text = bbcode
 
 	for c in _arrows_box.get_children():
 		c.queue_free()
+	if not show_arrows:
+		return
 
 	var arrows_tex: Texture2D = load(ASSETS_DIR + "card_arrows.png")
 	for i in 8:

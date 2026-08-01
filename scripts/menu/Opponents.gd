@@ -2,7 +2,16 @@ extends Control
 ## Port of UIOpponents.cs / UIOpponents.composer.cs (960x544 design canvas).
 ## Uses the real AIManager roster and Game.player.available_opponents, so
 ## locked opponents show card_back + "???" and Select is disabled for them,
-## same as the original. What's still missing: the unlock-on-win step lives
+## same as the original.
+## Label_Opp_Desc: the original reads AIManager's ai_table.csv Name column
+## (UIOpponents.cs:136), but that column is mostly dev placeholder text
+## ("Enemy 03".."Enemy 16") unrelated to the portrait actually shown (that
+## portrait always comes from gen_table.csv via CardManager.GenerateNewCard,
+## keyed by ai_table.csv's Image ID column - e.g. row 0 "Goblin Shaman" has
+## Image ID 0, which is gen_table.csv's Slime). So the name shown here is
+## gen_table.csv's card name for that Image ID instead, keeping the visible
+## name and portrait consistent.
+## What's still missing: the unlock-on-win step lives
 ## in gsEndPlayerPick.cs, the post-battle card-picking mini-game that
 ## BattleScene.gd deliberately doesn't port (see its header comment) - so for
 ## now only opponent 0 is ever unlocked. Wire that up when BattleScene grows
@@ -29,8 +38,6 @@ var item_overlays: Array = []      # TextureRect (new/defeated badge) per oppone
 
 var label_desc: Label
 var select_button: Button
-var sfx_button: AudioStreamPlayer
-var sfx_back: AudioStreamPlayer
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -65,21 +72,22 @@ func _build_ui() -> void:
 
 	var title := _make_label(Vector2(300, 9), Vector2(359, 36), font_stylish)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.text = "Select Your Opponent"
+	title.text = StringTable.get_string(StringTable.ID_OPPONENT_SELECT)
 	add_child(title)
 
 	label_desc = _make_label(Vector2(231, 473), Vector2(498, 36), font_stylish)
 	add_child(label_desc)
 
-	var back_button := _make_text_button("Back", Vector2(42, 463), Vector2(115, 56), font_stylish)
+	var back_button := _make_text_button(StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56), font_stylish)
 	back_button.pressed.connect(_on_back_pressed)
 
-	select_button = _make_text_button("Select", Vector2(805, 463), Vector2(115, 56), font_stylish)
+	select_button = _make_text_button(StringTable.get_string(StringTable.ID_SELECT), Vector2(805, 463), Vector2(115, 56), font_stylish)
 	select_button.pressed.connect(_on_select_pressed)
 
 	var scroll := ScrollContainer.new()
 	scroll.position = Vector2(73, 63)
 	scroll.size = Vector2(814, 380)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED  # GridListScrollOrientation.Vertical
 	add_child(scroll)
 
 	var grid := GridContainer.new()
@@ -99,14 +107,6 @@ func _build_ui() -> void:
 		item_portraits.append(null)
 		item_overlays.append(null)
 		_refresh_item(i)
-
-	sfx_button = AudioStreamPlayer.new()
-	sfx_button.stream = load(ASSETS + "sfx/button_sound.wav")
-	add_child(sfx_button)
-
-	sfx_back = AudioStreamPlayer.new()
-	sfx_back.stream = load(ASSETS + "sfx/button_back_sound.wav")
-	add_child(sfx_back)
 
 func _make_label(pos: Vector2, size: Vector2, font: Font) -> Label:
 	var label := Label.new()
@@ -160,7 +160,7 @@ func _refresh_item(index: int) -> void:
 		card.owner = 1
 		var view := CardView.new()
 		view.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		view.setup(card)
+		view.setup(card, false, false)  # renderFlags = 0 in the original: no stats, no arrows
 		portrait = view
 
 		var overlay := TextureRect.new()
@@ -195,19 +195,21 @@ func _select(index: int) -> void:
 		_paint_item(item_buttons[i], COLOR_SELECTED if i == index else COLOR_NORMAL)
 
 	var ai: AIManager.AIData = AIManager.get_ai(index)
+	var prefix := StringTable.get_string(StringTable.ID_OPPONENTS_NAME) + " : "
 	if Game.player.available_opponents[index]:
-		label_desc.text = "Opponent Name : " + ai.ai_name
+		var card_name: String = CardManager.defs[ai.image_id].name
+		label_desc.text = prefix + card_name
 		select_button.disabled = false
 	else:
-		label_desc.text = "Opponent Name : ???"
+		label_desc.text = prefix + "???"
 		select_button.disabled = true
 
 func _on_back_pressed() -> void:
-	sfx_back.play()
+	Game.play_sfx(ASSETS + "sfx/button_back_sound.wav")
 	get_tree().change_scene_to_file("res://scenes/menu/MainMenu.tscn")
 
 func _on_select_pressed() -> void:
-	sfx_button.play()
+	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 	if Game.rage_quit_mode:
 		Game.opponent_index = AIManager.rage_quit_index()
 	get_tree().change_scene_to_file("res://scenes/battle/BattleScene.tscn")

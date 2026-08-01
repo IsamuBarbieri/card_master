@@ -4,14 +4,22 @@ extends Control
 ## UpdateLanguage()) - the Image_* PNGs are a decorative overlay (two icon
 ## halves with a transparent gap) that sits on top with TouchResponse=false,
 ## letting the button's own label show through the middle.
-## Cat/Help easter egg not ported (its only target, UIHelp, doesn't exist yet).
+## Cat easter egg (InitCat/OnUpdate in UIMainMenu.cs): idle-loops its 28
+## frame animation then pauses for a random 2-6s before looping again; tap
+## goes to Help.
 
 const SCREEN_W := 960
 const SCREEN_H := 544
 const ASSETS := "res://assets/"
 
-var sfx_button: AudioStreamPlayer
-var music: AudioStreamPlayer
+const CAT_POS := Vector2(850, 416)
+const CAT_FRAME_SIZE := Vector2(160, 138)
+const CAT_FRAME_COUNT := 28
+const CAT_FPS := 10.0
+
+var cat_sprite: AnimatedSprite2D
+var cat_animating := false
+var cat_wait_time := 0.0
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -23,19 +31,58 @@ func _ready() -> void:
 	bg.size = Vector2(SCREEN_W, SCREEN_H)
 	add_child(bg)
 
-	_make_menu_button("Battle", "button_battle.png", Vector2(343, 26), Vector2(274, 71), _on_battle_pressed)
-	_make_menu_button("Shop", "button_shop.png", Vector2(131, 236), Vector2(274, 71), _on_shop_pressed)
-	_make_menu_button("Collection", "button_collection.png", Vector2(556, 236), Vector2(274, 71), _on_collection_pressed)
-	_make_menu_button("Options", "button_option.png", Vector2(343, 442), Vector2(274, 71), _on_options_pressed)
+	_make_menu_button(StringTable.get_string(StringTable.ID_BATTLE), "button_battle.png", Vector2(343, 26), Vector2(274, 71), _on_battle_pressed)
+	_make_menu_button(StringTable.get_string(StringTable.ID_SHOP), "button_shop.png", Vector2(131, 236), Vector2(274, 71), _on_shop_pressed)
+	_make_menu_button(StringTable.get_string(StringTable.ID_COLLECTION), "button_collection.png", Vector2(556, 236), Vector2(274, 71), _on_collection_pressed)
+	_make_menu_button(StringTable.get_string(StringTable.ID_OPTIONS), "button_option.png", Vector2(343, 442), Vector2(274, 71), _on_options_pressed)
 
-	sfx_button = AudioStreamPlayer.new()
-	sfx_button.stream = load(ASSETS + "sfx/button_sound.wav")
-	add_child(sfx_button)
+	Game.play_music(ASSETS + "music/menu1.mp3")
 
-	music = AudioStreamPlayer.new()
-	music.stream = load(ASSETS + "music/menu1.mp3")
-	add_child(music)
-	music.play()
+	_build_cat()
+	cat_wait_time = randf() * 3.5
+
+func _build_cat() -> void:
+	var sheet: Texture2D = load(ASSETS + "help_cat.png")
+	var cols := 6
+	var frame_w := int(CAT_FRAME_SIZE.x)
+	var frame_h := int(CAT_FRAME_SIZE.y)
+
+	var frames := SpriteFrames.new()
+	frames.remove_animation("default")
+	frames.add_animation("idle")
+	frames.set_animation_speed("idle", CAT_FPS)
+	frames.set_animation_loop("idle", false)
+	for i in CAT_FRAME_COUNT:
+		var atlas := AtlasTexture.new()
+		atlas.atlas = sheet
+		atlas.region = Rect2((i % cols) * frame_w, (i / cols) * frame_h, frame_w, frame_h)
+		frames.add_frame("idle", atlas)
+
+	cat_sprite = AnimatedSprite2D.new()
+	cat_sprite.sprite_frames = frames
+	cat_sprite.animation = "idle"
+	cat_sprite.centered = false
+	cat_sprite.position = CAT_POS
+	add_child(cat_sprite)
+
+	var cat_button := Button.new()
+	cat_button.flat = true
+	cat_button.position = CAT_POS
+	cat_button.size = CAT_FRAME_SIZE
+	cat_button.pressed.connect(_on_cat_pressed)
+	add_child(cat_button)
+
+func _process(delta: float) -> void:
+	if cat_animating:
+		if cat_sprite.frame >= CAT_FRAME_COUNT - 1 and not cat_sprite.is_playing():
+			cat_animating = false
+			cat_wait_time = 2.0 + randf() * 4.0
+	else:
+		cat_wait_time -= delta
+		if cat_wait_time < 0.0:
+			cat_animating = true
+			cat_sprite.frame = 0
+			cat_sprite.play("idle")
 
 func _make_menu_button(label: String, texture_name: String, pos: Vector2, size: Vector2, on_pressed: Callable) -> void:
 	var font_stylish: Font = load(ASSETS + "fonts/font_stylish.ttf")
@@ -62,17 +109,21 @@ func _make_menu_button(label: String, texture_name: String, pos: Vector2, size: 
 	add_child(icon)
 
 func _on_battle_pressed() -> void:
-	sfx_button.play()
+	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 	get_tree().change_scene_to_file("res://scenes/menu/Opponents.tscn")
 
 func _on_shop_pressed() -> void:
-	sfx_button.play()
+	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 	print("TODO: Shop screen not ported yet")
 
 func _on_collection_pressed() -> void:
-	sfx_button.play()
+	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 	print("TODO: Collection screen not ported yet")
 
 func _on_options_pressed() -> void:
-	sfx_button.play()
-	print("TODO: Options screen not ported yet")
+	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
+	get_tree().change_scene_to_file("res://scenes/menu/Options.tscn")
+
+func _on_cat_pressed() -> void:
+	Game.play_sfx(ASSETS + "sfx/help_cat.wav")
+	get_tree().change_scene_to_file("res://scenes/menu/Help.tscn")
