@@ -13,11 +13,9 @@ extends RefCounted
 ##   layout isn't a real contract worth the bug surface of reimplementing
 ##   by hand.
 ## - AIManager.AIPrepareSet's persistent per-AI card pools (topCards/
-##   genericCards/capturedCards) aren't ported (see BattleScene.gd's header
-##   comment - CPU hands are generated fresh from the opponent's First Set
-##   range each battle instead), so there's nothing to save for those. Only
-##   the per-AI `defeated` flag persists, folded into the player save file
-##   instead of the reference's one ai{id}.dat file per AI.
+##   genericCards/capturedCards) are folded into the single per-slot player
+##   save file (one entry per AI id) instead of the reference's one
+##   ai{id}.dat file per AI - same data, one file instead of up to 18.
 ##
 ## Ported as-is: 3 save slots, matchStarted flag for rage-quit detection,
 ## CardManager's unique_id counter (so post-load card generation doesn't
@@ -70,9 +68,15 @@ static func save_player(player: Player) -> void:
 	for card in player.cards:
 		cards_data.append(_card_to_dict(card))
 
-	var defeated := []
+	var ai_data := {}
 	for i in AIManager.count():
-		defeated.append(AIManager.get_ai(i).defeated)
+		var ai: AIManager.AIData = AIManager.get_ai(i)
+		var entry := {"defeated": ai.defeated}
+		if ai.dynamic_data_loaded:
+			entry["top"] = _cards_to_array(ai.top_cards)
+			entry["generic"] = _cards_to_array(ai.generic_cards)
+			entry["captured"] = _cards_to_array(ai.captured_cards)
+		ai_data[i] = entry
 
 	var data := {
 		"name": player.player_name,
@@ -81,7 +85,7 @@ static func save_player(player: Player) -> void:
 		"coins": player.coins,
 		"match_started": player.match_started,
 		"next_uid": CardManager.next_uid(),
-		"ai_defeated": defeated,
+		"ai_data": ai_data,
 	}
 
 	DirAccess.make_dir_recursive_absolute(_slot_dir(player.save_slot))
@@ -114,9 +118,24 @@ static func load_player(slot: int) -> Player:
 	# Reset first: AIManager's roster is a single global list shared by
 	# every save slot, so switching slots must clear whatever the
 	# previously loaded slot left behind before applying this slot's data.
-	var defeated: Array = data.get("ai_defeated", [])
+	var ai_data: Dictionary = data.get("ai_data", {})
 	for i in AIManager.count():
-		AIManager.get_ai(i).defeated = i < defeated.size() and defeated[i]
+		var ai: AIManager.AIData = AIManager.get_ai(i)
+		ai.defeated = false
+		ai.dynamic_data_loaded = false
+		ai.top_cards = []
+		ai.generic_cards = []
+		ai.captured_cards = []
+
+		var entry = ai_data.get(i)
+		if entry == null:
+			continue
+		ai.defeated = entry.get("defeated", false)
+		if entry.has("top"):
+			ai.top_cards = _array_to_cards(entry["top"])
+			ai.generic_cards = _array_to_cards(entry["generic"])
+			ai.captured_cards = _array_to_cards(entry["captured"])
+			ai.dynamic_data_loaded = true
 
 	return player
 
@@ -128,6 +147,18 @@ static func _read_save(slot: int) -> Variant:
 	var data = f.get_var()
 	f.close()
 	return data if data is Dictionary else null
+
+static func _cards_to_array(cards: Array) -> Array:
+	var out := []
+	for c in cards:
+		out.append(_card_to_dict(c))
+	return out
+
+static func _array_to_cards(arr: Array) -> Array:
+	var out := []
+	for d in arr:
+		out.append(_card_from_dict(d))
+	return out
 
 static func _card_to_dict(card: Card) -> Dictionary:
 	return {

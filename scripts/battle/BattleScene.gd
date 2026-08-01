@@ -8,16 +8,10 @@ extends Control
 ## expressed as a linear chain of `await`s and native Tweens instead.
 ##
 ## gsEndLevelUp/EndPlayerPick/EndCPUPick/EndNonePick are ported too (the
-## post-battle level-up + card-picking flow), with one deliberate scope cut:
-## the reference's AI keeps its own persistent card pool across matches
-## (AIManager.AIPrepareSet/topCards/genericCards/capturedCards, loaded via
-## SaveSystem) and captures/loses cards to/from that pool. This port's CPU
-## hand is freshly generated every battle from the opponent's First Set
-## range (AIManager.generate_hand - see its docstring), so it's scaled to
-## the right difficulty but not persistent (no SaveSystem yet), so there's
-## no persistent AI pool to add to or remove from - only the player-side
-## effect (Game.player.cards gaining or losing a card) is applied, which is
-## what actually matters for progression.
+## post-battle level-up + card-picking flow), including the AI's own
+## persistent card pool (AIManager.prepare_set/top_cards/generic_cards/
+## captured_cards) - captures and losses feed back into that pool via
+## AIManager.add_captured_card/remove_card, same as the reference.
 
 const SCREEN_W := 960
 const SCREEN_H := 544
@@ -194,18 +188,15 @@ func _get_player_deck() -> Array:
 			return deck
 	return CardManager.generate_playable_deck(5)
 
-## Port of AIManager.cs's AIPrepareSet(), simplified to its "first time this
-## AI is used" path (AIGenFirstSet): 5 cards drawn from the selected
-## opponent's First Set range in ai_table.csv, instead of the whole card
-## table - so a battle's difficulty actually tracks which opponent was
-## picked (early opponents draw weak cards, later ones draw strong ones)
-## rather than being uniformly random regardless of who you're fighting.
-## Not ported: AIPrepareSet's persistent per-AI capturedCards/topCards/
-## genericCards pools (no SaveSystem to back them yet - see AIManager.gd).
+## Port of AIManager.cs's AIPrepareSet(): the selected opponent's 5-card
+## battle hand, drawn from its persistent captured/top/generic pools
+## (AIManager.ensure_dynamic_data lazily generates the starting set the
+## first time this AI is used in the current save slot).
 func _get_cpu_deck() -> Array:
 	if Game.opponent_index >= 0:
 		var ai: AIManager.AIData = AIManager.get_ai(Game.opponent_index)
-		return AIManager.generate_hand(ai)
+		AIManager.ensure_dynamic_data(ai)
+		return AIManager.prepare_set(ai)
 	return CardManager.generate_playable_deck(5)
 
 func start_new_game() -> void:
@@ -1798,6 +1789,7 @@ func _end_player_pick_close() -> void:
 				Game.player.add_captured_rage_quit_card(card)
 			else:
 				Game.player.add_captured_card(card)
+			AIManager.remove_card(ai, card)
 
 	Game.player.match_started = false
 	SaveSystem.save_player(Game.player)
@@ -1901,8 +1893,12 @@ func _end_cpu_pick_setup_move() -> void:
 	_fade_in(button_done, mov_time)
 
 func _end_cpu_pick_close() -> void:
+	var ai: AIManager.AIData = AIManager.get_ai(Game.opponent_index)
+
 	for view in end_down_cards:
 		if end_movable.get(view, false):
+			if not Game.rage_quit_mode:
+				AIManager.add_captured_card(ai, view.card)
 			Game.player.remove_card(view.card)
 
 	Game.player.match_started = false

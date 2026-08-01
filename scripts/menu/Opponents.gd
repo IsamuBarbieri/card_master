@@ -157,6 +157,10 @@ func _refresh_item(index: int) -> void:
 	var portrait: Control
 	if Game.player.available_opponents[index]:
 		var ai: AIManager.AIData = AIManager.get_ai(index)
+		# Matches UIOpponents.cs's listItemUpdator calling AIManager.GetFullAI():
+		# just browsing this screen is enough to lazily generate (and persist,
+		# once saved) an AI's starting deck, even before ever fighting it.
+		AIManager.ensure_dynamic_data(ai)
 		var card := CardManager.generate_card(ai.image_id)
 		card.owner = 1
 		var view := CardView.new()
