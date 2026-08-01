@@ -459,6 +459,8 @@ func _gui_input(event: InputEvent) -> void:
 		var y := int(event.position.y)
 		if event.pressed:
 			_pointer_down = true
+			if event.double_click and _handle_double_click(x, y):
+				return
 			_route_click(x, y)
 		else:
 			_pointer_down = false
@@ -479,6 +481,8 @@ func _route_click(x: int, y: int) -> void:
 
 func _route_unclick(x: int, y: int) -> void:
 	match game_state:
+		GameState.WAITING_INPUT:
+			_waiting_input_on_unclick(x, y)
 		GameState.DECK_SCROLL:
 			if game_state_mode == 0:
 				game_state_mode = 1
@@ -490,6 +494,75 @@ func _route_unclick(x: int, y: int) -> void:
 			_drag_card_on_unclick(x, y)
 		_:
 			pass
+
+## New QoL addition (not in the reference): a plain click+release with no
+## drag on a non-center wheel card auto-scrolls that card to the center,
+## same as DeckSelect.gd's identical addition.
+func _waiting_input_on_unclick(x: int, y: int) -> void:
+	var was_active := wi_active
+	wi_active = false
+	if not was_active:
+		return
+
+	var hi := deck_selector.hit_test_h_box(x, y)
+	if hi != -1:
+		_snap_to_box(hi, true)
+		return
+
+	var vi := deck_selector.hit_test_v_box(x, y)
+	if vi != -1:
+		_snap_to_box(vi, false)
+
+func _snap_to_box(array_index: int, horz: bool) -> void:
+	var delta: float = deck_selector.snap_delta_for_box(array_index, horz)
+	if delta == 0.0:
+		return
+
+	deck_selector.on_input_setup(0, 0, horz)
+
+	game_state = GameState.DECK_SCROLL
+	game_state_mode = 1
+	ds_moving_vert = not horz
+	ds_cur_card_stats = null
+	ds_start_angle = deck_selector.cur_angle_v if not horz else deck_selector.cur_angle_h
+	ds_diff = delta
+	ds_elapsed = 0.0
+
+## New QoL addition (not in the reference): double-click/double-tap a card
+## to send it straight to the trade slot, instead of dragging it there by
+## hand - a wheel card stages a sell, a shop offer card stages a buy. Any
+## card already staged in the slot is bumped back to the wheel, matching
+## the drag-drop's own "swap in" behavior. Returns true if consumed.
+func _handle_double_click(x: int, y: int) -> bool:
+	var hi := deck_selector.hit_test_h_box(x, y)
+	if hi != -1:
+		_cancel_current_interaction()
+		var val := deck_selector.val_at_h_box(hi)
+		var selector_card: Card = deck_selector.remove_card_at_val(val)
+		if cur_sell_card != null:
+			deck_selector.add_card(cur_sell_card)
+		_show_card_slot(selector_card)
+		_set_sell_card(selector_card)
+		_enter_waiting_input()
+		next_sel = 2
+		return true
+
+	for i in 4:
+		if shop_cards_active[i] and Rect2(shop_card_views[i].global_position, SHOP_CARD_IMAGE_SIZE).has_point(Vector2(x, y)):
+			_cancel_current_interaction()
+			if cur_sell_card != null:
+				deck_selector.add_card(cur_sell_card)
+			_show_card_slot(shop_cards[i])
+			_set_buy_card(shop_cards[i])
+			last_chosen_shop_card_index = i
+			_enter_waiting_input()
+			next_sel = 2
+			return true
+
+	return false
+
+func _cancel_current_interaction() -> void:
+	drag_ghost.visible = false
 
 func _process(delta: float) -> void:
 	deck_selector.update()

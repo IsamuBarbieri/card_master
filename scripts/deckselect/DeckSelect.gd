@@ -281,6 +281,8 @@ func _gui_input(event: InputEvent) -> void:
 		var y := int(event.position.y)
 		if event.pressed:
 			_pointer_down = true
+			if event.double_click and _handle_double_click(x, y):
+				return
 			_route_click(x, y)
 		else:
 			_pointer_down = false
@@ -299,8 +301,56 @@ func _route_click(x: int, y: int) -> void:
 		GameState.DRAG_CARD:
 			_drag_card_on_click(x, y)
 
+## New QoL addition (not in the reference): double-click/double-tap a card
+## to send it straight to its slot, instead of dragging it there by hand.
+## A wheel card goes to the next free deck slot; a deck card goes back to
+## its wheel (routed by is_favourite, same as the drag-swap-out path).
+## Returns true if the double-click was consumed.
+func _handle_double_click(x: int, y: int) -> bool:
+	var lower_index: int = lower_deck.get_valid_card_index_under_cursor(x, y)
+	if lower_index != -1:
+		_cancel_current_interaction()
+		var cstats: Card = lower_deck.remove_card(lower_index)
+		if cstats.is_favourite:
+			deck_selector_right.add_card(cstats)
+			next_sel = 2
+		else:
+			deck_selector_left.add_card(cstats)
+			next_sel = 1
+		_enter_waiting_input()
+		return true
+
+	var selectors: Array[DeckSelectorWheel] = [deck_selector_left, deck_selector_right]
+	for selector in selectors:
+		var hi: int = selector.hit_test_h_box(x, y)
+		if hi != -1:
+			var free_index := lower_deck.get_unused_index()
+			if free_index == -1:
+				return true  # deck already full, nothing to do
+			_cancel_current_interaction()
+			var val: int = selector.val_at_h_box(hi)
+			var cstats: Card = selector.remove_card_at_val(val)
+			lower_deck.add_card(free_index, cstats)
+			next_sel = 10 + free_index
+			_enter_waiting_input()
+			return true
+
+	return false
+
+## Resets whatever WaitingInput/DeckScroll/DragCard was mid-flight so a
+## double-click can act immediately regardless of what the first of its two
+## clicks happened to start.
+func _cancel_current_interaction() -> void:
+	drag_ghost.visible = false
+	for index in 5:
+		if dc_lower_deck_hover_incs[index] != 0:
+			placeholders[index].position.y += 2.0 * dc_lower_deck_hover_incs[index]
+			dc_lower_deck_hover_incs[index] = 0
+
 func _route_unclick(x: int, y: int) -> void:
 	match game_state:
+		GameState.WAITING_INPUT:
+			_waiting_input_on_unclick(x, y)
 		GameState.DECK_SCROLL:
 			if game_state_mode == 0:
 				game_state_mode = 1
@@ -312,6 +362,44 @@ func _route_unclick(x: int, y: int) -> void:
 			_drag_card_on_unclick(x, y)
 		_:
 			pass
+
+## New QoL addition (not in the reference): a plain click+release with no
+## drag on a non-center wheel card auto-scrolls that card to the center,
+## instead of requiring a manual drag past the 90-degree snap threshold.
+func _waiting_input_on_unclick(x: int, y: int) -> void:
+	var selector := wi_selector
+	wi_panel = null
+	wi_selector = null
+	if selector == null:
+		return
+
+	var hi := selector.hit_test_h_box(x, y)
+	if hi != -1:
+		_snap_to_box(selector, hi, true)
+		return
+
+	var vi := selector.hit_test_v_box(x, y)
+	if vi != -1:
+		_snap_to_box(selector, vi, false)
+
+func _snap_to_box(selector: DeckSelectorWheel, array_index: int, horz: bool) -> void:
+	var delta: float = selector.snap_delta_for_box(array_index, horz)
+	if delta == 0.0:
+		return
+
+	# on_input_close() (called when the ease-out below finishes) reads the
+	# wheel's own moving_vert field, so it has to be kept in sync here too -
+	# same field on_input_setup() would normally set for a manual drag.
+	selector.on_input_setup(0, 0, horz)
+
+	game_state = GameState.DECK_SCROLL
+	game_state_mode = 1
+	ds_selector = selector
+	ds_moving_vert = not horz
+	ds_cur_card_stats = null
+	ds_start_angle = selector.cur_angle_v if not horz else selector.cur_angle_h
+	ds_diff = delta
+	ds_elapsed = 0.0
 
 func _process(delta: float) -> void:
 	deck_selector_left.update()

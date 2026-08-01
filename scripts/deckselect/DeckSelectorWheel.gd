@@ -136,10 +136,59 @@ func central_card_hit_test(x: int, y: int) -> bool:
 		return false
 	return Rect2(cv.global_position, cv.size * cv.scale).has_point(Vector2(x, y))
 
+## New QoL addition (not in the reference): hit-tests every visible box of
+## the horizontal (per-card) wheel, so a click anywhere on a neighbor card -
+## not just the center one - can be identified and acted on directly.
+func hit_test_h_box(x: int, y: int) -> int:
+	return _hit_test_box(ui_box_h, bbh, x, y)
+
+## Same as hit_test_h_box but for the vertical (per-type) wheel.
+func hit_test_v_box(x: int, y: int) -> int:
+	return _hit_test_box(ui_box_v, bbv, x, y)
+
+func _hit_test_box(boxes: Array, bb: BlackBox, x: int, y: int) -> int:
+	if bb.count == 0:
+		return -1
+	var hidden: int = bb.sorted_list[3].array_index
+	for i in 4:
+		if i == hidden:
+			continue
+		var cv: CardView = boxes[i]
+		if not cv.visible:
+			continue
+		if Rect2(cv.global_position, cv.size * cv.scale).has_point(Vector2(x, y)):
+			return i
+	return -1
+
+## The card-list index (within the current type) shown by a given
+## horizontal-wheel box, for hit_test_h_box() callers.
+func val_at_h_box(array_index: int) -> int:
+	return bbh.objects[array_index].val
+
+## New QoL addition: the angle delta (relative to the wheel's own current
+## angle) needed to bring the given box to the front/center position -
+## always a quarter turn since only immediate neighbors are ever visible.
+func snap_delta_for_box(array_index: int, horz: bool) -> float:
+	var cur_angle: float = cur_angle_h if horz else cur_angle_v
+	var raw := fposmod(cur_angle + 90.0 * float(array_index), 360.0)
+	if raw > 180.0:
+		raw -= 360.0
+	if raw > 45.0:
+		return -90.0
+	elif raw < -45.0:
+		return 90.0
+	return 0.0
+
 ## Returns the removed Card (reference also hands back a cloned texture -
 ## see the class-level deviation note).
 func remove_current_card() -> Card:
-	var result := card_matrix.remove_card_at_index(cur_index_v, bbh.sorted_list[0].val)
+	return remove_card_at_val(bbh.sorted_list[0].val)
+
+## Generalization of remove_current_card() to an arbitrary card-list index,
+## needed for the double-click-to-deck QoL shortcut (which can target a
+## neighbor card, not just the centered one).
+func remove_card_at_val(val: int) -> Card:
+	var result := card_matrix.remove_card_at_index(cur_index_v, val)
 	var card_stats: Card = result.card
 
 	if result.type_was_removed:

@@ -81,10 +81,10 @@ func _init() -> void:
 	_price_label.bbcode_enabled = true
 	_price_label.fit_content = true
 	_price_label.scroll_active = false
-	_price_label.position = Vector2(0, CARD_H / 2.0 - 12)
-	_price_label.size = Vector2(CARD_W, 24)
+	_price_label.position = Vector2(0, CARD_H / 2.0 - 15)
+	_price_label.size = Vector2(CARD_W, 30)
 	_price_label.add_theme_font_override("normal_font", _stylish_font)
-	_price_label.add_theme_font_size_override("normal_font_size", 18)
+	_price_label.add_theme_font_size_override("normal_font_size", 24)
 	_price_label.add_theme_color_override("default_color", Color.WHITE)
 	_price_label.add_theme_constant_override("outline_size", 3)
 	_price_label.add_theme_color_override("font_outline_color", Color.BLACK)
@@ -115,8 +115,16 @@ func setup(new_card: Card, show_stats := true, show_arrows := true, show_price :
 	var def: CardManager.CardDef = CardManager.defs[card.def_id]
 	var color_name := "blue" if card.owner == 0 else "red"
 
-	_bkg.texture = load(ASSETS_DIR + "card_bkg_%s.png" % color_name)
-	_art.texture = load(ASSETS_DIR + def.image)
+	# Port of Card.cs's isVoid special case: "The Void" has its own unique
+	# owner-tinted art (background baked in) instead of the generic
+	# card_bkg_%s.png + monster-art layering every other card uses, drawn
+	# over a plain black backdrop rather than the blue/red gradient bkg.
+	if def.name == "The Void":
+		_bkg.texture = load("res://assets/black8x8.png")
+		_art.texture = load(ASSETS_DIR + "the_void_%s.png" % color_name)
+	else:
+		_bkg.texture = load(ASSETS_DIR + "card_bkg_%s.png" % color_name)
+		_art.texture = load(ASSETS_DIR + def.image)
 	_border.texture = load(ASSETS_DIR + "card_border.png")
 
 	_stat_label.visible = show_stats
@@ -131,7 +139,7 @@ func setup(new_card: Card, show_stats := true, show_arrows := true, show_price :
 
 	_price_label.visible = show_price
 	if show_price:
-		_price_label.text = "[center]%d [img=14x14]res://assets/coins_icon.png[/img][/center]" % CardManager.card_price(card)
+		_price_label.text = "[center]%d [img=18x18]res://assets/coins_icon.png[/img][/center]" % CardManager.card_price(card)
 
 	for c in _arrows_box.get_children():
 		c.queue_free()

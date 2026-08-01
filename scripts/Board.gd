@@ -105,6 +105,13 @@ func get_capturable_cards(card: Card) -> Array:
 # from `card.owner`) so this works uniformly whether `card` has already been
 # flipped to the winner or not, which lets chained combo capture collect the
 # whole chain before any of it is actually captured.
+#
+# Every matched card gets captured unconditionally, 1:1 with the reference
+# (Board.cs's GetCapturableCardsForCombo - no return-arrow check, matching
+# Tetra Master (FF9)-style combo rules). Whether that capture itself keeps the
+# chain going another level is a separate, explicit rule the caller applies
+# via "continues": only if the captured card has the opposite-facing arrow
+# connecting it back does its own arrows get checked for a further combo.
 func get_combo_cards(card: Card, winner_owner: int) -> Array:
 	var result := []
 	for i in 8:
@@ -117,7 +124,7 @@ func get_combo_cards(card: Card, winner_owner: int) -> Array:
 		var other: Card = slots[row][col]
 		if other.owner == winner_owner:
 			continue
-		result.append(other)
+		result.append({"card": other, "continues": other.arrows[arrow_opposite_index(i)]})
 	return result
 
 func count_cards(owner: int) -> int:

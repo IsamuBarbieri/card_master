@@ -39,7 +39,12 @@ func _ready() -> void:
 	_make_menu_button(StringTable.get_string(StringTable.ID_COLLECTION), "button_collection.png", Vector2(556, 236), Vector2(274, 71), _on_collection_pressed)
 	_make_menu_button(StringTable.get_string(StringTable.ID_OPTIONS), "button_option.png", Vector2(343, 442), Vector2(274, 71), _on_options_pressed)
 
-	Game.play_music(ASSETS + "music/menu1.mp3")
+	if Game.autoplay_menu_music:
+		Game.autoplay_menu_music = false
+		var track := "menu1.mp3" if randi() % 2 == 0 else "menu2.mp3"
+		Game.crossfade_music(ASSETS + "music/" + track, 0.85)
+	else:
+		Game.play_music(ASSETS + "music/menu1.mp3")
 
 	_build_cat()
 	cat_wait_time = randf() * 3.5

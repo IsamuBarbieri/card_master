@@ -43,6 +43,22 @@ const OPPONENT_CARD_SCALE := 0.45
 const BATTLE_RUMBLE_TIME := 0.6
 const BATTLE_COUNTDOWN_TIME := 1.5
 const BATTLE_RUMBLE_DISTANCE := 16.0
+const BATTLE_RUMBLE_RETURN_TIME := 0.2
+
+# New QoL addition (not in the reference, which covers the whole card with
+# an opaque card_sel_target.png plaque - hiding its stats entirely): just
+# the "Target?" text, pulsing between white and a warm red/orange (reads as
+# "about to fight" rather than a neutral UI highlight color).
+const TARGET_FLASH_COLOR := Color(1.0, 0.3, 0.1)
+const TARGET_FLASH_TIME := 0.6
+
+# Port of gsCardPicking.cs's DrawableAlphaPingPong on quadCardGlow (there
+# ping-pongs 0.1-0.7 alpha over a 1.6s cycle) - was rendering fully opaque
+# here, hiding the board underneath; alpha range bumped to 0.5-0.8 per
+# design direction (still readable as a highlight, never fully solid).
+const HOVER_GLOW_MIN_ALPHA := 0.5
+const HOVER_GLOW_MAX_ALPHA := 0.8
+const HOVER_GLOW_FLASH_TIME := 0.8
 
 # Battle countdown number: centered in the vertical space between
 # card_border.png's top inner edge (y=9) and the top of the stat text
@@ -87,8 +103,10 @@ var drag_ghost: CardView = null
 var board_slots: Array = []       # [row][col] -> Button
 var board_card_views: Array = []  # [row][col] -> CardView or null
 var board_blocks: Array = []      # [row][col] -> TextureRect or null
-var board_targets: Array = []     # [row][col] -> TextureRect (sel-target overlay)
+var board_targets: Array = []     # [row][col] -> Label ("Target?" prompt)
+var board_target_tweens: Array = []  # [row][col] -> Tween or null (flash loop)
 var board_hover_glow: TextureRect
+var board_hover_glow_tween: Tween
 
 var hand_slots: Array = []        # size 5 -> Button
 
@@ -159,7 +177,6 @@ var sfx_place: AudioStreamPlayer
 var sfx_attack_p: AudioStreamPlayer
 var sfx_attack_m: AudioStreamPlayer
 var sfx_ragequit: AudioStreamPlayer  # (RAGEQUIT)
-var music: AudioStreamPlayer
 
 var font_stylish: Font = load("res://assets/fonts/font_stylish.ttf")
 var font_info: Font = load("res://assets/fonts/font_info.ttf")
@@ -221,7 +238,10 @@ func start_new_game() -> void:
 	_refresh_hands()
 	_refresh_scores()
 
-	music.play()
+	# Port of BattleScene.cs's MusicPlayWithFade call at the same spot -
+	# crossfades from whatever was playing (menu music) into battle1.mp3,
+	# instead of leaving the menu track running underneath it.
+	Game.crossfade_music(ASSETS + "music/battle1.mp3", 0.85, -8.0)
 	gsCoinToss_Set()
 
 # ---------------------------------------------------------------- UI build
@@ -353,6 +373,7 @@ func _build_board() -> void:
 		var view_row := []
 		var block_row := []
 		var target_row := []
+		var target_tween_row := []
 		for col in Board.NUM_COLS:
 			var pos := _board_cell_pos(row, col)
 
@@ -377,21 +398,28 @@ func _build_board() -> void:
 			add_child(block)
 			block_row.append(block)
 
-			var target := TextureRect.new()
-			target.texture = load(ASSETS + "cards/card_sel_target.png")
-			target.stretch_mode = TextureRect.STRETCH_SCALE
-			target.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			var target := Label.new()
+			target.text = "Target?"
+			target.add_theme_font_override("font", font_stylish)
+			target.add_theme_font_size_override("font_size", 22)
+			target.add_theme_color_override("font_color", Color.WHITE)
+			target.add_theme_color_override("font_outline_color", Color.BLACK)
+			target.add_theme_constant_override("outline_size", 4)
+			target.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			target.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			target.position = pos
 			target.size = Vector2(CARD_W, CARD_H)
 			target.visible = false
 			target.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			add_child(target)
 			target_row.append(target)
+			target_tween_row.append(null)
 
 		board_slots.append(slot_row)
 		board_card_views.append(view_row)
 		board_blocks.append(block_row)
 		board_targets.append(target_row)
+		board_target_tweens.append(target_tween_row)
 
 	board_hover_glow = TextureRect.new()
 	board_hover_glow.texture = load(ASSETS + "cards/card_sel_glow.png")
@@ -666,11 +694,6 @@ func _build_audio() -> void:
 	sfx_attack_m = _make_sfx("sfx/attack_m.wav")
 	sfx_ragequit = _make_sfx("sfx/ragequit_sfx.wav")
 
-	music = AudioStreamPlayer.new()
-	music.stream = load(ASSETS + "music/battle1.mp3")
-	music.volume_db = -8.0
-	add_child(music)
-
 func _make_sfx(path: String) -> AudioStreamPlayer:
 	var p := AudioStreamPlayer.new()
 	p.stream = load(ASSETS + path)
@@ -747,7 +770,22 @@ func _refresh_scores() -> void:
 
 func _highlight_targets(cards: Array, on: bool) -> void:
 	for c in cards:
-		board_targets[c.row][c.col].visible = on
+		var label: Label = board_targets[c.row][c.col]
+		var old_tween: Tween = board_target_tweens[c.row][c.col]
+		if is_instance_valid(old_tween):
+			old_tween.kill()
+			board_target_tweens[c.row][c.col] = null
+
+		label.visible = on
+		if on:
+			label.modulate = Color.WHITE
+			var tw := create_tween()
+			tw.set_loops()
+			tw.tween_property(label, "modulate", TARGET_FLASH_COLOR, TARGET_FLASH_TIME) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			tw.tween_property(label, "modulate", Color.WHITE, TARGET_FLASH_TIME) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			board_target_tweens[c.row][c.col] = tw
 
 func _show_card_info(card: Card) -> void:
 	if card == null:
@@ -822,7 +860,7 @@ func _play_rage_quit_intro() -> void:
 	rage_quit_banner.visible = true
 
 	sfx_ragequit.play()
-	_crossfade_music(ASSETS + "music/ragequit_battle.mp3", 0.85)
+	Game.crossfade_music(ASSETS + "music/ragequit_battle.mp3", 0.85, -8.0)
 
 	var tw := create_tween()
 	tw.tween_property(rage_quit_banner, "position:x", (SCREEN_W - rage_quit_banner.size.x) / 2.0, MOV_TIME) \
@@ -837,14 +875,6 @@ func _play_rage_quit_intro() -> void:
 	await tw2.finished
 
 	rage_quit_banner.visible = false
-
-func _crossfade_music(path: String, fade_time: float) -> void:
-	var tw := create_tween()
-	tw.tween_property(music, "volume_db", -80.0, fade_time)
-	await tw.finished
-	music.stream = load(path)
-	music.volume_db = -8.0
-	music.play()
 
 # --------------------------------------------------------------- player turn
 
@@ -911,16 +941,36 @@ func _slot_under_point(pos: Vector2) -> Vector2i:
 func _update_drag_hover(mouse_pos: Vector2) -> void:
 	var cell := _slot_under_point(mouse_pos)
 	if cell.x >= 0 and board.is_playable(cell.x, cell.y):
-		board_hover_glow.position = _board_cell_pos(cell.x, cell.y)
+		var cell_pos := _board_cell_pos(cell.x, cell.y)
+		if not board_hover_glow.visible or board_hover_glow.position != cell_pos:
+			board_hover_glow.position = cell_pos
+			_start_hover_glow_flash()
 		board_hover_glow.visible = true
 	else:
-		board_hover_glow.visible = false
+		_stop_hover_glow_flash()
+
+func _start_hover_glow_flash() -> void:
+	if is_instance_valid(board_hover_glow_tween):
+		board_hover_glow_tween.kill()
+	board_hover_glow.modulate.a = HOVER_GLOW_MIN_ALPHA
+	board_hover_glow_tween = create_tween()
+	board_hover_glow_tween.set_loops()
+	board_hover_glow_tween.tween_property(board_hover_glow, "modulate:a", HOVER_GLOW_MAX_ALPHA, HOVER_GLOW_FLASH_TIME) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	board_hover_glow_tween.tween_property(board_hover_glow, "modulate:a", HOVER_GLOW_MIN_ALPHA, HOVER_GLOW_FLASH_TIME) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+func _stop_hover_glow_flash() -> void:
+	if is_instance_valid(board_hover_glow_tween):
+		board_hover_glow_tween.kill()
+		board_hover_glow_tween = null
+	board_hover_glow.visible = false
 
 func gsCardPicking_Release(mouse_pos: Vector2) -> void:
 	var cell := _slot_under_point(mouse_pos)
 	drag_ghost.queue_free()
 	drag_ghost = null
-	board_hover_glow.visible = false
+	_stop_hover_glow_flash()
 	dragging = false
 
 	if cell.x >= 0 and board.is_playable(cell.x, cell.y):
@@ -1010,6 +1060,13 @@ func gsBattleCheck_Set(last_placed: Card) -> void:
 		return
 	elif fightable.size() == 1:
 		await gsBattle_Set(last_placed, fightable[0])
+	elif last_placed.owner != 0:
+		# New QoL addition (not in the reference, which shows the same
+		# "pick a target" highlight/delay for the CPU too): the AI's choice
+		# isn't a real decision the player watches unfold, so skip the
+		# target-selection UI entirely and fight immediately.
+		var target := GsCPUTurn.choose_battle_target(last_placed, fightable)
+		await gsBattle_Set(last_placed, target)
 	else:
 		var target := await gsBattleSelTarget_Set(last_placed, fightable)
 		await gsBattle_Set(last_placed, target)
@@ -1017,16 +1074,11 @@ func gsBattleCheck_Set(last_placed: Card) -> void:
 func gsBattleSelTarget_Set(last_placed: Card, candidates: Array) -> Card:
 	_highlight_targets(candidates, true)
 
-	var chosen: Card
-	if last_placed.owner == 0:
-		target_mode = true
-		target_candidates = candidates
-		chosen = await target_chosen
-		target_mode = false
-		target_candidates = []
-	else:
-		await get_tree().create_timer(0.7).timeout
-		chosen = GsCPUTurn.choose_battle_target(last_placed, candidates)
+	target_mode = true
+	target_candidates = candidates
+	var chosen: Card = await target_chosen
+	target_mode = false
+	target_candidates = []
 
 	_highlight_targets(candidates, false)
 	return chosen
@@ -1120,12 +1172,21 @@ func gsBattle_End(card0: Card, card1: Card, result: Dictionary) -> void:
 		if battle_value_labels[i].get_parent() != self:
 			battle_value_labels[i].reparent(self, false)
 
+	# New QoL addition (not in the reference, which never resets card0/card1's
+	# rumble offset at all - they stay permanently shifted 16px toward each
+	# other after every battle, a real bug there). Ported as a smooth ease
+	# back to the grid slot instead of a hard position snap.
 	var view0: CardView = board_card_views[card0.row][card0.col]
 	var view1: CardView = board_card_views[card1.row][card1.col]
+	var tw_back := create_tween()
+	tw_back.set_parallel(true)
 	if is_instance_valid(view0):
-		view0.position = Vector2.ZERO
+		tw_back.tween_property(view0, "position", Vector2.ZERO, BATTLE_RUMBLE_RETURN_TIME) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	if is_instance_valid(view1):
-		view1.position = Vector2.ZERO
+		tw_back.tween_property(view1, "position", Vector2.ZERO, BATTLE_RUMBLE_RETURN_TIME) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	await tw_back.finished
 
 	var winner: Card = result["winner"]
 	if winner == null:
@@ -1152,25 +1213,32 @@ func gsBattle_End(card0: Card, card1: Card, result: Dictionary) -> void:
 
 # Each combo card can itself chain into further combo cards through its own
 # arrows (e.g. a captured card pointing at another enemy card also captures
-# it, bumping the combo to x3, x4, ...). Returns the chain as levels (BFS
+# it, bumping the combo to x3, x4, ...) - but only if THAT capture had the
+# opposite-facing arrow connecting it back (get_combo_cards's "continues"),
+# otherwise the card is still captured but the chain stops there rather than
+# checking its arrows for a further level. Returns the chain as levels (BFS
 # depth) so the caller can animate one level at a time, in parallel within
 # a level, cascading to the next.
 func _collect_combo_levels(start: Card, winner_owner: int) -> Array:
 	var levels := []
 	var seen := {start.unique_id: true}
-	var frontier := [start]
-	while not frontier.is_empty():
-		var next_level := []
-		for card in frontier:
-			for c in board.get_combo_cards(card, winner_owner):
+	var expand_frontier := [start]
+	while not expand_frontier.is_empty():
+		var captured_this_level := []
+		var next_expand := []
+		for card in expand_frontier:
+			for entry in board.get_combo_cards(card, winner_owner):
+				var c: Card = entry["card"]
 				if seen.has(c.unique_id):
 					continue
 				seen[c.unique_id] = true
-				next_level.append(c)
-		if next_level.is_empty():
+				captured_this_level.append(c)
+				if entry["continues"]:
+					next_expand.append(c)
+		if captured_this_level.is_empty():
 			break
-		levels.append(next_level)
-		frontier = next_level
+		levels.append(captured_this_level)
+		expand_frontier = next_expand
 	return levels
 
 # --------------------------------------------------------------- captures
@@ -1315,7 +1383,6 @@ func gsEndStart_Set() -> void:
 		banner_path = "battle/battle_draw.png"
 
 	end_panel.visible = true
-	music.stop()
 
 	# banner slides in, holds, slides out
 	var banner_tex: Texture2D = load(ASSETS + banner_path)
@@ -1573,6 +1640,7 @@ func _update_owned_panel_pos(view: CardView) -> void:
 	panel_owned.position = Vector2(view.position.x + CARD_W / 2.0 - panel_owned.size.x / 2.0, view.position.y + CARD_H)
 
 func _return_to_main_menu() -> void:
+	Game.autoplay_menu_music = true
 	get_tree().change_scene_to_file("res://scenes/menu/MainMenu.tscn")
 
 # Single Button_Done handler shared by all three end flows (matches which

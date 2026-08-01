@@ -10,6 +10,11 @@ extends Node
 var player: Player = null
 var opponent_index: int = -1
 var rage_quit_mode: bool = false
+## Port of UIMainMenu.cs's autoplayMusic: set true right before returning to
+## MainMenu from a battle, so it crossfades into a randomly chosen menu
+## track (Music.ChooseMenuMusic()) instead of just continuing whatever was
+## already playing.
+var autoplay_menu_music: bool = false
 
 # Port of Game.cs's Options struct.
 var sfx_volume: float = 1.0:
@@ -49,6 +54,22 @@ func play_music(path: String) -> void:
 	var stream: AudioStream = load(path)
 	stream.loop = true
 	_music_player.stream = stream
+	_music_player.play()
+
+## Port of Events.MusicPlayWithFade: fades the current track out then swaps
+## and fades the new one in, instead of an abrupt cut. target_volume_db is a
+## per-track mixing tweak (not in the reference, which just uses the
+## slider-controlled volume) - battle1.mp3/ragequit_battle.mp3 are louder
+## raw files than the menu tracks, so BattleScene passes -8.0 to balance.
+func crossfade_music(path: String, fade_time: float, target_volume_db: float = 0.0) -> void:
+	var tw := create_tween()
+	tw.tween_property(_music_player, "volume_db", -80.0, fade_time)
+	await tw.finished
+	_music_path = path
+	var stream: AudioStream = load(path)
+	stream.loop = true
+	_music_player.stream = stream
+	_music_player.volume_db = target_volume_db
 	_music_player.play()
 
 ## One-shot sfx, parented to this autoload (not the calling scene) so it

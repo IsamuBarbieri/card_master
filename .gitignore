@@ -3,3 +3,7 @@
 /android/
 /prj_psvita/
 /build/
+
+# Assets no longer referenced by any script/scene - kept for reference,
+# excluded from git and from exported builds.
+/old_asset/
