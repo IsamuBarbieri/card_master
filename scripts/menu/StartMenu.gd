@@ -26,6 +26,7 @@ func _ready() -> void:
 	var font_stylish: Font = load(ASSETS + "fonts/font_stylish.ttf")
 	for i in SLOT_POSITIONS.size():
 		var slot := Button.new()
+		UIButtonStyle.apply(slot)
 		slot.position = SLOT_POSITIONS[i]
 		slot.size = SLOT_SIZE
 		slot.text = StringTable.get_string(StringTable.ID_NEW)

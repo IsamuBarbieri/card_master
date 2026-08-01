@@ -2,8 +2,11 @@ extends Control
 ## Port of UIMainMenu.cs / UIMainMenu.composer.cs (960x544 design canvas).
 ## Each button has its own text (Button_Battle.Text etc, set in
 ## UpdateLanguage()) - the Image_* PNGs are a decorative overlay (two icon
-## halves with a transparent gap) that sits on top with TouchResponse=false,
-## letting the button's own label show through the middle.
+## halves with a transparent gap in the middle) that sits on top with
+## TouchResponse=false, letting the button's own label show through the
+## middle. Buttons use PSM's default 9-patch background (see
+## UIButtonStyle.gd) - no CustomImage in the composer doesn't mean no
+## background, the engine's own default skin is button_9patch_*.png.
 ## Cat easter egg (InitCat/OnUpdate in UIMainMenu.cs): idle-loops its 28
 ## frame animation then pauses for a random 2-6s before looping again; tap
 ## goes to Help.
@@ -87,6 +90,7 @@ func _process(delta: float) -> void:
 func _make_menu_button(label: String, texture_name: String, pos: Vector2, size: Vector2, on_pressed: Callable) -> void:
 	var font_stylish: Font = load(ASSETS + "fonts/font_stylish.ttf")
 	var btn := Button.new()
+	UIButtonStyle.apply(btn)
 	btn.text = label
 	btn.position = pos
 	btn.size = size

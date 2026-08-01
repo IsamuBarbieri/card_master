@@ -108,6 +108,7 @@ func _make_label(pos: Vector2, size: Vector2, font: Font, font_size: int) -> Lab
 
 func _make_text_button(label: String, pos: Vector2, size: Vector2, font: Font) -> Button:
 	var btn := Button.new()
+	UIButtonStyle.apply(btn)
 	btn.text = label
 	btn.position = pos
 	btn.size = size
