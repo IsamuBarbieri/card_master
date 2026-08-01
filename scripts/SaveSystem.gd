@@ -170,6 +170,7 @@ static func _card_to_dict(card: Card) -> Dictionary:
 		"atype": card.attack_type,
 		"arrows": card.arrows,
 		"fav": card.is_favourite,
+		"zero_price": card.has_zero_price,
 		# is_on_deck deliberately not saved - matches the reference (not in
 		# CardStatsToByteArray either), since it's re-derived fresh by
 		# DeckSelect at the start of every deck-select session.
@@ -185,4 +186,52 @@ static func _card_from_dict(d: Dictionary) -> Card:
 	card.attack_type = d["atype"]
 	card.arrows = d["arrows"]
 	card.is_favourite = d["fav"]
+	card.has_zero_price = d.get("zero_price", false)
 	return card
+
+## Port of SaveShopCard/LoadShopCard/CheckForExistingAi's shop-card path:
+## the 4 rotating offer slots persist independently of the main player save
+## (reference: one shopcard{index}.dat per slot; here, one shop.save per
+## save slot holding all 4). Each entry is null (never generated/inactive)
+## or {"card": Card, "time": unix seconds} - `time` drives the once-a-day
+## rotation in Shop.gd.
+static func _shop_path(slot: int) -> String:
+	return _slot_dir(slot) + "/shop.save"
+
+static func save_shop_cards(slot: int, entries: Array) -> void:
+	var data := []
+	for e in entries:
+		if e == null:
+			data.append(null)
+		else:
+			data.append({"card": _card_to_dict(e["card"]), "time": e["time"]})
+
+	DirAccess.make_dir_recursive_absolute(_slot_dir(slot))
+	var path := _shop_path(slot)
+	var path_tmp := path + ".tmp"
+	var f := FileAccess.open(path_tmp, FileAccess.WRITE)
+	f.store_var(data)
+	f.close()
+	if FileAccess.file_exists(path):
+		DirAccess.remove_absolute(path)
+	DirAccess.rename_absolute(path_tmp, path)
+
+static func load_shop_cards(slot: int) -> Array:
+	var path := _shop_path(slot)
+	if not FileAccess.file_exists(path):
+		return [null, null, null, null]
+	var f := FileAccess.open(path, FileAccess.READ)
+	var data = f.get_var()
+	f.close()
+	if not (data is Array):
+		return [null, null, null, null]
+
+	var out := []
+	for e in data:
+		if e == null:
+			out.append(null)
+		else:
+			out.append({"card": _card_from_dict(e["card"]), "time": e["time"]})
+	while out.size() < 4:
+		out.append(null)
+	return out

@@ -118,11 +118,11 @@ func _on_battle_pressed() -> void:
 
 func _on_shop_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
-	print("TODO: Shop screen not ported yet")
+	get_tree().change_scene_to_file("res://scenes/menu/Shop.tscn")
 
 func _on_collection_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
-	print("TODO: Collection screen not ported yet")
+	get_tree().change_scene_to_file("res://scenes/menu/Collection.tscn")
 
 func _on_options_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")

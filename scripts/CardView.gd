@@ -41,6 +41,7 @@ var _art: TextureRect
 var _border: TextureRect
 var _arrows_box: Control
 var _stat_label: RichTextLabel
+var _price_label: RichTextLabel
 
 func _init() -> void:
 	custom_minimum_size = Vector2(CARD_W, CARD_H)
@@ -72,6 +73,25 @@ func _init() -> void:
 	_stat_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_stat_label)
 
+	# Card.cs's drawCoins() - price text + a small coin icon, centered as one
+	# group on the card. RichTextLabel's inline [img] BBCode does the "text
+	# then icon side by side" layout for free instead of measuring text
+	# width by hand like the reference does.
+	_price_label = RichTextLabel.new()
+	_price_label.bbcode_enabled = true
+	_price_label.fit_content = true
+	_price_label.scroll_active = false
+	_price_label.position = Vector2(0, CARD_H / 2.0 - 12)
+	_price_label.size = Vector2(CARD_W, 24)
+	_price_label.add_theme_font_override("normal_font", _stylish_font)
+	_price_label.add_theme_font_size_override("normal_font_size", 18)
+	_price_label.add_theme_color_override("default_color", Color.WHITE)
+	_price_label.add_theme_constant_override("outline_size", 3)
+	_price_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_price_label.visible = false
+	_price_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_price_label)
+
 static func stat_color(delta: float) -> Color:
 	if delta <= 0.5:
 		return STAT_COLOR_MIN.lerp(STAT_COLOR_MED, 2.0 * delta)
@@ -86,10 +106,11 @@ func _make_layer() -> TextureRect:
 	add_child(t)
 	return t
 
-## show_stats/show_arrows port Card.cs's RenderFlag.Stats/RenderFlag.Arrows -
-## e.g. UIOpponents.cs sets renderFlags=0 for its AI portraits, so those
-## show plain art with no stat text or arrows.
-func setup(new_card: Card, show_stats := true, show_arrows := true) -> void:
+## show_stats/show_arrows/show_price port Card.cs's RenderFlag.Stats/Arrows/
+## Coins - e.g. UIOpponents.cs sets renderFlags=0 for its AI portraits, so
+## those show plain art with no stat text or arrows. show_price is Shop's
+## ShopRenderFlags (Arrows|Stats|Coins).
+func setup(new_card: Card, show_stats := true, show_arrows := true, show_price := false) -> void:
 	card = new_card
 	var def: CardManager.CardDef = CardManager.defs[card.def_id]
 	var color_name := "blue" if card.owner == 0 else "red"
@@ -107,6 +128,10 @@ func setup(new_card: Card, show_stats := true, show_arrows := true) -> void:
 			bbcode += "[color=#%s]%s[/color]" % [color.to_html(false), text[i]]
 		bbcode += "[/center]"
 		_stat_label.text = bbcode
+
+	_price_label.visible = show_price
+	if show_price:
+		_price_label.text = "[center]%d [img=14x14]res://assets/coins_icon.png[/img][/center]" % CardManager.card_price(card)
 
 	for c in _arrows_box.get_children():
 		c.queue_free()

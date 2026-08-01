@@ -133,6 +133,30 @@ func generate_card(def_id: int) -> Card:
 		card.arrows.append(randi_range(r[0], r[1]) == 1)
 	return card
 
+## Port of CardManager.cs's CardPrice(). Flexible/Assault types command a
+## premium (exponent > 1 on the average stat), more arrows raise the price
+## linearly, hasZeroPrice (starter cards, shop slot 0) overrides to 0.
+func card_price(card: Card) -> int:
+	if card.has_zero_price:
+		return 0
+
+	var t: float
+	if card.attack_type == Card.AttackType.FLEXIBLE:
+		t = 1.1
+	elif card.attack_type == Card.AttackType.ASSAULT:
+		t = 1.3
+	else:
+		t = 1.0
+
+	var f := 0.0
+	for b in card.arrows:
+		if b:
+			f += 1.0
+
+	var val: float = float(card.attack_power + card.physical_defense + card.magical_defense) / 3.0
+	var total: float = 10.0 * f * pow(val, t)
+	return int(total)
+
 func generate_random_deck(count: int) -> Array:
 	var deck := []
 	for i in count:

@@ -21,6 +21,10 @@ var col: int = -1
 var is_on_deck: bool = false
 var is_favourite: bool = false
 
+# Shop: starter cards and shop slot 0 are always worth 0 coins to sell,
+# so they can't be insta-sold for free money.
+var has_zero_price: bool = false
+
 # Battle end state (Card.cs's levelUpPoints - incremented per battle win,
 # spent in BattleScene's gsEndLevelUp on this card's stats).
 var level_up_points: int = 0
@@ -59,6 +63,7 @@ func clone_stats() -> Card:
 	c.magical_defense = magical_defense
 	c.attack_type = attack_type
 	c.arrows = arrows.duplicate()
+	c.has_zero_price = has_zero_price
 	return c
 
 func stat_text() -> String:

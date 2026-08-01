@@ -238,9 +238,8 @@ func _update_boxes() -> void:
 
 				if bb.objects[i].new_value:
 					var val: int = bb.objects[i].val
-					# shop_mode would use Card.ShopRenderFlags here, but Shop
-					# isn't ported yet - always full stats+arrows for now.
-					cv.setup(card_matrix.card_types[cur_index_v].cards[val], true, true)
+					# Card.ShopRenderFlags (Arrows|Stats|Coins) in Shop mode.
+					cv.setup(card_matrix.card_types[cur_index_v].cards[val], true, true, shop_mode)
 			else:
 				cv.visible = false
 

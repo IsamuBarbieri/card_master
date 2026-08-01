@@ -24,7 +24,12 @@ func _init(new_name: String, slot: int, opponent_count: int) -> void:
 ## per card.
 func generate_base_set() -> void:
 	for i in 5:
-		cards.append(CardManager.generate_card(randi() % 2))
+		var card := CardManager.generate_card(randi() % 2)
+		card.has_zero_price = true
+		cards.append(card)
+
+func add_card(cstats: Card) -> void:
+	cards.append(cstats)
 
 func add_captured_card(cstats: Card) -> void:
 	cstats.is_favourite = false
