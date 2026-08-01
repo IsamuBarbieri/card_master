@@ -45,6 +45,14 @@ func attack_type_to_letter(type: int) -> String:
 		Card.AttackType.ASSAULT: return "A"
 	return "?"
 
+func attack_type_to_string(type: int) -> String:
+	match type:
+		Card.AttackType.PHYSICAL: return StringTable.get_string(StringTable.ID_ATTACK_TYPE_PHYSICAL)
+		Card.AttackType.MAGICAL: return StringTable.get_string(StringTable.ID_ATTACK_TYPE_MAGICAL)
+		Card.AttackType.FLEXIBLE: return StringTable.get_string(StringTable.ID_ATTACK_TYPE_FLEXIBLE)
+		Card.AttackType.ASSAULT: return StringTable.get_string(StringTable.ID_ATTACK_TYPE_ASSAULT)
+	return "?"
+
 func stat_to_hex(stat: int) -> String:
 	for i in STATS_RANGE.size():
 		if stat <= STATS_RANGE[i]:

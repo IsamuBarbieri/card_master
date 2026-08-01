@@ -130,6 +130,25 @@ func _ready() -> void:
 	_build_ui()
 	start_new_game()
 
+## Port of BattleScene.cs's generateCards(): the 5 Game.player.cards flagged
+## isOnDeck by DeckSelect, cloned (clone_stats()) same as the reference's
+## cards[i].Setup(cstat, 0) copying stats into a separate battle Card -
+## Board.capture() mutates card.owner in place on capture, and that must
+## not corrupt the persistent Game.player.cards entry.
+## Falls back to a random deck if Game.player has no on-deck cards (e.g.
+## BattleScene opened standalone for testing, bypassing the StartMenu ->
+## Opponents -> DeckSelect flow that normally populates it - not reference
+## behavior, just keeps this scene testable in isolation).
+func _get_player_deck() -> Array:
+	if Game.player != null:
+		var deck := []
+		for card in Game.player.cards:
+			if card.is_on_deck:
+				deck.append(card.clone_stats())
+		if deck.size() == 5:
+			return deck
+	return CardManager.generate_playable_deck(5)
+
 func start_new_game() -> void:
 	end_panel.visible = false
 	end_bkg.position.y = -SCREEN_H
@@ -141,7 +160,7 @@ func start_new_game() -> void:
 			row[i] = null
 	_refresh_board_visuals()
 
-	player_hand = CardManager.generate_playable_deck(5)
+	player_hand = _get_player_deck()
 	cpu_hand = CardManager.generate_playable_deck(5)
 	for c in cpu_hand:
 		c.owner = 1

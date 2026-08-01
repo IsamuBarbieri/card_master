@@ -17,6 +17,26 @@ var original_owner: int = 0
 var row: int = -1
 var col: int = -1
 
+# DeckSelect state (Card.Stats's isOnDeck/isFavourite in the reference).
+var is_on_deck: bool = false
+var is_favourite: bool = false
+
+## A fresh Card with the same stats but none of the battle/deck state
+## (owner, row/col, is_on_deck/is_favourite) - BattleScene needs this so
+## captures during a match (Board.capture mutates card.owner in place)
+## don't corrupt the persistent Game.player.cards entry the deck card came
+## from.
+func clone_stats() -> Card:
+	var c := Card.new()
+	c.def_id = def_id
+	c.unique_id = unique_id
+	c.attack_power = attack_power
+	c.physical_defense = physical_defense
+	c.magical_defense = magical_defense
+	c.attack_type = attack_type
+	c.arrows = arrows.duplicate()
+	return c
+
 func stat_text() -> String:
 	var s := ""
 	s += CardManager.stat_to_hex(attack_power)

@@ -16,6 +16,11 @@ extends Control
 ## BattleScene.gd deliberately doesn't port (see its header comment) - so for
 ## now only opponent 0 is ever unlocked. Wire that up when BattleScene grows
 ## a real end-of-match reward step.
+## Selection indicator: the reference marks the selected grid item by filling
+## its 2px margin ring white (MyListPanelItem.BackgroundColor), which reads
+## as barely-there at this scale. Reused DeckSelect's SelectionOutline (a
+## drawn double-rect border) instead, one per item so it scrolls for free as
+## a child of that item - same visual language as the deck carousel.
 
 const SCREEN_W := 960
 const SCREEN_H := 544
@@ -27,14 +32,12 @@ const ITEM_SIZE := Vector2(CARD_W + ITEM_MARGIN * 2, CARD_H + ITEM_MARGIN * 2)
 const GRID_COLUMNS := 7
 const LABEL_FONT_SIZE := 36
 
-const COLOR_NORMAL := Color(0.12, 0.12, 0.12, 0.0)
-const COLOR_SELECTED := Color(1, 1, 1, 1)
-
 var opp_count: int
 var selected_index := 0
 var item_buttons: Array = []       # Button per opponent
 var item_portraits: Array = []     # CardView or null (locked) per opponent
 var item_overlays: Array = []      # TextureRect (new/defeated badge) per opponent
+var item_outlines: Array = []      # SelectionOutline per opponent
 
 var label_desc: Label
 var select_button: Button
@@ -100,13 +103,22 @@ func _build_ui() -> void:
 		var item := Button.new()
 		item.custom_minimum_size = ITEM_SIZE
 		item.flat = true
-		_paint_item(item, COLOR_NORMAL)
 		item.pressed.connect(_on_item_pressed.bind(i))
 		grid.add_child(item)
 		item_buttons.append(item)
 		item_portraits.append(null)
 		item_overlays.append(null)
+
 		_refresh_item(i)
+
+		# Added last so it draws on top of the portrait/overlay.
+		var outline := SelectionOutline.new()
+		outline.set_anchors_preset(Control.PRESET_FULL_RECT)
+		outline.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		outline.set_target_rect(Rect2(ITEM_MARGIN, ITEM_MARGIN, CARD_W, CARD_H))
+		outline.visible = false
+		item.add_child(outline)
+		item_outlines.append(outline)
 
 func _make_label(pos: Vector2, size: Vector2, font: Font) -> Label:
 	var label := Label.new()
@@ -134,13 +146,6 @@ func _make_text_button(label: String, pos: Vector2, size: Vector2, font: Font) -
 	btn.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(btn)
 	return btn
-
-func _paint_item(item: Button, color: Color) -> void:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = color
-	item.add_theme_stylebox_override("normal", sb)
-	item.add_theme_stylebox_override("hover", sb)
-	item.add_theme_stylebox_override("pressed", sb)
 
 # Rebuilds one grid item's portrait/overlay: card_back+"???" if locked,
 # else the AI's stat-card portrait plus a new/defeated badge.
@@ -192,8 +197,8 @@ func _on_item_pressed(index: int) -> void:
 func _select(index: int) -> void:
 	selected_index = index
 	Game.opponent_index = index
-	for i in item_buttons.size():
-		_paint_item(item_buttons[i], COLOR_SELECTED if i == index else COLOR_NORMAL)
+	for i in item_outlines.size():
+		item_outlines[i].visible = (i == index)
 
 	var ai: AIManager.AIData = AIManager.get_ai(index)
 	var prefix := StringTable.get_string(StringTable.ID_OPPONENTS_NAME) + " : "
@@ -213,4 +218,4 @@ func _on_select_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 	if Game.rage_quit_mode:
 		Game.opponent_index = AIManager.rage_quit_index()
-	get_tree().change_scene_to_file("res://scenes/battle/BattleScene.tscn")
+	get_tree().change_scene_to_file("res://scenes/deckselect/DeckSelect.tscn")

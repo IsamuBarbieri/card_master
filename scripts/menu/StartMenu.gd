@@ -44,4 +44,5 @@ func _ready() -> void:
 func _on_slot_pressed(slot_index: int) -> void:
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 	Game.player = Player.new("Player", slot_index, AIManager.count())
+	Game.player.generate_base_set()
 	get_tree().change_scene_to_file("res://scenes/menu/MainMenu.tscn")
