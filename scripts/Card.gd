@@ -21,6 +21,30 @@ var col: int = -1
 var is_on_deck: bool = false
 var is_favourite: bool = false
 
+# Battle end state (Card.cs's levelUpPoints - incremented per battle win,
+# spent in BattleScene's gsEndLevelUp on this card's stats).
+var level_up_points: int = 0
+
+func can_level_up_p_def() -> bool:
+	var def: CardManager.CardDef = CardManager.defs[def_id]
+	return physical_defense < def.max_physical_defense
+
+func can_level_up_m_def() -> bool:
+	var def: CardManager.CardDef = CardManager.defs[def_id]
+	return magical_defense < def.max_magical_defense
+
+func can_level_up_a_pow() -> bool:
+	var def: CardManager.CardDef = CardManager.defs[def_id]
+	return attack_power < def.max_attack_power
+
+func can_level_up_a_type() -> bool:
+	var def: CardManager.CardDef = CardManager.defs[def_id]
+	if attack_type == AttackType.MAGICAL or attack_type == AttackType.PHYSICAL:
+		return def.max_attack_type >= AttackType.FLEXIBLE
+	elif attack_type == AttackType.FLEXIBLE:
+		return def.max_attack_type >= AttackType.ASSAULT
+	return false
+
 ## A fresh Card with the same stats but none of the battle/deck state
 ## (owner, row/col, is_on_deck/is_favourite) - BattleScene needs this so
 ## captures during a match (Board.capture mutates card.owner in place)

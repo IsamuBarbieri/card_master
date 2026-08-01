@@ -4,18 +4,13 @@ extends Control
 ## locked opponents show card_back + "???" and Select is disabled for them,
 ## same as the original.
 ## Label_Opp_Desc: the original reads AIManager's ai_table.csv Name column
-## (UIOpponents.cs:136), but that column is mostly dev placeholder text
-## ("Enemy 03".."Enemy 16") unrelated to the portrait actually shown (that
-## portrait always comes from gen_table.csv via CardManager.GenerateNewCard,
-## keyed by ai_table.csv's Image ID column - e.g. row 0 "Goblin Shaman" has
-## Image ID 0, which is gen_table.csv's Slime). So the name shown here is
-## gen_table.csv's card name for that Image ID instead, keeping the visible
-## name and portrait consistent.
-## What's still missing: the unlock-on-win step lives
-## in gsEndPlayerPick.cs, the post-battle card-picking mini-game that
-## BattleScene.gd deliberately doesn't port (see its header comment) - so for
-## now only opponent 0 is ever unlocked. Wire that up when BattleScene grows
-## a real end-of-match reward step.
+## (UIOpponents.cs:136), which had dev placeholder text ("Enemy 03".."Enemy
+## 16") unrelated to the portrait actually shown (that portrait always
+## comes from gen_table.csv via CardManager.GenerateNewCard, keyed by
+## ai_table.csv's Image ID column) - fixed at the data level (ai_table.csv's
+## Name column now matches gen_table.csv's name for that Image ID), but the
+## name shown here is still looked up via gen_table directly rather than
+## ai.ai_name, so it stays correct even if ai_table.csv drifts again.
 ## Selection indicator: the reference marks the selected grid item by filling
 ## its 2px margin ring white (MyListPanelItem.BackgroundColor), which reads
 ## as barely-there at this scale. Reused DeckSelect's SelectionOutline (a

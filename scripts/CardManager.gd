@@ -59,7 +59,7 @@ func stat_to_hex(stat: int) -> String:
 			return "%X" % i
 	return "0"
 
-func _parse_range(data: String) -> Array:
+func parse_range(data: String) -> Array:
 	if data.begins_with("("):
 		var inner := data.substr(1, data.length() - 2)
 		var parts := inner.split("-")
@@ -87,14 +87,14 @@ func load_definitions() -> void:
 		def.name = data[1]
 		def.image = data[2]
 
-		var atk := _parse_range(data[3])
+		var atk := parse_range(data[3])
 		def.atk_min = atk[0]; def.atk_max = atk[1]
 		def.attack_type = letter_to_attack_type(data[4])
 
-		var pdef := _parse_range(data[5])
+		var pdef := parse_range(data[5])
 		def.pdef_min = pdef[0]; def.pdef_max = pdef[1]
 
-		var mdef := _parse_range(data[6])
+		var mdef := parse_range(data[6])
 		def.mdef_min = mdef[0]; def.mdef_max = mdef[1]
 
 		def.max_attack_power = int(data[7])
@@ -104,7 +104,7 @@ func load_definitions() -> void:
 
 		def.arrow_ranges = []
 		for i in 8:
-			def.arrow_ranges.append(_parse_range(data[11 + i]))
+			def.arrow_ranges.append(parse_range(data[11 + i]))
 
 		defs.append(def)
 

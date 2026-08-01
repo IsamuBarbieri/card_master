@@ -7,11 +7,17 @@ extends Control
 ## its custom Events/Tween system, so the state transitions themselves are
 ## expressed as a linear chain of `await`s and native Tweens instead.
 ##
-## Not ported: gsEndLevelUp / gsEndPlayerPick / gsEndCPUPick / gsEndNonePick.
-## Those are a post-battle card-picking mini-game against the player's/AI's
-## persistent card collections (AIManager save data, SaveSystem) - this is a
-## single-skirmish port with no save/collection system, so gsEndStart's
-## banner+card animation is kept but resolves straight to a result screen.
+## gsEndLevelUp/EndPlayerPick/EndCPUPick/EndNonePick are ported too (the
+## post-battle level-up + card-picking flow), with one deliberate scope cut:
+## the reference's AI keeps its own persistent card pool across matches
+## (AIManager.AIPrepareSet/topCards/genericCards/capturedCards, loaded via
+## SaveSystem) and captures/loses cards to/from that pool. This port's CPU
+## hand is freshly generated every battle from the opponent's First Set
+## range (AIManager.generate_hand - see its docstring), so it's scaled to
+## the right difficulty but not persistent (no SaveSystem yet), so there's
+## no persistent AI pool to add to or remove from - only the player-side
+## effect (Game.player.cards gaining or losing a card) is applied, which is
+## what actually matters for progression.
 
 const SCREEN_W := 960
 const SCREEN_H := 544
@@ -113,8 +119,45 @@ var coin_red_tex: Texture2D
 var end_panel: Control
 var end_bkg: TextureRect
 var end_banner: TextureRect
-var end_label: Label
-var end_restart: Button
+
+# UIBattleEnd-equivalent widgets (built in _build_battle_end_ui()).
+var panel_owned: Control
+var owned_label: Label
+var panel_info: Control
+var end_info_name: Label
+var end_info_offense_val: Label
+var end_info_type_val: Label
+var end_info_pdef_val: Label
+var end_info_mdef_val: Label
+var label_central_msg: Label
+var button_done: Button
+var button_takeall: Button
+var image_arrow: TextureRect
+var help_arrow: TextureRect
+var busy_spinner: BusySpinner
+
+# End-of-match flow state (gsEndLevelUp/EndPlayerPick/EndCPUPick/EndNonePick).
+enum EndFlow { NONE, PLAYER_PICK, CPU_PICK, DRAW }
+var end_flow := EndFlow.NONE
+var end_result: BattleResult
+var end_up_cards: Array = []    # Array[CardView], player's original row (top)
+var end_down_cards: Array = []  # Array[CardView], CPU's original row (bottom)
+var end_movable: Dictionary = {}  # CardView -> bool: capturable this round
+
+var end_remaining := 1  # capturable cards still up for grabs (5 for a perfect win)
+var end_pick_interactive := false
+var end_pick_dragging := false
+var end_sel_view: CardView = null
+var end_pick_from_up := false
+var end_drag_start := Vector2.ZERO
+var end_card_start_pos := Vector2.ZERO
+var end_sel_original_pos := Vector2.ZERO
+
+var end_cpu_pickable: Array = []  # Array[CardView]
+var end_cpu_pick_mode := false
+var end_cpu_total_picks := 0.0
+var end_cpu_cur_pick := 0.0
+var end_cpu_sel_view: CardView = null
 
 var sfx_button: AudioStreamPlayer
 var sfx_place: AudioStreamPlayer
@@ -149,6 +192,20 @@ func _get_player_deck() -> Array:
 			return deck
 	return CardManager.generate_playable_deck(5)
 
+## Port of AIManager.cs's AIPrepareSet(), simplified to its "first time this
+## AI is used" path (AIGenFirstSet): 5 cards drawn from the selected
+## opponent's First Set range in ai_table.csv, instead of the whole card
+## table - so a battle's difficulty actually tracks which opponent was
+## picked (early opponents draw weak cards, later ones draw strong ones)
+## rather than being uniformly random regardless of who you're fighting.
+## Not ported: AIPrepareSet's persistent per-AI capturedCards/topCards/
+## genericCards pools (no SaveSystem to back them yet - see AIManager.gd).
+func _get_cpu_deck() -> Array:
+	if Game.opponent_index >= 0:
+		var ai: AIManager.AIData = AIManager.get_ai(Game.opponent_index)
+		return AIManager.generate_hand(ai)
+	return CardManager.generate_playable_deck(5)
+
 func start_new_game() -> void:
 	end_panel.visible = false
 	end_bkg.position.y = -SCREEN_H
@@ -161,7 +218,7 @@ func start_new_game() -> void:
 	_refresh_board_visuals()
 
 	player_hand = _get_player_deck()
-	cpu_hand = CardManager.generate_playable_deck(5)
+	cpu_hand = _get_cpu_deck()
 	for c in cpu_hand:
 		c.owner = 1
 		c.original_owner = 1
@@ -462,22 +519,142 @@ func _build_end_panel() -> void:
 	end_banner.visible = false
 	end_panel.add_child(end_banner)
 
-	end_label = Label.new()
-	end_label.position = Vector2((SCREEN_W - 300) / 2.0, 460)
-	end_label.size = Vector2(300, 30)
-	end_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	end_label.add_theme_font_override("font", font_stylish)
-	end_label.add_theme_font_size_override("font_size", 20)
-	end_label.visible = false
-	end_panel.add_child(end_label)
+	_build_battle_end_ui()
 
-	end_restart = Button.new()
-	end_restart.text = "Play again"
-	end_restart.position = Vector2((SCREEN_W - 120) / 2.0, 500)
-	end_restart.size = Vector2(120, 32)
-	end_restart.visible = false
-	end_restart.pressed.connect(start_new_game)
-	end_panel.add_child(end_restart)
+## Port of UIBattleEnd.composer.cs (default/horizontal orientation). All of
+## this sits on top of end_panel (which already has end_bkg behind it), and
+## is driven by gsEndLevelUp/EndPlayerPick/EndCPUPick/EndNonePick below.
+func _build_battle_end_ui() -> void:
+	panel_owned = Control.new()
+	panel_owned.size = Vector2(126, 38)
+	panel_owned.clip_contents = true
+	panel_owned.visible = false
+	end_panel.add_child(panel_owned)
+
+	var owned_bkg := TextureRect.new()
+	owned_bkg.texture = load(ASSETS + "common_transp_box_a.png")
+	owned_bkg.stretch_mode = TextureRect.STRETCH_SCALE
+	owned_bkg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	owned_bkg.size = Vector2(126, 38)
+	panel_owned.add_child(owned_bkg)
+
+	owned_label = _make_end_label(Vector2(0, 0), Vector2(126, 38), 20)
+	owned_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	panel_owned.add_child(owned_label)
+
+	panel_info = Control.new()
+	panel_info.position = Vector2(8, 311)
+	panel_info.size = Vector2(228, 224)
+	panel_info.clip_contents = true
+	panel_info.visible = false
+	end_panel.add_child(panel_info)
+
+	var info_bkg := TextureRect.new()
+	info_bkg.texture = load(ASSETS + "common_transp_box_a.png")
+	info_bkg.stretch_mode = TextureRect.STRETCH_SCALE
+	info_bkg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	info_bkg.size = Vector2(228, 224)
+	panel_info.add_child(info_bkg)
+
+	end_info_name = _make_end_label(Vector2(9, 8), Vector2(210, 41), 25)
+	end_info_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	panel_info.add_child(end_info_name)
+
+	var info_offense_lbl := _make_end_label(Vector2(9, 48), Vector2(174, 41), 25)
+	info_offense_lbl.text = StringTable.get_string(StringTable.ID_CARD_ATTACK)
+	panel_info.add_child(info_offense_lbl)
+	end_info_offense_val = _make_end_label(Vector2(111, 48), Vector2(108, 41), 25)
+	end_info_offense_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	panel_info.add_child(end_info_offense_val)
+
+	var info_type_lbl := _make_end_label(Vector2(9, 89), Vector2(174, 41), 25)
+	info_type_lbl.text = StringTable.get_string(StringTable.ID_CARD_TYPE)
+	panel_info.add_child(info_type_lbl)
+	end_info_type_val = _make_end_label(Vector2(111, 89), Vector2(108, 41), 25)
+	end_info_type_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	panel_info.add_child(end_info_type_val)
+
+	var info_pdef_lbl := _make_end_label(Vector2(9, 130), Vector2(169, 41), 25)
+	info_pdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_PHYSICAL_DEFENSE)
+	panel_info.add_child(info_pdef_lbl)
+	end_info_pdef_val = _make_end_label(Vector2(111, 130), Vector2(108, 41), 25)
+	end_info_pdef_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	panel_info.add_child(end_info_pdef_val)
+
+	var info_mdef_lbl := _make_end_label(Vector2(9, 171), Vector2(169, 41), 25)
+	info_mdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_MAGICAL_DEFENSE)
+	panel_info.add_child(info_mdef_lbl)
+	end_info_mdef_val = _make_end_label(Vector2(111, 171), Vector2(108, 41), 25)
+	end_info_mdef_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	panel_info.add_child(end_info_mdef_val)
+
+	label_central_msg = _make_end_label(Vector2(46, 233), Vector2(742, 74), 25)
+	label_central_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	label_central_msg.autowrap_mode = TextServer.AUTOWRAP_WORD
+	label_central_msg.visible = false
+	end_panel.add_child(label_central_msg)
+
+	button_done = _make_end_button(StringTable.get_string(StringTable.ID_DONE), Vector2(790, 463), Vector2(122, 56))
+	button_done.visible = false
+	button_done.pressed.connect(_on_end_done_pressed)
+	end_panel.add_child(button_done)
+
+	button_takeall = _make_end_button(StringTable.get_string(StringTable.ID_TAKE_ALL), Vector2(795, 242), Vector2(158, 56))
+	button_takeall.visible = false
+	button_takeall.pressed.connect(_on_end_takeall_pressed)
+	end_panel.add_child(button_takeall)
+
+	image_arrow = TextureRect.new()
+	image_arrow.texture = load(ASSETS + "cursor.png")
+	image_arrow.stretch_mode = TextureRect.STRETCH_SCALE
+	image_arrow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	image_arrow.size = Vector2(64, 64)
+	image_arrow.visible = false
+	image_arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	end_panel.add_child(image_arrow)
+
+	help_arrow = TextureRect.new()
+	help_arrow.texture = load(ASSETS + "help_arrow.png")
+	help_arrow.stretch_mode = TextureRect.STRETCH_SCALE
+	help_arrow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	help_arrow.position = Vector2(574, 98)
+	help_arrow.size = Vector2(159, 317)
+	help_arrow.visible = false
+	help_arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	end_panel.add_child(help_arrow)
+
+	busy_spinner = BusySpinner.new()
+	busy_spinner.position = Vector2(912, 496)
+	busy_spinner.size = Vector2(48, 48)
+	busy_spinner.pivot_offset = Vector2(24, 24)
+	busy_spinner.visible = false
+	end_panel.add_child(busy_spinner)
+
+func _make_end_label(pos: Vector2, label_size: Vector2, font_size: int) -> Label:
+	var label := Label.new()
+	label.position = pos
+	label.size = label_size
+	label.add_theme_font_override("font", font_stylish)
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", Color.BLACK)
+	label.add_theme_color_override("font_shadow_color", Color(128.0 / 255.0, 128.0 / 255.0, 128.0 / 255.0, 0.5))
+	label.add_theme_constant_override("shadow_offset_x", 1)
+	label.add_theme_constant_override("shadow_offset_y", 1)
+	return label
+
+func _make_end_button(text: String, pos: Vector2, btn_size: Vector2) -> Button:
+	var btn := Button.new()
+	UIButtonStyle.apply(btn)
+	btn.text = text
+	btn.position = pos
+	btn.size = btn_size
+	btn.add_theme_font_override("font", font_stylish)
+	btn.add_theme_font_size_override("font_size", 25)
+	btn.add_theme_color_override("font_color", Color.BLACK)
+	btn.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
+	btn.add_theme_constant_override("shadow_offset_x", 2)
+	btn.add_theme_constant_override("shadow_offset_y", 1)
+	return btn
 
 func _build_audio() -> void:
 	sfx_button = _make_sfx("sfx/button_sound.wav")
@@ -662,6 +839,10 @@ func gsCardPicking_Set(index: int, card: Card) -> void:
 	_update_drag_ghost_pos(get_global_mouse_position())
 
 func _input(event: InputEvent) -> void:
+	if end_flow == EndFlow.PLAYER_PICK:
+		_end_player_pick_input(event)
+		return
+
 	if not dragging:
 		return
 	if event is InputEventMouseMotion:
@@ -957,6 +1138,11 @@ func _collect_combo_levels(start: Card, winner_owner: int) -> Array:
 # same flip with a scale_x 1 -> 0 -> 1 tween and rebuilds the CardView with
 # the new owner's colors at the midpoint.
 func captureCardProcedure(attacker: Card, captured: Card, from_battle: bool) -> void:
+	# Only the player cards that win a battle (not an instant no-fight
+	# capture) can be upgraded post-match.
+	if from_battle and attacker.original_owner == 0:
+		attacker.level_up_points += 1
+
 	var row := captured.row
 	var col := captured.col
 	var view: CardView = board_card_views[row][col]
@@ -985,7 +1171,13 @@ func captureCardProcedure(attacker: Card, captured: Card, from_battle: bool) -> 
 
 # Same flip as captureCardProcedure but for a whole combo level at once,
 # all cards shrinking/growing in parallel instead of one after another.
+# Combo captures also count as "fromBattle" for level-up purposes in the
+# reference (gsBattle.cs's foreach comboCards loop passes fromBattle:true) -
+# every card in the chain grants a level-up point, not just the initial hit.
 func _capture_batch(attacker: Card, cards: Array) -> void:
+	if attacker.original_owner == 0:
+		attacker.level_up_points += cards.size()
+
 	var animated: Array = []
 	for c in cards:
 		var view: CardView = board_card_views[c.row][c.col]
@@ -1062,28 +1254,22 @@ func gsEndStart_Set() -> void:
 	var p1 := board.count_cards(1)
 	var result: BattleResult
 	var banner_path: String
-	var label_text: String
 
 	if p0 > p1 and p0 == 10:
 		result = BattleResult.PLAYER_PERFECT
 		banner_path = "battle/battle_perfect.png"
-		label_text = "Perfect! %d - %d" % [p0, p1]
 	elif p0 > p1:
 		result = BattleResult.PLAYER_WINS
 		banner_path = "battle/battle_win.png"
-		label_text = "You win! %d - %d" % [p0, p1]
 	elif p1 > p0 and p1 == 10:
 		result = BattleResult.CPU_PERFECT
 		banner_path = "battle/battle_lose.png"
-		label_text = "CPU wins (perfect). %d - %d" % [p0, p1]
 	elif p1 > p0:
 		result = BattleResult.CPU_WINS
 		banner_path = "battle/battle_lose.png"
-		label_text = "CPU wins. %d - %d" % [p0, p1]
 	else:
 		result = BattleResult.DRAW
 		banner_path = "battle/battle_draw.png"
-		label_text = "Draw. %d - %d" % [p0, p1]
 
 	end_panel.visible = true
 	music.stop()
@@ -1110,14 +1296,11 @@ func gsEndStart_Set() -> void:
 	await tw2.finished
 
 	await _move_cards_to_end_rows()
-
-	end_label.text = label_text
-	end_label.visible = true
-	end_restart.visible = true
+	await gsEndLevelUp_Set(result)
 
 func _move_cards_to_end_rows() -> void:
-	var up_cards: Array = []    # originally the player's cards
-	var down_cards: Array = []  # originally the CPU's cards
+	end_up_cards.clear()
+	end_down_cards.clear()
 
 	for row in Board.NUM_ROWS:
 		for col in Board.NUM_COLS:
@@ -1129,18 +1312,565 @@ func _move_cards_to_end_rows() -> void:
 				continue
 			view.reparent(end_panel, true)
 			if card.original_owner == 0:
-				up_cards.append(view)
+				end_up_cards.append(view)
 			else:
-				down_cards.append(view)
+				end_down_cards.append(view)
 
 	var tw := create_tween()
 	tw.set_parallel(true)
-	for i in up_cards.size():
+	for i in end_up_cards.size():
 		var x := END_PL0_START.x + i * (CARD_W + END_PL_OFFSET_X)
-		tw.tween_property(up_cards[i], "position", Vector2(x, END_PL0_START.y), 1.0) \
+		tw.tween_property(end_up_cards[i], "position", Vector2(x, END_PL0_START.y), 1.0) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	for i in down_cards.size():
+	for i in end_down_cards.size():
 		var x := END_PL1_START.x + i * (CARD_W + END_PL_OFFSET_X)
-		tw.tween_property(down_cards[i], "position", Vector2(x, END_PL1_START.y), 1.0) \
+		tw.tween_property(end_down_cards[i], "position", Vector2(x, END_PL1_START.y), 1.0) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	await tw.finished
+
+# --------------------------------------------------------- end: level up
+
+func gsEndLevelUp_Set(result: BattleResult) -> void:
+	for view in end_up_cards:
+		var card: Card = view.card
+		if card.level_up_points == 0:
+			continue
+		await _level_up_card(view, card)
+		_sync_card_stats_to_collection(card)
+
+	match result:
+		BattleResult.PLAYER_PERFECT, BattleResult.PLAYER_WINS:
+			gsEndPlayerPick_Set(result)
+		BattleResult.CPU_PERFECT, BattleResult.CPU_WINS:
+			gsEndCPUPick_Set(result)
+		BattleResult.DRAW:
+			gsEndNonePick_Set()
+
+# Applies card.levelUpPoints worth of random stat increases (same
+# probabilities as gsEndLevelUp.cs: attack power has 2 of 5 "slots" so it's
+# twice as likely as any single other stat; attack type only advances on a
+# 5% roll per attempt, 1% once already Flexible), then shows floating text
+# for whatever actually changed.
+func _level_up_card(view: CardView, card: Card) -> void:
+	var def: CardManager.CardDef = CardManager.defs[card.def_id]
+
+	var possible := [
+		card.can_level_up_a_pow(), card.can_level_up_a_pow(),
+		card.can_level_up_a_type(), card.can_level_up_p_def(), card.can_level_up_m_def(),
+	]
+	if not possible.any(func(b): return b):
+		await _show_level_up_text(view, StringTable.get_string(StringTable.ID_CARD_LVLUP_MAX), " ")
+		return
+
+	var old_attack_power := card.attack_power
+	var old_attack_type := card.attack_type
+	var old_pdef := card.physical_defense
+	var old_mdef := card.magical_defense
+
+	var remaining := card.level_up_points
+	var guard := 0
+	while remaining > 0 and guard < 1000:
+		guard += 1
+		var r := randi() % 5
+		if not possible[r]:
+			continue
+		if r < 2:
+			card.attack_power = mini(card.attack_power + 1, def.max_attack_power)
+			remaining -= 1
+		elif r == 2:
+			var roll := randi() % 100
+			var success := (roll == 17) if card.attack_type == Card.AttackType.FLEXIBLE else (roll < 5)
+			if success:
+				card.attack_type += 1
+				remaining -= 1
+		elif r == 3:
+			card.physical_defense = mini(card.physical_defense + 1, def.max_physical_defense)
+			remaining -= 1
+		elif r == 4:
+			card.magical_defense = mini(card.magical_defense + 1, def.max_magical_defense)
+			remaining -= 1
+
+	if card.attack_type != old_attack_type:
+		var s0 := StringTable.get_string(StringTable.ID_CARD_LVLUP_ATTACK_TYPE)
+		var s1 := CardManager.attack_type_to_string(old_attack_type)
+		if old_attack_type == def.max_attack_type:
+			s1 += " " + StringTable.get_string(StringTable.ID_CARD_LVLUP_MAX)
+		await _show_level_up_text(view, s0, s1)
+
+	if card.attack_power != old_attack_power:
+		var inc := card.attack_power - old_attack_power
+		var s0 := StringTable.get_string(StringTable.ID_CARD_ATTACK) + " " + StringTable.get_string(StringTable.ID_CARD_LVLUP)
+		var s1 := "%d+%d" % [old_attack_power, inc]
+		if old_attack_power == def.max_attack_power:
+			s1 += " " + StringTable.get_string(StringTable.ID_CARD_LVLUP_MAX)
+		await _show_level_up_text(view, s0, s1)
+
+	if card.physical_defense != old_pdef:
+		var inc := card.physical_defense - old_pdef
+		var s0 := StringTable.get_string(StringTable.ID_CARD_PHYSICAL_DEFENSE) + " " + StringTable.get_string(StringTable.ID_CARD_LVLUP)
+		var s1 := "%d+%d" % [old_pdef, inc]
+		if old_pdef == def.max_physical_defense:
+			s1 += " " + StringTable.get_string(StringTable.ID_CARD_LVLUP_MAX)
+		await _show_level_up_text(view, s0, s1)
+
+	if card.magical_defense != old_mdef:
+		var inc := card.magical_defense - old_mdef
+		var s0 := StringTable.get_string(StringTable.ID_CARD_MAGICAL_DEFENSE) + " " + StringTable.get_string(StringTable.ID_CARD_LVLUP)
+		var s1 := "%d+%d" % [old_mdef, inc]
+		if old_mdef == def.max_magical_defense:
+			s1 += " " + StringTable.get_string(StringTable.ID_CARD_LVLUP_MAX)
+		await _show_level_up_text(view, s0, s1)
+
+	view.setup(card)
+
+# BattleScene's player_hand cards are clone_stats() copies of the entries
+# in Game.player.cards (so mid-battle owner mutations don't corrupt the
+# persistent collection - see clone_stats()'s docstring). The reference
+# doesn't need this: Card.Stats is a shared reference there, so a level-up
+# on the battle card IS the same object as the one in Player.cards. Here
+# that has to be an explicit sync instead, matched by unique_id.
+func _sync_card_stats_to_collection(card: Card) -> void:
+	for entry in Game.player.cards:
+		if entry.unique_id == card.unique_id:
+			entry.attack_power = card.attack_power
+			entry.physical_defense = card.physical_defense
+			entry.magical_defense = card.magical_defense
+			entry.attack_type = card.attack_type
+			return
+
+# Simplified from gsEndLevelUp.cs's parallel-delay choreography (multiple
+# floating texts scheduled with staggered start times) to one small tween
+# per message, awaited in sequence - same "stat pops up and floats away"
+# read, far less bookkeeping.
+func _show_level_up_text(view: CardView, line0: String, line1: String) -> void:
+	var label := Label.new()
+	# Globals.UIFontLevelUp: font_info.ttf at 24 - bumped a bit further since
+	# a 96px-wide card leaves little room and the text needs to read at a
+	# glance. Color/shadow match the reference exactly (light grey, black
+	# drop shadow).
+	label.add_theme_font_override("font", font_info)
+	label.add_theme_font_size_override("font_size", 26)
+	label.add_theme_color_override("font_color", Color(213.0 / 255.0, 213.0 / 255.0, 213.0 / 255.0))
+	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
+	label.add_theme_constant_override("shadow_offset_x", 1)
+	label.add_theme_constant_override("shadow_offset_y", 1)
+	label.text = line0 + "\n" + line1
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.size = Vector2(CARD_W * 2.5, 64)
+	# Reference starts the text at the card's bottom edge and floats it a
+	# full card-height upward (ending well above the card) - on a small
+	# 96x128 card that reads as "appears above the card, easy to miss".
+	# Center it on the card instead and only drift up a little.
+	var card_center: Vector2 = view.position + Vector2(CARD_W, CARD_H) / 2.0
+	label.position = card_center - label.size / 2.0
+	label.modulate.a = 0.0
+	label.z_index = 60
+	end_panel.add_child(label)
+
+	var start_y := label.position.y
+	var tw := create_tween()
+	tw.tween_property(label, "modulate:a", 1.0, 0.2)
+	var tw2 := create_tween()
+	tw2.tween_property(label, "position:y", start_y - 30.0, 1.5)
+	await get_tree().create_timer(1.0).timeout
+	var tw3 := create_tween()
+	tw3.tween_property(label, "modulate:a", 0.0, 0.5)
+	await tw3.finished
+	label.queue_free()
+
+# --------------------------------------------------------- end: shared helpers
+
+# Compresses `views` into `total_width` starting at `start` (same fit-to-
+# width logic as gsEndPlayer_MoveCardUp, shared by both EndPlayerPick's and
+# EndCPUPick's row layout in the reference too). Cards flagged in
+# end_movable sit slightly higher (they're the ones actually changing hands).
+func _relayout_row(views: Array, start: Vector2, total_width: float, mov_time: float) -> void:
+	if views.is_empty():
+		return
+	var count: int = views.size()
+	var natural_len: float = count * CARD_W + (count - 1) * END_PL_OFFSET_X
+	var offs := END_PL_OFFSET_X
+	if natural_len > total_width and count > 1:
+		offs = ceilf((total_width - count * CARD_W) / float(count - 1))
+
+	var tw := create_tween()
+	tw.set_parallel(true)
+	for i in count:
+		var x: float = start.x + i * (CARD_W + offs)
+		var y: float = start.y
+		if end_movable.get(views[i], false):
+			y -= END_PL_OFFSET_Y / 2.0
+		tw.tween_property(views[i], "position", Vector2(x, y), mov_time) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+func _card_view_contains(view: CardView, pos: Vector2) -> bool:
+	return Rect2(view.position, Vector2(CARD_W, CARD_H)).has_point(pos)
+
+func _show_end_card_info(card: Card) -> void:
+	if card == null:
+		panel_owned.visible = false
+		panel_info.visible = false
+		return
+
+	panel_info.visible = true
+	panel_owned.visible = true
+	# "Owned" has no UIStringTable entry in the reference either - hardcoded
+	# English there too.
+	owned_label.text = "Owned: %d" % Game.player.get_num_cards_of_this_type(card)
+
+	var def: CardManager.CardDef = CardManager.defs[card.def_id]
+	end_info_name.text = def.name
+	end_info_pdef_val.text = str(card.physical_defense)
+	end_info_mdef_val.text = str(card.magical_defense)
+	end_info_offense_val.text = str(card.attack_power)
+	end_info_type_val.text = CardManager.attack_type_to_string(card.attack_type)
+
+func _update_owned_panel_pos(view: CardView) -> void:
+	panel_owned.position = Vector2(view.position.x + CARD_W / 2.0 - panel_owned.size.x / 2.0, view.position.y + CARD_H)
+
+func _return_to_main_menu() -> void:
+	get_tree().change_scene_to_file("res://scenes/menu/MainMenu.tscn")
+
+# Single Button_Done handler shared by all three end flows (matches which
+# one is live via end_flow), same as the reference wiring one ButtonAction
+# per UIBattleEnd instance but always to the same-shaped Close callback.
+func _on_end_done_pressed() -> void:
+	sfx_button.play()
+	busy_spinner.visible = true
+	end_pick_interactive = false
+	button_done.disabled = true
+	await get_tree().create_timer(1.2).timeout
+	match end_flow:
+		EndFlow.PLAYER_PICK:
+			_end_player_pick_close()
+		EndFlow.CPU_PICK:
+			_end_cpu_pick_close()
+		EndFlow.DRAW:
+			_end_none_pick_close()
+
+# --------------------------------------------------------- end: player pick
+
+func gsEndPlayerPick_Set(result: BattleResult) -> void:
+	end_flow = EndFlow.PLAYER_PICK
+	end_result = result
+	end_sel_view = null
+	end_pick_interactive = false
+
+	if result == BattleResult.PLAYER_PERFECT:
+		end_remaining = 5
+		label_central_msg.text = StringTable.get_string(StringTable.ID_MSG_PICK_5_CARD)
+	else:
+		end_remaining = 1
+		label_central_msg.text = StringTable.get_string(StringTable.ID_MSG_PICK_1_CARD)
+		label_central_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+	label_central_msg.visible = true
+	label_central_msg.modulate.a = 0.0
+	var tw_msg := create_tween()
+	tw_msg.tween_property(label_central_msg, "modulate:a", 1.0, 1.5)
+
+	if result == BattleResult.PLAYER_PERFECT:
+		button_takeall.visible = true
+		button_takeall.modulate.a = 0.0
+		var tw_all := create_tween()
+		tw_all.tween_property(button_takeall, "modulate:a", 1.0, 1.5)
+	else:
+		help_arrow.visible = true
+		help_arrow.modulate.a = 0.0
+		var tw_arrow := create_tween()
+		tw_arrow.tween_property(help_arrow, "modulate:a", 1.0, 3.0)
+
+	end_movable.clear()
+	for view in end_down_cards:
+		var card: Card = view.card
+		end_movable[view] = (card.original_owner == 1 and card.owner == 0)
+
+	var delay := 0.0
+	for view in end_down_cards:
+		if end_movable.get(view, false):
+			var tw := create_tween()
+			tw.tween_property(view, "position:y", view.position.y - END_PL_OFFSET_Y, 0.4) \
+				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT).set_delay(delay)
+			delay += 0.4 * 0.2
+
+	await get_tree().create_timer(delay + 0.45).timeout
+	end_pick_interactive = true
+
+func _end_player_pick_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_end_player_pick_click(event.position)
+		else:
+			_end_player_pick_unclick(event.position)
+	elif event is InputEventMouseMotion and end_sel_view != null:
+		_end_player_pick_drag(event.position)
+
+func _end_player_pick_click(pos: Vector2) -> void:
+	if not end_pick_interactive or end_sel_view != null:
+		return
+
+	end_pick_from_up = false
+	var found: CardView = null
+
+	for view in end_up_cards:
+		if end_movable.get(view, false) and _card_view_contains(view, pos):
+			found = view
+			end_pick_from_up = true
+			break
+
+	if found == null:
+		for view in end_down_cards:
+			if end_movable.get(view, false) and _card_view_contains(view, pos) and end_remaining > 0:
+				found = view
+				end_pick_from_up = false
+				break
+
+	if found == null:
+		return
+
+	if end_result == BattleResult.PLAYER_PERFECT:
+		# perfect mode: only allows previewing a card's stats
+		_show_end_card_info(found.card)
+		_update_owned_panel_pos(found)
+		return
+
+	end_sel_view = found
+	end_card_start_pos = found.position
+	end_drag_start = pos
+	if not end_pick_from_up:
+		end_sel_original_pos = found.position
+
+	found.z_index = 50
+	_show_end_card_info(found.card)
+	_update_owned_panel_pos(found)
+
+	if help_arrow.visible:
+		help_arrow.visible = false
+
+func _end_player_pick_drag(pos: Vector2) -> void:
+	end_sel_view.position = end_card_start_pos + (pos - end_drag_start)
+	_update_owned_panel_pos(end_sel_view)
+
+func _end_player_pick_unclick(_pos: Vector2) -> void:
+	if end_sel_view == null:
+		return
+
+	var view := end_sel_view
+	var up_rect := Rect2(END_PL0_START, Vector2(END_PL0_WIDTH, CARD_H))
+	var down_rect := Rect2(END_PL1_START, Vector2(END_PL1_WIDTH, CARD_H))
+	var card_rect := Rect2(view.position, Vector2(CARD_W, CARD_H))
+
+	var move_up := false
+	var move_down := false
+	var move_back := false
+
+	if card_rect.intersects(up_rect):
+		if end_pick_from_up:
+			move_back = true
+		else:
+			move_up = true
+	elif card_rect.intersects(down_rect):
+		if end_pick_from_up:
+			move_down = true
+		else:
+			move_back = true
+	else:
+		move_back = true
+
+	end_pick_interactive = false
+	end_sel_view = null
+
+	if move_up:
+		end_up_cards.append(view)
+		end_down_cards.erase(view)
+		_relayout_row(end_up_cards, END_PL0_START, END_PL0_WIDTH, 0.3)
+		end_remaining -= 1
+		_fade_in(button_done, 0.3)
+		await get_tree().create_timer(0.3).timeout
+	elif move_down:
+		end_down_cards.append(view)
+		end_up_cards.erase(view)
+		var tw := create_tween()
+		tw.tween_property(view, "position", end_sel_original_pos, 0.2) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		_relayout_row(end_up_cards, END_PL0_START, END_PL0_WIDTH, 0.3)
+		end_remaining += 1
+		_fade_out(button_done, 0.3)
+		await get_tree().create_timer(0.2).timeout
+	else:
+		var tw := create_tween()
+		tw.tween_property(view, "position", end_card_start_pos, 0.2) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		await tw.finished
+
+	end_pick_interactive = true
+
+func _fade_in(node: CanvasItem, duration: float) -> void:
+	node.visible = true
+	var tw := create_tween()
+	tw.tween_property(node, "modulate:a", 1.0, duration)
+
+func _fade_out(node: CanvasItem, duration: float) -> void:
+	var tw := create_tween()
+	tw.tween_property(node, "modulate:a", 0.0, duration)
+	tw.tween_callback(func(): node.visible = false)
+
+func _on_end_takeall_pressed() -> void:
+	sfx_button.play()
+	for view in end_down_cards:
+		end_up_cards.append(view)
+	end_down_cards.clear()
+
+	_relayout_row(end_up_cards, END_PL0_START, END_PL0_WIDTH, 0.7)
+
+	end_pick_interactive = false
+	end_remaining = 0
+	_show_end_card_info(null)
+
+	_fade_in(button_done, 0.25)
+	_fade_out(button_takeall, 0.25)
+	_fade_out(label_central_msg, 0.25)
+
+func _end_player_pick_close() -> void:
+	var ai: AIManager.AIData = AIManager.get_ai(Game.opponent_index)
+	ai.defeated = true
+	if Game.opponent_index + 1 < Game.player.available_opponents.size():
+		Game.player.available_opponents[Game.opponent_index + 1] = true
+	Game.opponent_index = -1
+
+	for view in end_up_cards:
+		if end_movable.get(view, false):
+			var card: Card = view.card
+			if Game.rage_quit_mode:
+				Game.player.add_captured_rage_quit_card(card)
+			else:
+				Game.player.add_captured_card(card)
+
+	Game.player.match_started = false
+	busy_spinner.visible = false
+	_return_to_main_menu()
+
+# ------------------------------------------------------------ end: CPU pick
+
+func gsEndCPUPick_Set(result: BattleResult) -> void:
+	end_flow = EndFlow.CPU_PICK
+	end_result = result
+	end_cpu_sel_view = null
+	end_cpu_pick_mode = false
+	end_cpu_total_picks = float(randi_range(40, 49))
+	end_cpu_cur_pick = end_cpu_total_picks
+
+	if result == BattleResult.CPU_PERFECT:
+		label_central_msg.text = StringTable.get_string(StringTable.ID_MSG_CPU_PICK_5_CARD)
+		label_central_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		panel_info.visible = false
+	else:
+		label_central_msg.text = StringTable.get_string(StringTable.ID_MSG_CPU_PICK_1_CARD)
+
+	label_central_msg.visible = true
+	label_central_msg.modulate.a = 0.0
+	var tw_msg := create_tween()
+	tw_msg.tween_property(label_central_msg, "modulate:a", 1.0, 1.5)
+
+	end_movable.clear()
+	for view in end_up_cards:
+		var card: Card = view.card
+		end_movable[view] = (card.original_owner == 0 and card.owner == 1)
+
+	end_cpu_pickable.clear()
+	for view in end_up_cards:
+		if end_movable.get(view, false):
+			end_cpu_pickable.append(view)
+
+	if end_cpu_pickable.size() == 1:
+		end_cpu_cur_pick = 4.0
+		end_cpu_total_picks = 4.0
+
+	var delay := 0.0
+	for view in end_up_cards:
+		if end_movable.get(view, false):
+			var tw := create_tween()
+			tw.tween_property(view, "position:y", view.position.y - END_PL_OFFSET_Y, 0.4) \
+				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT).set_delay(delay)
+			delay += 0.4 * 0.2
+
+	await get_tree().create_timer(delay + 0.45).timeout
+
+	if result == BattleResult.CPU_WINS:
+		end_cpu_pick_mode = true
+		_end_cpu_pick_roulette()
+	else:
+		_end_cpu_pick_setup_move()
+
+# Slot-machine-style reveal: curPick decays 1% per rendered frame (same
+# per-frame math as gsEndCPUPick.cs's OnUpdate, so it's frame-rate coupled
+# there too, not a deviation) cycling through the pickable cards faster and
+# faster until it settles on one.
+func _end_cpu_pick_roulette() -> void:
+	while end_cpu_pick_mode:
+		end_cpu_cur_pick *= 0.99
+		var val: int = int(end_cpu_total_picks - end_cpu_cur_pick)
+		var sel: CardView = end_cpu_pickable[val % end_cpu_pickable.size()]
+
+		image_arrow.visible = true
+		image_arrow.position = Vector2(sel.position.x + CARD_W / 2.0 - image_arrow.size.x / 2.0, sel.position.y + CARD_H)
+
+		if end_cpu_sel_view != sel:
+			_show_end_card_info(sel.card)
+			panel_owned.visible = false
+			end_cpu_sel_view = sel
+
+		if end_cpu_cur_pick <= 2.0:
+			end_cpu_pick_mode = false
+			await get_tree().create_timer(0.3).timeout
+			_end_cpu_pick_setup_move()
+			return
+
+		await get_tree().process_frame
+
+func _end_cpu_pick_setup_move() -> void:
+	var mov_time: float
+
+	if end_result == BattleResult.CPU_PERFECT:
+		for view in end_up_cards:
+			end_down_cards.append(view)
+		end_up_cards.clear()
+		mov_time = 0.8
+	else:
+		end_down_cards.append(end_cpu_sel_view)
+		end_up_cards.erase(end_cpu_sel_view)
+		mov_time = 1.0
+
+	_relayout_row(end_down_cards, END_PL1_START, END_PL1_WIDTH, mov_time)
+
+	image_arrow.visible = false
+	_fade_in(button_done, mov_time)
+
+func _end_cpu_pick_close() -> void:
+	for view in end_down_cards:
+		if end_movable.get(view, false):
+			Game.player.remove_card(view.card)
+
+	Game.player.match_started = false
+	busy_spinner.visible = false
+	_return_to_main_menu()
+
+# --------------------------------------------------------------- end: draw
+
+func gsEndNonePick_Set() -> void:
+	end_flow = EndFlow.DRAW
+
+	label_central_msg.text = StringTable.get_string(StringTable.ID_BATTLE_END_DRAW)
+	label_central_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	panel_info.visible = false
+
+	label_central_msg.visible = true
+	label_central_msg.modulate.a = 0.0
+	_fade_in(label_central_msg, 1.5)
+	_fade_in(button_done, 1.5)
+
+func _end_none_pick_close() -> void:
+	Game.player.match_started = false
+	busy_spinner.visible = false
+	_return_to_main_menu()
