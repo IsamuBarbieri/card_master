@@ -11,13 +11,15 @@ config_version=5
 [application]
 
 config/name="Card Master"
-run/main_scene="res://scenes/battle/BattleScene.tscn"
+run/main_scene="res://scenes/menu/StartMenu.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.png"
 
 [autoload]
 
 CardManager="*res://scripts/CardManager.gd"
+AIManager="*res://scripts/AIManager.gd"
+Game="*res://scripts/Game.gd"
 
 [display]
 
