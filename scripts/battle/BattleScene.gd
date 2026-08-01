@@ -115,6 +115,7 @@ var vfx_sprites := {}                # Card.AttackType -> AnimatedSprite2D
 var coin_sprite: TextureRect
 var coin_blue_tex: Texture2D
 var coin_red_tex: Texture2D
+var rage_quit_banner: TextureRect  # (RAGEQUIT)
 
 var end_panel: Control
 var end_bkg: TextureRect
@@ -163,6 +164,7 @@ var sfx_button: AudioStreamPlayer
 var sfx_place: AudioStreamPlayer
 var sfx_attack_p: AudioStreamPlayer
 var sfx_attack_m: AudioStreamPlayer
+var sfx_ragequit: AudioStreamPlayer  # (RAGEQUIT)
 var music: AudioStreamPlayer
 
 var font_stylish: Font = load("res://assets/fonts/font_stylish.ttf")
@@ -465,6 +467,16 @@ func _build_battle_overlay() -> void:
 	coin_sprite.visible = false
 	add_child(coin_sprite)
 
+	# (RAGEQUIT)
+	rage_quit_banner = TextureRect.new()
+	rage_quit_banner.texture = load(ASSETS + "battle/battle_ragequit.png")
+	rage_quit_banner.stretch_mode = TextureRect.STRETCH_SCALE
+	rage_quit_banner.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	rage_quit_banner.size = Vector2(rage_quit_banner.texture.get_width(), rage_quit_banner.texture.get_height())
+	rage_quit_banner.visible = false
+	rage_quit_banner.z_index = 50
+	add_child(rage_quit_banner)
+
 func _make_vfx(path: String) -> AnimatedSprite2D:
 	var tex: Texture2D = load(path)
 	var cols := 5
@@ -661,6 +673,7 @@ func _build_audio() -> void:
 	sfx_place = _make_sfx("sfx/place_card.wav")
 	sfx_attack_p = _make_sfx("sfx/attack_p.wav")
 	sfx_attack_m = _make_sfx("sfx/attack_m.wav")
+	sfx_ragequit = _make_sfx("sfx/ragequit_sfx.wav")
 
 	music = AudioStreamPlayer.new()
 	music.stream = load(ASSETS + "music/battle1.mp3")
@@ -797,11 +810,50 @@ func gsCoinToss_Set() -> void:
 	await tw2.finished
 	coin_sprite.visible = false
 
+	if Game.rage_quit_mode:
+		await _play_rage_quit_intro()
+
 	active_player = 0 if player0_wins else 1
 	if active_player == 0:
 		gsPlayerTurn_Set()
 	else:
 		gsCPUTurn_Set()
+
+# (RAGEQUIT) Banner slides in from the left, holds, slides out to the
+# right, while a sting plays and the music crossfades to the special
+# ragequit_battle.mp3 track - same beats as gsCoinToss.cs's Update, just
+# awaited sequentially instead of scheduled via delayed events.
+func _play_rage_quit_intro() -> void:
+	const MOV_TIME := 0.7
+	const STAY_TIME := 2.1
+
+	rage_quit_banner.position = Vector2(-rage_quit_banner.size.x, (SCREEN_H - rage_quit_banner.size.y) / 2.0)
+	rage_quit_banner.visible = true
+
+	sfx_ragequit.play()
+	_crossfade_music(ASSETS + "music/ragequit_battle.mp3", 0.85)
+
+	var tw := create_tween()
+	tw.tween_property(rage_quit_banner, "position:x", (SCREEN_W - rage_quit_banner.size.x) / 2.0, MOV_TIME) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	await tw.finished
+
+	await get_tree().create_timer(STAY_TIME).timeout
+
+	var tw2 := create_tween()
+	tw2.tween_property(rage_quit_banner, "position:x", float(SCREEN_W), MOV_TIME) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	await tw2.finished
+
+	rage_quit_banner.visible = false
+
+func _crossfade_music(path: String, fade_time: float) -> void:
+	var tw := create_tween()
+	tw.tween_property(music, "volume_db", -80.0, fade_time)
+	await tw.finished
+	music.stream = load(path)
+	music.volume_db = -8.0
+	music.play()
 
 # --------------------------------------------------------------- player turn
 
@@ -1748,6 +1800,7 @@ func _end_player_pick_close() -> void:
 				Game.player.add_captured_card(card)
 
 	Game.player.match_started = false
+	SaveSystem.save_player(Game.player)
 	busy_spinner.visible = false
 	_return_to_main_menu()
 
@@ -1853,6 +1906,7 @@ func _end_cpu_pick_close() -> void:
 			Game.player.remove_card(view.card)
 
 	Game.player.match_started = false
+	SaveSystem.save_player(Game.player)
 	busy_spinner.visible = false
 	_return_to_main_menu()
 
@@ -1872,5 +1926,6 @@ func gsEndNonePick_Set() -> void:
 
 func _end_none_pick_close() -> void:
 	Game.player.match_started = false
+	SaveSystem.save_player(Game.player)
 	busy_spinner.visible = false
 	_return_to_main_menu()

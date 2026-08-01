@@ -28,6 +28,15 @@ var _next_uid := 0
 func _ready() -> void:
 	load_definitions()
 
+## SaveSystem persists this (CardManager.cardGeneratorNextId in the
+## reference) so cards created after loading a save don't collide with
+## unique_ids already used by that save's cards.
+func next_uid() -> int:
+	return _next_uid
+
+func set_next_uid(value: int) -> void:
+	_next_uid = value
+
 func letter_to_attack_type(letter: String) -> int:
 	match letter:
 		"P": return Card.AttackType.PHYSICAL

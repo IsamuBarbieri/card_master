@@ -328,6 +328,7 @@ func _process(delta: float) -> void:
 		if launch_battle_delay <= 0.0:
 			launch_battle_delay = 0.0
 			Game.player.match_started = true
+			SaveSystem.save_player(Game.player)
 			get_tree().change_scene_to_file("res://scenes/battle/BattleScene.tscn")
 
 # --------------------------------------------------------- WaitingInput ---

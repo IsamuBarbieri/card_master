@@ -27,6 +27,9 @@ func _ready() -> void:
 
 func _load() -> void:
 	var file := FileAccess.open(CSV_PATH, FileAccess.READ)
+	if file == null:
+		push_error("Could not open " + CSV_PATH)
+		return
 	var line_index := 0
 	while not file.eof_reached():
 		var line := file.get_line()
