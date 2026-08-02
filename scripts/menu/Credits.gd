@@ -9,7 +9,7 @@ const FONT_SIZE := 36
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	var font_stylish: Font = load(ASSETS + "fonts/font_stylish.ttf")
+	var font_stylish: Font = Game.font_stylish
 
 	var bg_black := ColorRect.new()
 	bg_black.color = Color.BLACK

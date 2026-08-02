@@ -48,9 +48,9 @@ func _ready() -> void:
 	bg.size = Vector2(SCREEN_W, SCREEN_H)
 	add_child(bg)
 
-	var font_stylish: Font = load(ASSETS + "fonts/font_stylish.ttf")
+	var font_stylish: Font = Game.font_stylish
 	for i in 3:
-		var slot := Button.new()
+		var slot := FixedSizeButton.new()
 		UIButtonStyle.apply(slot)
 		slot.position = SLOT_POSITIONS[i]
 		slot.size = SLOT_SIZE
@@ -154,7 +154,7 @@ func _build_dialog_shell(panel_size: Vector2) -> Control:
 	return overlay
 
 func _make_dialog_label(pos: Vector2, label_size: Vector2, font: Font) -> Label:
-	var label := Label.new()
+	var label := FixedSizeLabel.new()
 	label.position = pos
 	label.size = label_size
 	label.add_theme_font_override("font", font)
@@ -166,7 +166,7 @@ func _make_dialog_label(pos: Vector2, label_size: Vector2, font: Font) -> Label:
 	return label
 
 func _make_dialog_button(text: String, pos: Vector2, btn_size: Vector2, font: Font) -> Button:
-	var btn := Button.new()
+	var btn := FixedSizeButton.new()
 	UIButtonStyle.apply(btn)
 	btn.text = text
 	btn.position = pos
@@ -181,7 +181,7 @@ func _make_dialog_button(text: String, pos: Vector2, btn_size: Vector2, font: Fo
 	return btn
 
 func _build_name_dialog() -> void:
-	var font_stylish: Font = load(ASSETS + "fonts/font_stylish.ttf")
+	var font_stylish: Font = Game.font_stylish
 	name_dialog = _build_dialog_shell(Vector2(500, 300))
 	var panel: Control = name_dialog.get_meta("panel")
 
@@ -210,7 +210,7 @@ func _build_name_dialog() -> void:
 	panel.add_child(cancel_btn)
 
 func _build_confirm_dialog() -> void:
-	var font_stylish: Font = load(ASSETS + "fonts/font_stylish.ttf")
+	var font_stylish: Font = Game.font_stylish
 	confirm_dialog = _build_dialog_shell(Vector2(360, 260))
 	var panel: Control = confirm_dialog.get_meta("panel")
 

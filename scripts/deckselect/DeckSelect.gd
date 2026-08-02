@@ -100,7 +100,7 @@ func _ready() -> void:
 	_enter_waiting_input()
 
 func _build_ui() -> void:
-	var font_stylish: Font = load(ASSETS + "fonts/font_stylish.ttf")
+	var font_stylish: Font = Game.font_stylish
 
 	var bg := TextureRect.new()
 	bg.texture = load(ASSETS + "common_bkg_clean.png")
@@ -249,7 +249,7 @@ func _make_selector_panel(pos: Vector2, panel_size: Vector2) -> Control:
 	return panel
 
 func _make_label(pos: Vector2, label_size: Vector2, font: Font) -> Label:
-	var label := Label.new()
+	var label := FixedSizeLabel.new()
 	label.position = pos
 	label.size = label_size
 	label.add_theme_font_override("font", font)
@@ -261,7 +261,7 @@ func _make_label(pos: Vector2, label_size: Vector2, font: Font) -> Label:
 	return label
 
 func _make_text_button(label: String, pos: Vector2, btn_size: Vector2, font: Font) -> Button:
-	var btn := Button.new()
+	var btn := FixedSizeButton.new()
 	UIButtonStyle.apply(btn)
 	btn.text = label
 	btn.position = pos

@@ -24,10 +24,11 @@ var label_sfx: Label
 var label_lang: Label
 var back_button: Button
 var credits_button: Button
+var title_screen_button: Button
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	var font_stylish: Font = load(ASSETS + "fonts/font_stylish.ttf")
+	var font_stylish: Font = Game.font_stylish
 
 	var bg := TextureRect.new()
 	bg.texture = load(ASSETS + "common_bkg_dark_clean.png")
@@ -97,6 +98,12 @@ func _ready() -> void:
 	credits_button = _make_text_button("", Vector2(412, 463), Vector2(136, 56), font_stylish)
 	credits_button.pressed.connect(_on_credits_pressed)
 
+	# New addition (not in the reference): mirror of back_button on the
+	# opposite corner (960 - 42 - 115 = 803, same y/size) - returns to the
+	# Title Screen instead of MainMenu.
+	title_screen_button = _make_text_button("", Vector2(803, 463), Vector2(115, 56), font_stylish)
+	title_screen_button.pressed.connect(_on_title_screen_pressed)
+
 	sfx_cat = AudioStreamPlayer.new()
 	sfx_cat.stream = load(ASSETS + "sfx/help_cat.wav")
 	sfx_cat.bus = "SFX"
@@ -108,7 +115,7 @@ func _ready() -> void:
 	_update_language_texts()
 
 func _make_label(pos: Vector2, size: Vector2, font: Font, font_size: int) -> Label:
-	var label := Label.new()
+	var label := FixedSizeLabel.new()
 	label.position = pos
 	label.size = size
 	label.add_theme_font_override("font", font)
@@ -120,7 +127,7 @@ func _make_label(pos: Vector2, size: Vector2, font: Font, font_size: int) -> Lab
 	return label
 
 func _make_text_button(label: String, pos: Vector2, size: Vector2, font: Font) -> Button:
-	var btn := Button.new()
+	var btn := FixedSizeButton.new()
 	UIButtonStyle.apply(btn)
 	btn.text = label
 	btn.position = pos
@@ -163,6 +170,13 @@ func _on_language_selected(index: int) -> void:
 	_update_language_texts()
 
 func _update_language_texts() -> void:
+	# Re-applied every call (not just at construction): Game.font_stylish
+	# may now point at a different actual font than when these controls were
+	# built, if the language just switched to/from one that needs a
+	# different font (see Game._update_fonts_for_language).
+	for ctrl in [title, label_music, label_sfx, label_lang, back_button, credits_button, title_screen_button]:
+		ctrl.add_theme_font_override("font", Game.font_stylish)
+
 	title.text = StringTable.get_string(StringTable.ID_OPTIONS)
 	UIButtonStyle.fit_menu_button_text(title, TITLE_ICON_GAP_WIDTH)
 	label_music.text = StringTable.get_string(StringTable.ID_MUSIC)
@@ -175,6 +189,8 @@ func _update_language_texts() -> void:
 	UIButtonStyle.fit_button_text(back_button)
 	credits_button.text = StringTable.get_string(StringTable.ID_CREDITS)
 	UIButtonStyle.fit_button_text(credits_button)
+	title_screen_button.text = StringTable.get_string(StringTable.ID_TITLE_SCREEN)
+	UIButtonStyle.fit_button_text(title_screen_button)
 
 func _on_back_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_back_sound.wav")
@@ -183,3 +199,7 @@ func _on_back_pressed() -> void:
 func _on_credits_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 	get_tree().change_scene_to_file("res://scenes/menu/Credits.tscn")
+
+func _on_title_screen_pressed() -> void:
+	Game.play_sfx(ASSETS + "sfx/button_back_sound.wav")
+	get_tree().change_scene_to_file("res://scenes/menu/TitleScreen.tscn")

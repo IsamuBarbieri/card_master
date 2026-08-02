@@ -179,6 +179,7 @@ var end_pick_from_up := false
 var end_drag_start := Vector2.ZERO
 var end_card_start_pos := Vector2.ZERO
 var end_sel_original_pos := Vector2.ZERO
+var end_owned_view: CardView = null  # card the Owned panel is currently pinned to
 
 var end_cpu_pickable: Array = []  # Array[CardView]
 var end_cpu_pick_mode := false
@@ -192,8 +193,8 @@ var sfx_attack_p: AudioStreamPlayer
 var sfx_attack_m: AudioStreamPlayer
 var sfx_ragequit: AudioStreamPlayer  # (RAGEQUIT)
 
-var font_stylish: Font = load("res://assets/fonts/font_stylish.ttf")
-var font_info: Font = load("res://assets/fonts/font_info.ttf")
+var font_stylish: Font = Game.font_stylish
+var font_info: Font = Game.font_info
 
 func _ready() -> void:
 	board = Board.new()
@@ -680,7 +681,7 @@ func _build_battle_end_ui() -> void:
 	end_panel.add_child(busy_spinner)
 
 func _make_end_label(pos: Vector2, label_size: Vector2, font_size: int) -> Label:
-	var label := Label.new()
+	var label := FixedSizeLabel.new()
 	label.position = pos
 	label.size = label_size
 	label.add_theme_font_override("font", font_stylish)
@@ -692,13 +693,13 @@ func _make_end_label(pos: Vector2, label_size: Vector2, font_size: int) -> Label
 	return label
 
 func _make_end_button(text: String, pos: Vector2, btn_size: Vector2) -> Button:
-	var btn := Button.new()
+	var btn := FixedSizeButton.new()
 	UIButtonStyle.apply(btn)
 	btn.text = text
 	btn.position = pos
 	btn.size = btn_size
 	btn.add_theme_font_override("font", font_stylish)
-	btn.add_theme_font_size_override("font_size", 25)
+	btn.add_theme_font_size_override("font_size", 36)
 	btn.add_theme_color_override("font_color", Color.BLACK)
 	btn.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
 	btn.add_theme_constant_override("shadow_offset_x", 2)
@@ -1640,6 +1641,7 @@ func _show_end_card_info(card: Card) -> void:
 	if card == null:
 		panel_owned.visible = false
 		panel_info.visible = false
+		end_owned_view = null
 		return
 
 	panel_info.visible = true
@@ -1656,7 +1658,15 @@ func _show_end_card_info(card: Card) -> void:
 	end_info_type_val.text = CardManager.attack_type_to_string(card.attack_type)
 
 func _update_owned_panel_pos(view: CardView) -> void:
+	end_owned_view = view
 	panel_owned.position = Vector2(view.position.x + CARD_W / 2.0 - panel_owned.size.x / 2.0, view.position.y + CARD_H)
+
+# Cards keep moving after the panel is last positioned (drag-release tweens,
+# _relayout_row) - pin the panel to its card every frame instead of patching
+# every place a tween can move end_owned_view.
+func _process(_delta: float) -> void:
+	if end_owned_view != null and panel_owned.visible:
+		_update_owned_panel_pos(end_owned_view)
 
 func _return_to_main_menu() -> void:
 	Game.autoplay_menu_music = true

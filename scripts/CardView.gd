@@ -32,8 +32,6 @@ const STAT_COLOR_MIN := Color(0.0, 1.0, 0.0)
 const STAT_COLOR_MED := Color(1.0, 1.0, 0.0)
 const STAT_COLOR_MAX := Color(1.0, 100.0 / 255.0, 0.0)
 
-static var _stylish_font: Font = load("res://assets/fonts/font_stylish.ttf")
-
 var card: Card
 
 var _bkg: TextureRect
@@ -66,7 +64,7 @@ func _init() -> void:
 	# flush with the card's bottom edge - or the frame's bottom trim covers it.
 	_stat_label.position = Vector2(0, STAT_AREA_BOTTOM - STAT_FONT_SIZE_HEIGHT)
 	_stat_label.size = Vector2(CARD_W, STAT_FONT_SIZE_HEIGHT)
-	_stat_label.add_theme_font_override("normal_font", _stylish_font)
+	_stat_label.add_theme_font_override("normal_font", Game.font_stylish)
 	_stat_label.add_theme_font_size_override("normal_font_size", STAT_FONT_SIZE)
 	_stat_label.add_theme_constant_override("outline_size", 3)
 	_stat_label.add_theme_color_override("font_outline_color", Color.BLACK)
@@ -83,7 +81,7 @@ func _init() -> void:
 	_price_label.scroll_active = false
 	_price_label.position = Vector2(0, CARD_H / 2.0 - 15)
 	_price_label.size = Vector2(CARD_W, 30)
-	_price_label.add_theme_font_override("normal_font", _stylish_font)
+	_price_label.add_theme_font_override("normal_font", Game.font_stylish)
 	_price_label.add_theme_font_size_override("normal_font_size", 24)
 	_price_label.add_theme_color_override("default_color", Color.WHITE)
 	_price_label.add_theme_constant_override("outline_size", 3)

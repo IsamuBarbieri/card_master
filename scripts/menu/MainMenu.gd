@@ -104,7 +104,7 @@ func _process(delta: float) -> void:
 			cat_sprite.play("idle")
 
 func _make_menu_button(label: String, texture_name: String, pos: Vector2, size: Vector2, on_pressed: Callable) -> void:
-	var font_stylish: Font = load(ASSETS + "fonts/font_stylish.ttf")
+	var font_stylish: Font = Game.font_stylish
 	var btn := Button.new()
 	UIButtonStyle.apply(btn)
 	btn.text = label

@@ -83,8 +83,8 @@ func _make_page(bg_path: String) -> Control:
 	return page
 
 func _add_label(page: Control, pos: Vector2, size: Vector2, string_id: int, center := false) -> void:
-	var font_stylish: Font = load(ASSETS + "fonts/font_stylish.ttf")
-	var label := Label.new()
+	var font_stylish: Font = Game.font_stylish
+	var label := FixedSizeLabel.new()
 	label.position = pos
 	label.size = size
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD
@@ -95,6 +95,12 @@ func _add_label(page: Control, pos: Vector2, size: Vector2, string_id: int, cent
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.text = StringTable.get_string(string_id)
 	page.add_child(label)
+	# New QoL addition (not in the reference, which never localized past its
+	# fixed English/Italian text): shrinks the font until the wrapped
+	# paragraph fits the box vertically - some translations (e.g. Russian on
+	# the Cards page) wrap to more lines than FONT_SIZE's box allows,
+	# clipping the end of the text since pages set clip_contents = true.
+	UIButtonStyle.fit_paragraph_to_box(label, size)
 
 func _build_presentation_page() -> Control:
 	var page := _make_page("help/help_presentation.png")

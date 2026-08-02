@@ -33,20 +33,40 @@ var music_volume: float = 1.0:
 var language: int = 0:
 	set(value):
 		language = value
+		_update_fonts_for_language()
 		SaveSystem.save_settings()
 
 var _music_player: AudioStreamPlayer
 var _music_path := ""
 
-# Kept alive here (not just a local in _ready()) - Godot's load() cache is
-# reference-counted, so a FontFile only a local variable mutates would get
-# freed once _ready() returns and a later load() elsewhere would silently
-# hand back a fresh, unmodified instance (fallbacks lost). See _ready()'s
-# fallback setup below.
-var _font_stylish: FontFile
-var _font_info: FontFile
+## Every screen reads Game.font_stylish/font_info instead of load()-ing the
+## .ttf path itself (used to be ~15 separate load() calls, one per screen -
+## centralized here so there's a single point to swap fonts per language).
+## Both start out pointing at the game's own decorative fonts; _update_fonts
+## _for_language() below swaps them for languages those fonts can't render.
+var font_stylish: Font
+var font_info: Font
+
+var _font_stylish_default: FontFile
+var _font_info_default: FontFile
+## font_stylish.ttf/font_info.ttf's own fallback mechanism turned out to be
+## broken (confirmed via every mechanism Godot offers - .fallbacks,
+## FontVariation, forcing a fresh non-cached load - Cyrillic still measures/
+## renders as blank even with a verified-working fallback font attached).
+## Extended Latin (the accents ES/DE/FR/PT need) IS natively covered by
+## font_stylish.ttf itself, so this only matters for scripts it has zero
+## native coverage for - Russian confirmed broken, swapped to this OFL
+## font instead of fighting the broken fallback. Chinese would need the
+## same treatment but with a CJK-capable font, not yet sourced (Noto Sans
+## here is Latin/Greek/Cyrillic only) - still broken for now.
+var _fallback_font: FontFile
 
 func _ready() -> void:
+	# Explicit rather than relying on the project default staying 0/uncapped
+	# - guarantees animations (Title Screen's pulse, etc) aren't throttled by
+	# any stray fps cap regardless of platform/export settings.
+	Engine.max_fps = 0
+
 	if AudioServer.get_bus_index("Music") == -1:
 		AudioServer.add_bus()
 		AudioServer.set_bus_name(AudioServer.bus_count - 1, "Music")
@@ -58,29 +78,25 @@ func _ready() -> void:
 	_music_player.bus = "Music"
 	add_child(_music_player)
 
-	# New QoL fix (not in the reference): font_stylish.ttf/font_info.ttf only
-	# cover Latin glyphs, and relying on allow_system_fallback for the rest
-	# (as Japanese already did) turned out to render Cyrillic as completely
-	# blank. Bundling an explicit OFL-licensed fallback (Latin+Cyrillic+Greek)
-	# was the first attempt at fixing this - confirmed NOT sufficient on its
-	# own (Cyrillic is still blank even with this in place), so the root
-	# cause is still open - likely something deeper in the GL Compatibility
-	# renderer's glyph rendering rather than font/glyph availability. Left
-	# in place since it's harmless and may still be part of the eventual
-	# fix. Set once here, on the same resource instance every
-	# load(".../font_stylish.ttf") elsewhere in the codebase returns
-	# (Godot caches resources by path), so this single
-	# assignment covers every screen without touching each call site.
-	var fallback_font: FontFile = load("res://assets/fonts/NotoSans-Regular.ttf")
-	_font_stylish = load("res://assets/fonts/font_stylish.ttf")
-	_font_info = load("res://assets/fonts/font_info.ttf")
-	_font_stylish.fallbacks = [fallback_font]
-	_font_info.fallbacks = [fallback_font]
+	_font_stylish_default = load("res://assets/fonts/font_stylish.ttf")
+	_font_info_default = load("res://assets/fonts/font_info.ttf")
+	_fallback_font = load("res://assets/fonts/NotoSans-Regular.ttf")
 
 	var settings := SaveSystem.load_settings()
 	language = settings.get("language", _detect_default_language())
 	sfx_volume = settings.get("sfx_volume", 1.0)
 	music_volume = settings.get("music_volume", 1.0)
+
+## Picks which actual font backs the public font_stylish/font_info for the
+## current language - see _fallback_font's docstring above for why this
+## swap exists instead of just attaching a fallback to the default fonts.
+func _update_fonts_for_language() -> void:
+	if language == StringTable.LANGUAGE_BY_LOCALE["ru"]:
+		font_stylish = _fallback_font
+		font_info = _fallback_font
+	else:
+		font_stylish = _font_stylish_default
+		font_info = _font_info_default
 
 ## First-launch default (before any language has ever been explicitly saved):
 ## match the OS/device language (Windows now, Android once that release

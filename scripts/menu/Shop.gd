@@ -131,7 +131,7 @@ func _ready() -> void:
 # ---------------------------------------------------------------- UI build
 
 func _build_ui() -> void:
-	var font_stylish: Font = load(ASSETS + "fonts/font_stylish.ttf")
+	var font_stylish: Font = Game.font_stylish
 
 	var bg := TextureRect.new()
 	bg.texture = load(ASSETS + "common_bkg_clean.png")
@@ -190,7 +190,10 @@ func _build_ui() -> void:
 	add_child(label_shop_help)
 	UIButtonStyle.fit_button_text(label_shop_help)
 
-	var back_button := _make_button(StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56), font_stylish)
+	# font_size 36 to match every other screen's Back button (DeckSelect,
+	# Opponents, Options) - this helper's other buttons stay at the default
+	# 25, tuned for their own tighter boxes.
+	var back_button := _make_button(StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56), font_stylish, 36)
 	back_button.pressed.connect(_on_back_pressed)
 
 	var label_shop := _make_label(Vector2(348, 21), Vector2(264, 47), font_stylish, 46)
@@ -370,7 +373,7 @@ func _make_sfx(path: String) -> AudioStreamPlayer:
 	return p
 
 func _make_label(pos: Vector2, label_size: Vector2, font: Font, font_size: int) -> Label:
-	var label := Label.new()
+	var label := FixedSizeLabel.new()
 	label.position = pos
 	label.size = label_size
 	label.add_theme_font_override("font", font)
@@ -381,14 +384,14 @@ func _make_label(pos: Vector2, label_size: Vector2, font: Font, font_size: int) 
 	label.add_theme_constant_override("shadow_offset_y", 1)
 	return label
 
-func _make_button(text: String, pos: Vector2, btn_size: Vector2, font: Font) -> Button:
-	var btn := Button.new()
+func _make_button(text: String, pos: Vector2, btn_size: Vector2, font: Font, font_size: int = 25) -> Button:
+	var btn := FixedSizeButton.new()
 	UIButtonStyle.apply(btn)
 	btn.text = text
 	btn.position = pos
 	btn.size = btn_size
 	btn.add_theme_font_override("font", font)
-	btn.add_theme_font_size_override("font_size", 25)
+	btn.add_theme_font_size_override("font_size", font_size)
 	btn.add_theme_color_override("font_color", Color.BLACK)
 	btn.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
 	btn.add_theme_constant_override("shadow_offset_x", 1)
