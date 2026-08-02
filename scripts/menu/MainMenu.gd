@@ -20,6 +20,17 @@ const CAT_FRAME_SIZE := Vector2(160, 138)
 const CAT_FRAME_COUNT := 28
 const CAT_FPS := 10.0
 
+# Measured widest transparent gap between each icon's two halves at the
+# vertical midline (source art 428x112, displayed at 274x71, scale 0.6402),
+# in on-screen px - narrower than the button's own 274px width, so this is
+# the real safe zone for translated text (see UIButtonStyle.fit_menu_button_text).
+const MENU_BUTTON_GAP_WIDTHS := {
+	"button_battle.png": 163.0,
+	"button_shop.png": 177.0,
+	"button_collection.png": 158.0,
+	"button_option.png": 142.0,
+}
+
 var cat_sprite: AnimatedSprite2D
 var cat_animating := false
 var cat_wait_time := 0.0
@@ -107,6 +118,7 @@ func _make_menu_button(label: String, texture_name: String, pos: Vector2, size: 
 	btn.add_theme_constant_override("shadow_offset_y", 1)
 	btn.pressed.connect(on_pressed)
 	add_child(btn)
+	UIButtonStyle.fit_menu_button_text(btn, MENU_BUTTON_GAP_WIDTHS[texture_name])
 
 	var icon := TextureRect.new()
 	icon.texture = load(ASSETS + texture_name)

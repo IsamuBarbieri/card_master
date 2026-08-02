@@ -17,6 +17,10 @@ const ASSETS := "res://assets/"
 const CARD_W := 96
 const CARD_H := 128
 const GET_BACK_TIME := 0.1
+# label_shop reuses button_shop.png's "two icon halves + transparent gap"
+# trick at this screen's icon size (214x56, scale 0.5 vs native 428x112):
+# native gap 276px * 0.5 = 138px on-screen.
+const TITLE_ICON_GAP_WIDTH := 138.0
 
 # ShopScene.cs's genTable: per shop-card-slot index, the [min,max] card
 # definitionId range to generate from - reused as availableOpponents
@@ -184,6 +188,7 @@ func _build_ui() -> void:
 	label_shop_help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_shop_help.text = StringTable.get_string(StringTable.ID_SHOP_HELP)
 	add_child(label_shop_help)
+	UIButtonStyle.fit_button_text(label_shop_help)
 
 	var back_button := _make_button(StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56), font_stylish)
 	back_button.pressed.connect(_on_back_pressed)
@@ -192,16 +197,19 @@ func _build_ui() -> void:
 	label_shop.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_shop.text = StringTable.get_string(StringTable.ID_SHOP)
 	add_child(label_shop)
+	UIButtonStyle.fit_menu_button_text(label_shop, TITLE_ICON_GAP_WIDTH)
 
 	var label_sell := _make_label(Vector2(67, 32), Vector2(214, 36), font_stylish, 36)
 	label_sell.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_sell.text = StringTable.get_string(StringTable.ID_SELL)
 	add_child(label_sell)
+	UIButtonStyle.fit_button_text(label_sell)
 
 	var label_buy := _make_label(Vector2(679, 32), Vector2(214, 36), font_stylish, 36)
 	label_buy.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_buy.text = StringTable.get_string(StringTable.ID_BUY)
 	add_child(label_buy)
+	UIButtonStyle.fit_button_text(label_buy)
 
 	var coins_icon := TextureRect.new()
 	coins_icon.texture = load(ASSETS + "coins_icon.png")
@@ -247,10 +255,12 @@ func _build_ui() -> void:
 	label_info_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_info_name.text = StringTable.get_string(StringTable.ID_CARD_STATS)
 	add_child(label_info_name)
+	UIButtonStyle.fit_button_text(label_info_name)
 
 	var info_offense_lbl := _make_label(Vector2(373, 172), Vector2(174, 41), font_stylish, 36)
 	info_offense_lbl.text = StringTable.get_string(StringTable.ID_CARD_ATTACK)
 	add_child(info_offense_lbl)
+	UIButtonStyle.fit_button_text(info_offense_lbl)
 	label_value_offense = _make_label(Vector2(505, 172), Vector2(108, 41), font_stylish, 36)
 	label_value_offense.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label_value_offense.text = "- - -"
@@ -259,6 +269,7 @@ func _build_ui() -> void:
 	var info_type_lbl := _make_label(Vector2(373, 220), Vector2(174, 41), font_stylish, 36)
 	info_type_lbl.text = StringTable.get_string(StringTable.ID_CARD_TYPE)
 	add_child(info_type_lbl)
+	UIButtonStyle.fit_button_text(info_type_lbl)
 	label_value_type = _make_label(Vector2(507, 220), Vector2(108, 41), font_stylish, 36)
 	label_value_type.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label_value_type.text = "---"
@@ -267,6 +278,7 @@ func _build_ui() -> void:
 	var info_pdef_lbl := _make_label(Vector2(373, 268), Vector2(169, 41), font_stylish, 36)
 	info_pdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_PHYSICAL_DEFENSE)
 	add_child(info_pdef_lbl)
+	UIButtonStyle.fit_button_text(info_pdef_lbl)
 	label_value_pdef = _make_label(Vector2(505, 268), Vector2(108, 41), font_stylish, 36)
 	label_value_pdef.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label_value_pdef.text = "- - -"
@@ -275,6 +287,7 @@ func _build_ui() -> void:
 	var info_mdef_lbl := _make_label(Vector2(373, 315), Vector2(169, 41), font_stylish, 36)
 	info_mdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_MAGICAL_DEFENSE)
 	add_child(info_mdef_lbl)
+	UIButtonStyle.fit_button_text(info_mdef_lbl)
 	label_value_mdef = _make_label(Vector2(505, 315), Vector2(108, 41), font_stylish, 36)
 	label_value_mdef.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label_value_mdef.text = "- - -"
@@ -381,6 +394,7 @@ func _make_button(text: String, pos: Vector2, btn_size: Vector2, font: Font) -> 
 	btn.add_theme_constant_override("shadow_offset_x", 1)
 	btn.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(btn)
+	UIButtonStyle.fit_button_text(btn)
 	return btn
 
 func _hit_test(control: Control, x: int, y: int) -> bool:

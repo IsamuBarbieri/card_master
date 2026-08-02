@@ -24,6 +24,11 @@ extends RefCounted
 const SAVE_ROOT := "user://"
 const PLAYER_FILE := "player.save"
 const SLOT_COUNT := 3
+## Global (not per-slot) settings - language and audio volumes are app-level
+## preferences, not part of any one player's save data, so they live outside
+## the slotN/ folders and load once at Game's own _ready() regardless of
+## which slot (if any) gets picked afterward.
+const SETTINGS_FILE := "user://settings.save"
 
 static func _slot_dir(slot: int) -> String:
 	return SAVE_ROOT + "slot%d" % slot
@@ -235,3 +240,25 @@ static func load_shop_cards(slot: int) -> Array:
 	while out.size() < 4:
 		out.append(null)
 	return out
+
+static func save_settings() -> void:
+	var data := {
+		"language": Game.language,
+		"music_volume": Game.music_volume,
+		"sfx_volume": Game.sfx_volume,
+	}
+	var path_tmp := SETTINGS_FILE + ".tmp"
+	var f := FileAccess.open(path_tmp, FileAccess.WRITE)
+	f.store_var(data)
+	f.close()
+	if FileAccess.file_exists(SETTINGS_FILE):
+		DirAccess.remove_absolute(SETTINGS_FILE)
+	DirAccess.rename_absolute(path_tmp, SETTINGS_FILE)
+
+static func load_settings() -> Dictionary:
+	if not FileAccess.file_exists(SETTINGS_FILE):
+		return {}
+	var f := FileAccess.open(SETTINGS_FILE, FileAccess.READ)
+	var data = f.get_var()
+	f.close()
+	return data if data is Dictionary else {}

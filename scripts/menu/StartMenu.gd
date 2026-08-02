@@ -120,6 +120,7 @@ func _refresh_slots() -> void:
 			delete_buttons[i].visible = true
 		else:
 			slot_buttons[i].text = StringTable.get_string(StringTable.ID_NEW)
+			UIButtonStyle.fit_button_text(slot_buttons[i])
 			delete_buttons[i].visible = false
 
 # --------------------------------------------------------------- dialogs
@@ -176,6 +177,7 @@ func _make_dialog_button(text: String, pos: Vector2, btn_size: Vector2, font: Fo
 	btn.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
 	btn.add_theme_constant_override("shadow_offset_x", 1)
 	btn.add_theme_constant_override("shadow_offset_y", 1)
+	UIButtonStyle.fit_button_text(btn)
 	return btn
 
 func _build_name_dialog() -> void:
@@ -187,6 +189,7 @@ func _build_name_dialog() -> void:
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.text = StringTable.get_string(StringTable.ID_ENTER_NAME)
 	panel.add_child(label)
+	UIButtonStyle.fit_button_text(label)
 
 	name_edit = LineEdit.new()
 	name_edit.position = Vector2(70, 134)

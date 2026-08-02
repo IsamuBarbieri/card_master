@@ -9,6 +9,11 @@ const SCREEN_W := 960
 const SCREEN_H := 544
 const ASSETS := "res://assets/"
 const LABEL_FONT_SIZE := 36
+# Title reuses button_option.png the same "two icon halves + transparent
+# gap" trick as MainMenu's own Options button (see UIButtonStyle.gd), just
+# at this screen's own icon size (265x68 vs MainMenu's 274x71): native gap
+# 222px * (265/428) scale = ~137.5px on-screen.
+const TITLE_ICON_GAP_WIDTH := 137.5
 
 var sfx_cat: AudioStreamPlayer
 var _sfx_dragging := false
@@ -71,9 +76,17 @@ func _ready() -> void:
 	var lang_popup := OptionButton.new()
 	lang_popup.position = Vector2(300, 328)
 	lang_popup.size = Vector2(360, 56)
+	# Order must match StringTable.TABLE (sorted alphabetically by each
+	# language's own native name).
+	lang_popup.add_item("Deutsch")
 	lang_popup.add_item("English")
+	lang_popup.add_item("Español")
+	lang_popup.add_item("Français")
 	lang_popup.add_item("Italiano")
+	lang_popup.add_item("Português (Brasil)")
+	lang_popup.add_item("Русский")
 	lang_popup.add_item("日本語")
+	lang_popup.add_item("简体中文")
 	lang_popup.selected = Game.language
 	lang_popup.item_selected.connect(_on_language_selected)
 	add_child(lang_popup)
@@ -151,11 +164,17 @@ func _on_language_selected(index: int) -> void:
 
 func _update_language_texts() -> void:
 	title.text = StringTable.get_string(StringTable.ID_OPTIONS)
+	UIButtonStyle.fit_menu_button_text(title, TITLE_ICON_GAP_WIDTH)
 	label_music.text = StringTable.get_string(StringTable.ID_MUSIC)
+	UIButtonStyle.fit_button_text(label_music)
 	label_sfx.text = StringTable.get_string(StringTable.ID_SFX)
+	UIButtonStyle.fit_button_text(label_sfx)
 	label_lang.text = StringTable.get_string(StringTable.ID_LANGUAGE)
+	UIButtonStyle.fit_button_text(label_lang)
 	back_button.text = StringTable.get_string(StringTable.ID_BACK)
+	UIButtonStyle.fit_button_text(back_button)
 	credits_button.text = StringTable.get_string(StringTable.ID_CREDITS)
+	UIButtonStyle.fit_button_text(credits_button)
 
 func _on_back_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_back_sound.wav")

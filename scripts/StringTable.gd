@@ -3,6 +3,18 @@ extends Node
 ## verbatim from the reference. The reference's Japanese table is mostly
 ## blank placeholder text, so it's been fully retranslated here from the
 ## English strings instead of reproducing those gaps.
+##
+## Spanish, German, French, Portuguese (Brazilian), Russian, and Simplified
+## Chinese (not in the reference at all) were added afterward, picked from
+## Steam's language-share data as the highest-value languages beyond what's
+## already covered here. See UIButtonStyle.gd's fit_button_text/
+## fit_menu_button_text for the overflow-safe font-fit system every button/
+## label showing these strings routes through.
+##
+## TABLE rows are sorted alphabetically by each language's own native name
+## (Deutsch, English, Español, ...) - LANGUAGE_BY_LOCALE below maps
+## OS.get_locale_language() codes to TABLE indices and MUST stay in sync
+## with this order (see Game.gd's default-language detection).
 
 enum {
 	ID_NEW, ID_ENTER_NAME, ID_OK, ID_CANCEL, ID_BATTLE, ID_SHOP, ID_OPTIONS,
@@ -24,6 +36,39 @@ enum {
 }
 
 const TABLE := [
+	# Deutsch
+	[
+		"Neu", "Spielernamen eingeben", "OK", "Abbrechen", "Kampf", "Laden",
+		"Optionen", "Zurück", "Spielen", "Wähle Fünf Karten", "Karten",
+		"Favoriten", "Wähle deinen Gegner", "Auswählen", "Angriff", "Typ",
+		"Phys. Verteidigung", "Mag. Verteidigung", "Überspringen", "Alle nehmen",
+		"Hoch!", "Neuer Angriffstyp!", "Physisch", "Magisch", "Flexibel",
+		"Ansturm", "Max!", "Wähle 1 blaue Karte als Preis",
+		"Du hast alle Karten des Gegners gewonnen!", "Fertig",
+		"Die KI wählt nun eine besiegte rote Karte als Preis",
+		"Die KI hat all deine Karten gewonnen...", "MENÜ", "Kartenwerte", "Punkte",
+		"Sammlung", "Verkaufen", "Kaufen", "Zurückkaufen!",
+		"Ziehe eine Karte in das Feld unten, um sie zu kaufen oder zu verkaufen.",
+		"Kaufen für:", "Verkaufen für:", "Brauchst du Hilfe? Frag die schwarze Katze!",
+		"Musik:", "Effekte:", "Credits", "Slot-Daten löschen",
+		"Willst du WIRKLICH ALLE Daten\ndieses Slots löschen?",
+		"Sprache:", "Unentschieden, drücke Fertig um fortzufahren.",
+		"Dies ist die Deckauswahl. Hier wählst du die Karten aus, mit denen du spielen willst.",
+		"Du kannst Karten zwischen der Kartenliste und den Favoriten hin- und herziehen.",
+		"Wische vertikal, um den Kartentyp zu wählen, und horizontal, um durch die Karten zu blättern.",
+		"Ziehe die Karten in diese Felder, um sie auszuwählen.",
+		"Ziehe die Karten auf das Feld, um sie zu spielen", "Hier können keine Karten platziert werden",
+		"Verbleibende gegnerische Karten", "Punkte", "Kartenwerte",
+		"Ziehe eine Karte hierher, um sie zu verkaufen oder zu kaufen", "Dein Geld",
+		"Das ist die Liste der kaufbaren Karten. Weitere Karten werden freigeschaltet, indem du stärkere Gegner besiegst",
+		"Kämpfe gegen Gegner, um neue Karten zu gewinnen, sie weiterzuentwickeln und stärkere Feinde freizuschalten",
+		"Verkaufe Karten und kaufe neue, um sie im Kampf einzusetzen",
+		"Betrachte deine ganze Sammlung in voller Auflösung",
+		"Ändere die Spielsprache und stelle die Lautstärke ein. Vergiss nicht, dir die Credits anzusehen ^^",
+		"Card Master ist ein Sammelkartenspiel, bei dem zwei Gegner gegeneinander antreten, indem sie Karten auf einem 4x4-Raster platzieren. Jeder Spieler wählt 5 Karten aus seinem Deck. Das Spiel endet, wenn alle Karten platziert sind. Sieger ist, wer am Ende mehr Karten seiner Farbe besitzt. Der Sieger darf sich eine der eroberten gegnerischen Karten stehlen.",
+		"Karten haben 4 Werte: Angriff (AT), Typ (T), Physische Verteidigung (PD) und Magische Verteidigung (MD). AT, PD und MD reichen von 0 bis 255, unterteilt in 16 Klassen von 0 bis F. Je höher der Wert, desto höher die Klasse. Eine Karte kann einen von 4 Typen haben: Physisch (P), Magisch (M), Exploit (X) oder Ansturm (A). Jeder Typ bestimmt, wie die Karte gegen andere kämpft. P greift PD an, M greift MD an, X greift den niedrigeren Wert von PD und MD an, A nutzt den höchsten eigenen Wert, um den niedrigsten Wert der gegnerischen Karte anzugreifen, egal welcher das ist. Jede Karte kann bis zu 8 Pfeile haben, die in die 8 Himmelsrichtungen zeigen. Diese Pfeile werden benutzt, um gegnerische Karten zu erobern oder anzugreifen. Zeigt der Pfeil einer Karte auf eine Karte ohne Gegenpfeil, wird diese automatisch erobert; zeigt er auf einen entgegengesetzten Pfeil, beginnt der Kampf. Die Farbe der Werte, von Grün bis Rot, zeigt den Entwicklungsstand. Rot bedeutet, der Wert ist maximal.",
+		"Gegnername",
+	],
 	# English
 	[
 		"New", "Enter Player Name", "OK", "Cancel", "Battle", "Shop", "Options",
@@ -56,6 +101,73 @@ const TABLE := [
 		"Card Master is a collectible cards game, where two opponents fight each other by placing cards in to a 4x4 grid. Every player choose 5 cards of his deck to use. The game end when all the cards are played. The winner is the one that at the end have more cards of his color. The winner player steal one of the captured opponent card.",
 		"Cards have 4 stats. Attack (AT), Type (T), Phisical Defense (PD) and Magical Defense (MD). AT, PD and MD value are from 0 to 255, and are subdivided in 16 class from 0 to F. Higher the stats are, higher will be the class. A card can be of 4 Types, Phisical (P), Magical (M), Exploit (X) or Assault (A). Every type define how the card fight againts the other. P attack PD, M attack MD, X attack lowest stats between PD and MD, A use the highest stats of the card to attack the lowest stats of the opponents card, whatever they are. Every crads can have up to 8 arrows, facing the 8 cardinal points. This arrow are used by cards for capture or attack the opponents cards. If a card's arrow face a card without a facing back arrow, the card is automatically captured, but if a card's arrow face a card with a opposite facing back arrow, the fight begin. Stats color, from greens to red, indicate the evolution state of the stats. Red mean the stat is maxed out.",
 		"Opponent Name",
+	],
+	# Español
+	[
+		"Nuevo", "Introduce el Nombre del Jugador", "OK", "Cancelar", "Batalla",
+		"Tienda", "Opciones", "Atrás", "Jugar", "Elige Cinco Cartas", "Cartas",
+		"Cartas Favoritas", "Elige a tu Oponente", "Elegir", "Ataque", "Tipo",
+		"Def. Física", "Def. Mágica", "Saltar", "Llevar Todas", "¡Sube!",
+		"¡Nuevo Tipo de Ataque!", "Física", "Mágica", "Flexible", "Asalto",
+		"¡Máx!", "Elige 1 Carta Azul como Premio",
+		"¡Has ganado todas las cartas del oponente!", "Hecho",
+		"La IA elegirá ahora una Carta Roja derrotada como Premio",
+		"La IA ha ganado todas tus cartas...", "MENÚ", "Estadísticas", "Puntos",
+		"Colección", "Vender", "Comprar", "¡Recomprar!",
+		"Mueve una carta al recuadro de abajo para comprar o vender.",
+		"Comprar por:", "Vender por:", "¿Necesitas ayuda? ¡Pregúntale al gato negro!",
+		"Música:", "Efectos:", "Créditos", "Borrar datos del slot",
+		"¿Estás REALMENTE seguro de que quieres borrar\nTODOS los datos de este slot?",
+		"Idioma:", "Empate, pulsa Hecho para continuar.",
+		"Este es el menú de Selección de Mazo. Aquí puedes elegir las cartas que quieres usar para jugar.",
+		"Puedes mover cartas entre la lista de Cartas y Favoritas, y viceversa, arrastrándolas.",
+		"Desliza verticalmente para elegir el tipo de carta y horizontalmente para recorrer las cartas.",
+		"Arrastra las cartas a estos recuadros para seleccionarlas.",
+		"Arrastra las cartas a la cuadrícula para jugarlas", "No se pueden colocar cartas aquí",
+		"Cartas restantes del rival", "Puntos", "Estadísticas",
+		"Mueve una carta aquí para venderla o comprarla", "Tu Dinero",
+		"Esta es la lista de cartas disponibles. Se desbloquean más cartas al derrotar rivales más fuertes",
+		"Enfréntate a rivales para ganar cartas nuevas, evolucionarlas y desbloquear enemigos más fuertes",
+		"Vende cartas y compra otras nuevas para usarlas en batalla",
+		"Contempla toda tu colección de cartas en alta resolución",
+		"Cambia el idioma del juego y ajusta el volumen. ¡No olvides echar un vistazo a los Créditos! ^^",
+		"Card Master es un juego de cartas coleccionables, donde dos jugadores se enfrentan colocando cartas en una cuadrícula de 4x4. Cada jugador elige 5 cartas de su mazo para usar. La partida termina cuando se han colocado todas las cartas. El ganador es quien al final tiene más cartas de su color. El jugador ganador roba una de las cartas capturadas al oponente.",
+		"Las cartas tienen 4 estadísticas: Ataque (AT), Tipo (T), Defensa Física (DF) y Defensa Mágica (DM). Los valores de AT, DF y DM van de 0 a 255, divididos en 16 clases de 0 a F. Cuanto más alta la estadística, más alta será la clase. Una carta puede ser de 4 tipos: Física (P), Mágica (M), Exploit (X) o Asalto (A). Cada tipo define cómo lucha la carta contra las demás. P ataca DF, M ataca DM, X ataca la estadística más baja entre DF y DM, A usa la estadística más alta de la carta para atacar la más baja de la carta rival, sea cual sea. Cada carta puede tener hasta 8 flechas, orientadas hacia los 8 puntos cardinales. Estas flechas se usan para capturar o atacar cartas rivales. Si la flecha de una carta apunta a una carta sin flecha de vuelta, la carta es capturada automáticamente, pero si apunta a una carta con flecha opuesta, comienza el combate. El color de las estadísticas, de verde a rojo, indica su nivel de evolución. El rojo significa que la estadística está al máximo.",
+		"Nombre del Rival",
+	],
+	# Français
+	[
+		"Nouveau", "Entrez le nom du joueur", "OK", "Annuler", "Combat",
+		"Boutique", "Options", "Retour", "Jouer", "Choisissez cinq cartes",
+		"Cartes", "Cartes favorites", "Choisissez votre adversaire", "Sélectionner",
+		"Attaque", "Type", "Déf. physique", "Déf. magique", "Passer",
+		"Tout prendre", "En hausse !", "Nouveau type d'attaque !", "Physique",
+		"Magique", "Flexible", "Assaut", "Max !",
+		"Choisissez 1 carte bleue comme récompense",
+		"Vous avez gagné toutes les cartes de l'adversaire !", "Terminé",
+		"L'IA va maintenant choisir une carte rouge vaincue comme récompense",
+		"L'IA a gagné toutes vos cartes...", "MENU", "Statistiques", "Score",
+		"Collection", "Vendre", "Acheter", "Racheter !",
+		"Déplacez une carte dans la case ci-dessous pour l'acheter ou la vendre.",
+		"Acheter pour :", "Vendre pour :", "Besoin d'aide ? Demandez au chat noir !",
+		"Musique :", "Effets :", "Crédits", "Supprimer les données du slot",
+		"Voulez-vous VRAIMENT supprimer\nTOUTES les données de ce slot ?",
+		"Langue :", "Match nul, appuyez sur Terminé pour continuer.",
+		"Ceci est le menu de sélection du deck. Ici, vous choisissez les cartes que vous voulez utiliser pour jouer.",
+		"Vous pouvez déplacer des cartes entre la liste des cartes et les favoris, et inversement, en les faisant glisser.",
+		"Faites glisser verticalement pour choisir le type de carte et horizontalement pour parcourir les cartes.",
+		"Faites glisser les cartes dans ces cases pour les sélectionner.",
+		"Faites glisser les cartes sur la grille pour les jouer", "Les cartes ne peuvent pas être placées ici",
+		"Cartes restantes de l'adversaire", "Score", "Statistiques",
+		"Déplacez une carte ici pour la vendre ou l'acheter", "Votre argent",
+		"Voici la liste des cartes disponibles à l'achat. D'autres cartes se débloquent en battant des adversaires plus forts",
+		"Affrontez des adversaires pour gagner de nouvelles cartes, les faire évoluer et débloquer des ennemis plus forts",
+		"Vendez des cartes et achetez-en de nouvelles à utiliser au combat",
+		"Admirez toute votre collection de cartes en haute résolution",
+		"Changez la langue du jeu et réglez le volume. N'oubliez pas de consulter les crédits ^^",
+		"Card Master est un jeu de cartes à collectionner, où deux adversaires s'affrontent en plaçant des cartes sur une grille 4x4. Chaque joueur choisit 5 cartes de son deck à utiliser. La partie se termine quand toutes les cartes sont placées. Le vainqueur est celui qui possède le plus de cartes de sa couleur à la fin. Le joueur vainqueur vole une des cartes capturées à l'adversaire.",
+		"Les cartes ont 4 statistiques : Attaque (AT), Type (T), Défense Physique (DP) et Défense Magique (DM). Les valeurs d'AT, DP et DM vont de 0 à 255, réparties en 16 classes de 0 à F. Plus la statistique est élevée, plus la classe l'est aussi. Une carte peut être de 4 types : Physique (P), Magique (M), Exploit (X) ou Assaut (A). Chaque type définit comment la carte combat les autres. P attaque DP, M attaque DM, X attaque la statistique la plus faible entre DP et DM, A utilise la statistique la plus élevée de la carte pour attaquer la plus faible de la carte adverse, quelle qu'elle soit. Chaque carte peut avoir jusqu'à 8 flèches, orientées vers les 8 points cardinaux. Ces flèches servent à capturer ou attaquer les cartes adverses. Si la flèche d'une carte pointe vers une carte sans flèche opposée, la carte est automatiquement capturée ; mais si elle pointe vers une flèche opposée, le combat commence. La couleur des statistiques, du vert au rouge, indique leur niveau d'évolution. Le rouge signifie que la statistique est au maximum.",
+		"Nom de l'adversaire",
 	],
 	# Italiano
 	[
@@ -91,6 +203,72 @@ const TABLE := [
 		"Le carte hanno 4 valori. Attacco (AT), Tipo (T), Difesa Fisica (DF) e Difesa Magica (DM). AT, DF e DM hanno valori che vanno tra 0 e 255, suddivisi in 16 classi da 0 a F. Piú il valore e alto, piú la classe sará elevata. Una carta puó essere di 4 tipi, Fisica (F), Magica (M), Exploit (X) e Assalto (A). P attacca DP, M attacca DM, X attacca il valore piú basso tra DP e DM e A usa il valore piú alto della carta per attaccare quello piú basso di quella avversaria. Ogni carta puó avere fino a 8 frecce posizionate sui punti cardinali. Queste frecce vengono utilizzate per catturare o attaccare le carte avversarie. Se la freccia di una carta punta una carta che non ha a sua volta un freccia nella direzione opposta, essa viene automaticamente catturata, altrimenti se c'é una freccia opposta, ha inizio il combattimento. Il colore delle statistiche indica il livello di evoluzione delle stesse. Il colore rosso indica una statistica che ha raggiunto il suo massimo per quel tipo di carta.",
 		"Nome del Nemico",
 	],
+	# Português (Brasil)
+	[
+		"Novo", "Digite o Nome do Jogador", "OK", "Cancelar", "Batalha", "Loja",
+		"Opções", "Voltar", "Jogar", "Selecione Cinco Cartas", "Cartas",
+		"Cartas Favoritas", "Selecione seu Adversário", "Selecionar", "Ataque",
+		"Tipo", "Def. Física", "Def. Mágica", "Pular", "Pegar Todas", "Subiu!",
+		"Novo Tipo de Ataque!", "Física", "Mágica", "Flexível", "Investida",
+		"Máx!", "Escolha 1 Carta Azul como Prêmio",
+		"Você ganhou todas as cartas do adversário!", "Concluído",
+		"A IA agora vai escolher uma Carta Vermelha derrotada como Prêmio",
+		"A IA ganhou todas as suas cartas...", "MENU", "Estatísticas", "Pontuação",
+		"Coleção", "Vender", "Comprar", "Recomprar!",
+		"Mova uma carta para a caixa abaixo para comprar ou vender.",
+		"Comprar por:", "Vender por:", "Precisa de ajuda? Pergunte ao gato preto!",
+		"Música:", "Efeitos:", "Créditos", "Apagar dados do slot",
+		"Você tem CERTEZA de que quer apagar\nTODOS os dados deste slot?",
+		"Idioma:", "Empate, pressione Concluído para continuar.",
+		"Este é o menu de Seleção de Deck. Aqui você escolhe as cartas que quer usar para jogar.",
+		"Você pode mover cartas entre a lista de Cartas e Favoritas, e vice-versa, arrastando-as.",
+		"Deslize verticalmente para escolher o tipo de carta e horizontalmente para percorrer as cartas.",
+		"Arraste as cartas para estas caixas para selecioná-las.",
+		"Arraste as cartas para a grade para jogá-las", "As cartas não podem ser colocadas aqui",
+		"Cartas restantes do adversário", "Pontuação", "Estatísticas",
+		"Mova uma carta aqui para vendê-la ou comprá-la", "Seu Dinheiro",
+		"Esta é a lista de cartas disponíveis para compra. Mais cartas são desbloqueadas ao derrotar adversários mais fortes",
+		"Enfrente adversários para ganhar cartas novas, evoluí-las e desbloquear inimigos mais fortes",
+		"Venda cartas e compre outras novas para usar na batalha",
+		"Admire toda a sua coleção de cartas em alta resolução",
+		"Mude o idioma do jogo e ajuste o volume. Não esqueça de conferir os Créditos ^^",
+		"Card Master é um jogo de cartas colecionáveis, onde dois adversários se enfrentam colocando cartas em uma grade 4x4. Cada jogador escolhe 5 cartas do seu deck para usar. O jogo termina quando todas as cartas forem colocadas. O vencedor é quem tiver mais cartas da sua cor ao final. O jogador vencedor rouba uma das cartas capturadas do adversário.",
+		"As cartas têm 4 estatísticas: Ataque (AT), Tipo (T), Defesa Física (DF) e Defesa Mágica (DM). Os valores de AT, DF e DM vão de 0 a 255, divididos em 16 classes de 0 a F. Quanto maior a estatística, maior a classe. Uma carta pode ser de 4 tipos: Física (P), Mágica (M), Exploit (X) ou Investida (A). Cada tipo define como a carta luta contra as outras. P ataca DF, M ataca DM, X ataca o menor valor entre DF e DM, A usa o maior valor da carta para atacar o menor valor da carta adversária, seja qual for. Cada carta pode ter até 8 setas, apontando para os 8 pontos cardeais. Essas setas são usadas para capturar ou atacar cartas adversárias. Se a seta de uma carta aponta para uma carta sem seta de volta, a carta é capturada automaticamente; mas se aponta para uma seta oposta, a batalha começa. A cor das estatísticas, do verde ao vermelho, indica o nível de evolução. Vermelho significa que a estatística está no máximo.",
+		"Nome do Adversário",
+	],
+	# Русский
+	[
+		"Новый", "Введите имя игрока", "ОК", "Отмена", "Битва", "Магазин",
+		"Настройки", "Назад", "Играть", "Выберите пять карт", "Карты",
+		"Избранные карты", "Выберите противника", "Выбрать", "Атака", "Тип",
+		"Физ. защита", "Маг. защита", "Пропустить", "Забрать все", "Улучшение!",
+		"Новый тип атаки!", "Физический", "Магический", "Гибкий", "Штурм",
+		"Макс!", "Выберите 1 синюю карту в награду",
+		"Вы выиграли все карты соперника!", "Готово",
+		"Теперь ИИ выберет побеждённую красную карту в награду",
+		"ИИ выиграл все ваши карты...", "МЕНЮ", "Характеристики", "Счёт",
+		"Коллекция", "Продать", "Купить", "Выкупить!",
+		"Переместите карту в поле ниже, чтобы купить или продать.",
+		"Купить за:", "Продать за:", "Нужна помощь? Спросите чёрного кота!",
+		"Музыка:", "Звук:", "Титры", "Удалить данные слота",
+		"Вы ДЕЙСТВИТЕЛЬНО хотите удалить\nВСЕ данные этого слота?",
+		"Язык:", "Ничья, нажмите «Готово», чтобы продолжить.",
+		"Это меню выбора колоды. Здесь вы выбираете карты, которыми хотите играть.",
+		"Вы можете перетаскивать карты между списком карт и избранным в обе стороны.",
+		"Проведите вертикально, чтобы выбрать тип карт, и горизонтально, чтобы листать карты.",
+		"Перетащите карты в эти поля, чтобы выбрать их.",
+		"Перетащите карты на сетку, чтобы сыграть ими", "Сюда нельзя поместить карты",
+		"Оставшиеся карты соперника", "Счёт", "Характеристики",
+		"Переместите карту сюда, чтобы продать или купить её", "Ваши деньги",
+		"Это список карт, доступных для покупки. Больше карт открывается за победу над более сильными противниками",
+		"Сражайтесь с противниками, чтобы получать новые карты, развивать их и открывать более сильных врагов",
+		"Продавайте карты и покупайте новые, чтобы использовать их в бою",
+		"Просмотрите всю свою коллекцию карт в полном разрешении",
+		"Смените язык игры и настройте громкость звука. Не забудьте заглянуть в титры ^^",
+		"Card Master — это игра в коллекционные карты, где два игрока сражаются, размещая карты на сетке 4x4. Каждый игрок выбирает 5 карт из своей колоды. Игра заканчивается, когда все карты выставлены. Победителем становится тот, у кого в итоге больше карт своего цвета. Победитель забирает одну из захваченных карт соперника.",
+		"У карт есть 4 характеристики: Атака (AT), Тип (T), Физическая защита (PD) и Магическая защита (MD). Значения AT, PD и MD варьируются от 0 до 255 и делятся на 16 классов от 0 до F. Чем выше значение, тем выше класс. Карта может быть одного из 4 типов: Физический (P), Магический (M), Эксплойт (X) или Штурм (A). Каждый тип определяет, как карта сражается с другими. P атакует PD, M атакует MD, X атакует более низкое значение из PD и MD, A использует самое высокое значение карты, чтобы атаковать самое низкое значение карты противника, каким бы оно ни было. У каждой карты может быть до 8 стрелок, направленных по 8 сторонам света. Эти стрелки используются для захвата или атаки карт противника. Если стрелка карты направлена на карту без ответной стрелки, карта захватывается автоматически, а если стрелка направлена на противоположную стрелку — начинается бой. Цвет характеристик, от зелёного до красного, показывает уровень их развития. Красный означает, что характеристика достигла максимума.",
+		"Имя соперника",
+	],
 	# 日本語 - full retranslation from English (the reference table was mostly
 	# blank placeholders).
 	[
@@ -124,7 +302,43 @@ const TABLE := [
 		"カードには4つのステータスがあります。攻撃力(AT)、タイプ(T)、物理防御力(PD)、魔法防御力(MD)です。AT、PD、MDの値は0〜255で、0〜Fの16段階に分けられます。数値が高いほどクラスも高くなります。カードには物理(P)、魔法(M)、万能(X)、強襲(A)の4つのタイプがあり、タイプによって戦い方が決まります。Pの攻撃はPDを、Mの攻撃はMDを狙います。XはPDとMDのうち低い方を狙い、Aはカードの最も高いステータスで相手の最も低いステータスを攻撃します。カードには8方向に矢印を最大8個まで持てます。この矢印は相手のカードを捕獲したり攻撃したりするために使われます。矢印が反対方向の矢印を持たないカードを指している場合、そのカードは自動的に捕獲されます。逆に反対方向に矢印があると戦闘が始まります。ステータスの色は緑から赤へと進化状態を示し、赤は最大値に達したことを意味します。",
 		"対戦相手の名前",
 	],
+	# 简体中文
+	[
+		"新建", "输入玩家名称", "确定", "取消", "对战", "商店", "设置", "返回",
+		"开始", "选择五张卡牌", "卡牌", "收藏卡牌", "选择对手", "选择", "攻击",
+		"类型", "物理防御", "魔法防御", "跳过", "全部拿走", "提升!", "新攻击类型!",
+		"物理", "魔法", "灵活", "突袭", "已满级!", "选择1张蓝色卡牌作为奖励",
+		"你赢得了对手的所有卡牌!", "完成", "AI现在将选择一张被击败的红色卡牌作为奖励",
+		"AI赢得了你的所有卡牌…", "菜单", "卡牌属性", "分数", "收藏", "出售",
+		"购买", "买回!", "将卡牌拖到下方的框中以购买或出售。", "购买价:", "出售价:",
+		"需要帮助?问问黑猫吧!", "音乐:", "音效:", "制作人员", "删除存档数据",
+		"你真的确定要删除\n所选存档槽的所有数据吗?",
+		"语言:", "平局,按\"完成\"继续。",
+		"这是选卡界面。在这里你可以选择想要用来对战的卡牌。",
+		"你可以通过拖动,在卡牌列表和收藏之间来回移动卡牌。",
+		"垂直滑动可选择卡牌类型,水平滑动可切换卡牌。",
+		"将卡牌拖入这些框中以选择它们。",
+		"将卡牌拖到网格中以使用它", "此处无法放置卡牌",
+		"对手剩余卡牌", "分数", "卡牌属性",
+		"将卡牌移到这里以出售或购买", "你的金币",
+		"这是可购买的卡牌列表。击败更强的对手可解锁更多卡牌",
+		"与对手战斗以赢得新卡牌,进化它们并解锁更强的敌人",
+		"出售卡牌,购买新卡牌用于对战",
+		"以全分辨率欣赏你收藏的所有卡牌",
+		"更改游戏语言并设置音量。别忘了看看制作人员名单哦 ^^",
+		"《卡牌大师》是一款集换式卡牌游戏,两名玩家通过在4x4的格子上放置卡牌来对战。每位玩家从自己的牌组中选择5张卡牌使用。当所有卡牌都放置完毕时游戏结束。最终拥有更多自己颜色卡牌的一方获胜。获胜的玩家可以夺走一张被俘获的对手卡牌。",
+		"卡牌有4项属性:攻击(AT)、类型(T)、物理防御(PD)和魔法防御(MD)。AT、PD和MD的数值范围是0到255,分为从0到F的16个等级。数值越高,等级越高。卡牌有4种类型:物理(P)、魔法(M)、万能(X)或突袭(A)。每种类型决定了卡牌如何与其他卡牌对战。P攻击PD,M攻击MD,X攻击PD和MD中较低的一项,A使用卡牌中最高的属性攻击对方卡牌中最低的属性,无论那是哪一项。每张卡牌最多可以有8个箭头,分别指向8个方位。这些箭头用于俘获或攻击对手的卡牌。如果一张卡牌的箭头指向一张没有对应反向箭头的卡牌,该卡牌会被自动俘获;但如果指向的是有相对箭头的卡牌,则会触发战斗。属性的颜色从绿到红表示其进化程度,红色表示该属性已达到最大值。",
+		"对手名称",
+	],
 ]
+
+## Maps OS.get_locale_language() codes to TABLE indices - must stay in sync
+## with TABLE's order above. Used by Game.gd to default to the system
+## language on first launch (before any language has been explicitly saved).
+const LANGUAGE_BY_LOCALE := {
+	"de": 0, "en": 1, "es": 2, "fr": 3, "it": 4, "pt": 5, "ru": 6, "ja": 7, "zh": 8,
+}
+const DEFAULT_LANGUAGE := 1  # English - used when the system locale isn't one of the above
 
 func get_string(id: int) -> String:
 	return TABLE[Game.language][id]

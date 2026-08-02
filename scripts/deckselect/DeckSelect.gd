@@ -152,37 +152,45 @@ func _build_ui() -> void:
 	label_select5.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_select5.text = StringTable.get_string(StringTable.ID_DECK_SELECT_CARDS)
 	add_child(label_select5)
+	UIButtonStyle.fit_button_text(label_select5)
 
 	var label_your_deck := _make_label(Vector2(67, 32), Vector2(214, 36), font_stylish)
 	label_your_deck.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_your_deck.text = StringTable.get_string(StringTable.ID_CARDS)
 	add_child(label_your_deck)
+	UIButtonStyle.fit_button_text(label_your_deck)
 
 	var label_your_prefs := _make_label(Vector2(679, 32), Vector2(214, 36), font_stylish)
 	label_your_prefs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_your_prefs.text = StringTable.get_string(StringTable.ID_FAVORITE_CARDS)
 	add_child(label_your_prefs)
+	UIButtonStyle.fit_button_text(label_your_prefs)
 
 	var label_info_offense := _make_label(Vector2(361, 161), Vector2(174, 41), font_stylish)
 	label_info_offense.text = StringTable.get_string(StringTable.ID_CARD_ATTACK)
 	add_child(label_info_offense)
+	UIButtonStyle.fit_button_text(label_info_offense)
 
 	var label_info_type := _make_label(Vector2(361, 209), Vector2(174, 41), font_stylish)
 	label_info_type.text = StringTable.get_string(StringTable.ID_CARD_TYPE)
 	add_child(label_info_type)
+	UIButtonStyle.fit_button_text(label_info_type)
 
 	var label_info_pdef := _make_label(Vector2(361, 257), Vector2(169, 41), font_stylish)
 	label_info_pdef.text = StringTable.get_string(StringTable.ID_CARD_PHYSICAL_DEFENSE)
 	add_child(label_info_pdef)
+	UIButtonStyle.fit_button_text(label_info_pdef)
 
 	var label_info_mdef := _make_label(Vector2(361, 304), Vector2(169, 41), font_stylish)
 	label_info_mdef.text = StringTable.get_string(StringTable.ID_CARD_MAGICAL_DEFENSE)
 	add_child(label_info_mdef)
+	UIButtonStyle.fit_button_text(label_info_mdef)
 
 	label_info_name = _make_label(Vector2(361, 118), Vector2(242, 41), font_stylish)
 	label_info_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_info_name.text = StringTable.get_string(StringTable.ID_CARD_STATS)
 	add_child(label_info_name)
+	UIButtonStyle.fit_button_text(label_info_name)
 
 	label_value_offense = _make_label(Vector2(493, 161), Vector2(108, 41), font_stylish)
 	label_value_offense.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -265,6 +273,7 @@ func _make_text_button(label: String, pos: Vector2, btn_size: Vector2, font: Fon
 	btn.add_theme_constant_override("shadow_offset_x", 1)
 	btn.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(btn)
+	UIButtonStyle.fit_button_text(btn)
 	return btn
 
 func _hit_test(control: Control, x: int, y: int) -> bool:

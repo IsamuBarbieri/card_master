@@ -72,6 +72,7 @@ func _build_ui() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.text = StringTable.get_string(StringTable.ID_OPPONENT_SELECT)
 	add_child(title)
+	UIButtonStyle.fit_button_text(title)
 
 	label_desc = _make_label(Vector2(231, 473), Vector2(498, 36), font_stylish)
 	add_child(label_desc)
@@ -140,6 +141,7 @@ func _make_text_button(label: String, pos: Vector2, size: Vector2, font: Font) -
 	btn.add_theme_constant_override("shadow_offset_x", 1)
 	btn.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(btn)
+	UIButtonStyle.fit_button_text(btn)
 	return btn
 
 # Rebuilds one grid item's portrait/overlay: card_back+"???" if locked,

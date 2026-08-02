@@ -608,6 +608,7 @@ func _build_battle_end_ui() -> void:
 	var info_offense_lbl := _make_end_label(Vector2(9, 48), Vector2(174, 41), 25)
 	info_offense_lbl.text = StringTable.get_string(StringTable.ID_CARD_ATTACK)
 	panel_info.add_child(info_offense_lbl)
+	UIButtonStyle.fit_button_text(info_offense_lbl)
 	end_info_offense_val = _make_end_label(Vector2(111, 48), Vector2(108, 41), 25)
 	end_info_offense_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	panel_info.add_child(end_info_offense_val)
@@ -615,6 +616,7 @@ func _build_battle_end_ui() -> void:
 	var info_type_lbl := _make_end_label(Vector2(9, 89), Vector2(174, 41), 25)
 	info_type_lbl.text = StringTable.get_string(StringTable.ID_CARD_TYPE)
 	panel_info.add_child(info_type_lbl)
+	UIButtonStyle.fit_button_text(info_type_lbl)
 	end_info_type_val = _make_end_label(Vector2(111, 89), Vector2(108, 41), 25)
 	end_info_type_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	panel_info.add_child(end_info_type_val)
@@ -622,6 +624,7 @@ func _build_battle_end_ui() -> void:
 	var info_pdef_lbl := _make_end_label(Vector2(9, 130), Vector2(169, 41), 25)
 	info_pdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_PHYSICAL_DEFENSE)
 	panel_info.add_child(info_pdef_lbl)
+	UIButtonStyle.fit_button_text(info_pdef_lbl)
 	end_info_pdef_val = _make_end_label(Vector2(111, 130), Vector2(108, 41), 25)
 	end_info_pdef_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	panel_info.add_child(end_info_pdef_val)
@@ -629,6 +632,7 @@ func _build_battle_end_ui() -> void:
 	var info_mdef_lbl := _make_end_label(Vector2(9, 171), Vector2(169, 41), 25)
 	info_mdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_MAGICAL_DEFENSE)
 	panel_info.add_child(info_mdef_lbl)
+	UIButtonStyle.fit_button_text(info_mdef_lbl)
 	end_info_mdef_val = _make_end_label(Vector2(111, 171), Vector2(108, 41), 25)
 	end_info_mdef_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	panel_info.add_child(end_info_mdef_val)
@@ -699,6 +703,7 @@ func _make_end_button(text: String, pos: Vector2, btn_size: Vector2) -> Button:
 	btn.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
 	btn.add_theme_constant_override("shadow_offset_x", 2)
 	btn.add_theme_constant_override("shadow_offset_y", 1)
+	UIButtonStyle.fit_button_text(btn)
 	return btn
 
 func _build_audio() -> void:
@@ -1690,6 +1695,7 @@ func gsEndPlayerPick_Set(result: BattleResult) -> void:
 		label_central_msg.add_theme_font_size_override("font_size", END_TAKEALL_MSG_FONT_SIZE)
 		label_central_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label_central_msg.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		UIButtonStyle.fit_button_text(label_central_msg)
 		button_takeall.position = END_TAKEALL_BUTTON_POS
 	else:
 		end_remaining = 1

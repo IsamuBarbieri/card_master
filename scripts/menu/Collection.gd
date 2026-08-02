@@ -105,6 +105,7 @@ func _build_ui() -> void:
 	label_collection.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_collection.text = StringTable.get_string(StringTable.ID_COLLECTION)
 	add_child(label_collection)
+	UIButtonStyle.fit_button_text(label_collection)
 
 	var image_collection := TextureRect.new()
 	image_collection.texture = load(ASSETS + "button_collection.png")
@@ -156,6 +157,7 @@ func _build_ui() -> void:
 	var info_offense_lbl := _make_label(Vector2(246, 384), Vector2(153, 31), font_stylish, 25)
 	info_offense_lbl.text = StringTable.get_string(StringTable.ID_CARD_ATTACK)
 	add_child(info_offense_lbl)
+	UIButtonStyle.fit_button_text(info_offense_lbl)
 	label_value_offense = _make_label(Vector2(399, 384), Vector2(126, 31), font_stylish, 25)
 	label_value_offense.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label_value_offense.text = "- - -"
@@ -164,6 +166,7 @@ func _build_ui() -> void:
 	var info_type_lbl := _make_label(Vector2(246, 416), Vector2(153, 36), font_stylish, 25)
 	info_type_lbl.text = StringTable.get_string(StringTable.ID_CARD_TYPE)
 	add_child(info_type_lbl)
+	UIButtonStyle.fit_button_text(info_type_lbl)
 	label_value_type = _make_label(Vector2(399, 416), Vector2(126, 36), font_stylish, 25)
 	label_value_type.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label_value_type.text = "- - -"
@@ -172,6 +175,7 @@ func _build_ui() -> void:
 	var info_pdef_lbl := _make_label(Vector2(246, 452), Vector2(153, 37), font_stylish, 25)
 	info_pdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_PHYSICAL_DEFENSE)
 	add_child(info_pdef_lbl)
+	UIButtonStyle.fit_button_text(info_pdef_lbl)
 	label_value_pdef = _make_label(Vector2(399, 452), Vector2(126, 37), font_stylish, 25)
 	label_value_pdef.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label_value_pdef.text = "- - -"
@@ -180,6 +184,7 @@ func _build_ui() -> void:
 	var info_mdef_lbl := _make_label(Vector2(246, 489), Vector2(153, 34), font_stylish, 25)
 	info_mdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_MAGICAL_DEFENSE)
 	add_child(info_mdef_lbl)
+	UIButtonStyle.fit_button_text(info_mdef_lbl)
 	label_value_mdef = _make_label(Vector2(399, 489), Vector2(126, 34), font_stylish, 25)
 	label_value_mdef.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label_value_mdef.text = "- - -"
@@ -267,6 +272,7 @@ func _make_button(text: String, pos: Vector2, btn_size: Vector2, font: Font) -> 
 	btn.add_theme_constant_override("shadow_offset_x", 1)
 	btn.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(btn)
+	UIButtonStyle.fit_button_text(btn)
 	return btn
 
 # ------------------------------------------------------------- selection
