@@ -1,9 +1,10 @@
 extends Control
 ## Port of UICollection.cs / UICollection.composer.cs (960x544 design
 ## canvas). Two vertical browse lists (card types, then individual cards of
-## the selected type) driving a big preview + stat panel. No drag/state
-## machine needed here (pure click-to-browse), so this is much simpler than
-## DeckSelect/Shop despite reusing the same CardMatrix grouping.
+## the selected type) driving a big preview + stat panel. Much simpler than
+## DeckSelect/Shop despite reusing the same CardMatrix grouping - no drag
+## state machine for card placement, just tap-to-select rows (plus drag-to-
+## scroll on the lists themselves, a QoL addition not in the reference).
 ##
 ## Reuses the normal card art scaled down via CardView's transform instead
 ## of the reference's separate cards_small/ pre-shrunk asset set (Card.cs's
@@ -26,16 +27,31 @@ const ROW_HEIGHT := 47.0
 const ROW_IMAGE_SIZE := Vector2(32, 43)
 const COLOR_NORMAL := Color(0.12, 0.12, 0.12, 0.3)
 const COLOR_SELECTED := Color(0.12, 0.3, 0.3, 0.7)
+const COLOR_TRANSPARENT := Color(0, 0, 0, 0)
+const DRAG_CLICK_THRESHOLD := 6.0
+
+# New QoL addition (not in the reference, which lists individual cards one
+# per row like the type list): a grid reads much better once a type has
+# more than a couple of copies, and drops the per-row background box since
+# the card art alone (no label needed - same type, so same name) is enough.
+# 4 columns is the most that fits card_scroll's 230px width without
+# crowding info_bkg/big_card_view to its right.
+const CARD_GRID_COLUMNS := 4
+const CARD_GRID_GAP := 5
+const CARD_GRID_CELL := Vector2(50, 67)
+const CARD_GRID_ART := Vector2(44, 59)
 
 var card_matrix := CardMatrix.new()
 var sel_type_index := 0
 var sel_card_index := 0
 
-var type_rows: Array = []  # Button x N
-var card_rows: Array = []  # Button x N (rebuilt per type)
+var type_rows: Array = []  # Panel x N
+var card_rows: Array = []  # Panel x N (rebuilt per type, laid out in a grid)
 
 var type_list_box: VBoxContainer
-var card_list_box: VBoxContainer
+var card_list_box: GridContainer
+var type_scroll: ScrollContainer
+var card_scroll: ScrollContainer
 
 var big_card_view: CardView
 var label_value_offense: Label
@@ -45,12 +61,25 @@ var label_value_mdef: Label
 
 var sfx_back: AudioStreamPlayer
 
+# New QoL addition (not in the reference, which relies on the thin native
+# scrollbar handle): drag anywhere on either list to scroll it, like the
+# card wheels elsewhere in the game - rows are non-interactive Panels so
+# the ScrollContainer itself gets the input to tell a drag from a tap.
+var drag_scroll: ScrollContainer = null
+var drag_start_y := 0.0
+var drag_start_scroll := 0
+var drag_moved := false
+
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 
 	for card in Game.player.cards:
 		card.is_on_deck = false
 	card_matrix.init(Game.player.cards, false, true)
+	# New QoL addition (not in the reference, which lists types in whatever
+	# order they were first acquired): alphabetical is much easier to browse.
+	card_matrix.card_types.sort_custom(func(a: CardMatrix.SameTypeCards, b: CardMatrix.SameTypeCards) -> bool:
+		return CardManager.defs[a.original_id].name < CardManager.defs[b.original_id].name)
 
 	_build_ui()
 
@@ -92,23 +121,27 @@ func _build_ui() -> void:
 	big_card_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(big_card_view)
 
-	var type_scroll := ScrollContainer.new()
+	type_scroll = ScrollContainer.new()
 	type_scroll.position = Vector2(23, 86)
-	type_scroll.size = Vector2(204, 287)
+	type_scroll.size = Vector2(204, 280)
 	type_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	type_scroll.gui_input.connect(_on_list_gui_input.bind(type_scroll, func() -> int: return type_rows.size(), _select_type, 1, Vector2(204, ROW_HEIGHT)))
 	add_child(type_scroll)
 	type_list_box = VBoxContainer.new()
 	type_list_box.add_theme_constant_override("separation", 0)
 	type_list_box.custom_minimum_size = Vector2(204, 0)
 	type_scroll.add_child(type_list_box)
 
-	var card_scroll := ScrollContainer.new()
+	card_scroll = ScrollContainer.new()
 	card_scroll.position = Vector2(270, 86)
-	card_scroll.size = Vector2(230, 287)
+	card_scroll.size = Vector2(230, 280)
 	card_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	card_scroll.gui_input.connect(_on_list_gui_input.bind(card_scroll, func() -> int: return card_rows.size(), _select_card, CARD_GRID_COLUMNS, CARD_GRID_CELL + Vector2(CARD_GRID_GAP, CARD_GRID_GAP)))
 	add_child(card_scroll)
-	card_list_box = VBoxContainer.new()
-	card_list_box.add_theme_constant_override("separation", 0)
+	card_list_box = GridContainer.new()
+	card_list_box.columns = CARD_GRID_COLUMNS
+	card_list_box.add_theme_constant_override("h_separation", CARD_GRID_GAP)
+	card_list_box.add_theme_constant_override("v_separation", CARD_GRID_GAP)
 	card_list_box.custom_minimum_size = Vector2(230, 0)
 	card_scroll.add_child(card_list_box)
 
@@ -163,7 +196,6 @@ func _build_type_rows(font: Font) -> void:
 
 	for i in card_matrix.card_types.size():
 		var row := _make_row(font)
-		row.pressed.connect(_select_type.bind(i))
 		type_list_box.add_child(row)
 		type_rows.append(row)
 
@@ -181,11 +213,13 @@ func _build_type_rows(font: Font) -> void:
 		label.text = def.name
 		row.add_child(label)
 
-func _make_row(font: Font) -> Button:
-	var row := Button.new()
-	row.flat = true
+func _make_row(font: Font) -> Panel:
+	var row := Panel.new()
 	row.custom_minimum_size = Vector2(0, ROW_HEIGHT)
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Rows are purely visual - mouse events must fall through to the
+	# ScrollContainer's own gui_input so it can tell a drag from a tap.
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_paint_row(row, COLOR_NORMAL)
 	return row
 
@@ -203,12 +237,10 @@ func _make_row_label(font: Font) -> Label:
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
 
-func _paint_row(row: Button, color: Color) -> void:
+func _paint_row(row: Panel, color: Color) -> void:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = color
-	row.add_theme_stylebox_override("normal", sb)
-	row.add_theme_stylebox_override("hover", sb)
-	row.add_theme_stylebox_override("pressed", sb)
+	row.add_theme_stylebox_override("panel", sb)
 
 func _make_label(pos: Vector2, label_size: Vector2, font: Font, font_size: int) -> Label:
 	var label := Label.new()
@@ -247,29 +279,35 @@ func _select_type(index: int) -> void:
 	for row in card_rows:
 		row.queue_free()
 	card_rows.clear()
+	card_scroll.scroll_vertical = 0
 
-	var font_stylish: Font = load(ASSETS + "fonts/font_stylish.ttf")
 	var type_cards: Array = card_matrix.card_types[index].cards
 	for i in type_cards.size():
-		var row := _make_row(font_stylish)
-		row.pressed.connect(_select_card.bind(i))
-		card_list_box.add_child(row)
-		card_rows.append(row)
+		var cell := _make_card_cell()
+		card_list_box.add_child(cell)
+		card_rows.append(cell)
 
 		var view := CardView.new()
-		view.position = Vector2(4, (ROW_HEIGHT - ROW_IMAGE_SIZE.y) / 2.0)
-		view.scale = ROW_IMAGE_SIZE / Vector2(CARD_W, CARD_H)
+		view.position = (CARD_GRID_CELL - CARD_GRID_ART) / 2.0
+		view.scale = CARD_GRID_ART / Vector2(CARD_W, CARD_H)
 		view.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		view.setup(type_cards[i], false, true)
-		row.add_child(view)
+		cell.add_child(view)
 
 	sel_card_index = 0
 	_select_card(0)
 
+func _make_card_cell() -> Panel:
+	var cell := Panel.new()
+	cell.custom_minimum_size = CARD_GRID_CELL
+	cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_paint_row(cell, COLOR_TRANSPARENT)
+	return cell
+
 func _select_card(index: int) -> void:
 	sel_card_index = index
 	for i in card_rows.size():
-		_paint_row(card_rows[i], COLOR_SELECTED if i == index else COLOR_NORMAL)
+		_paint_row(card_rows[i], COLOR_SELECTED if i == index else COLOR_TRANSPARENT)
 
 	var card: Card = card_matrix.card_types[sel_type_index].cards[index]
 
@@ -279,6 +317,32 @@ func _select_card(index: int) -> void:
 	label_value_mdef.text = str(card.magical_defense)
 	label_value_offense.text = str(card.attack_power)
 	label_value_type.text = CardManager.attack_type_to_string(card.attack_type)
+
+# Shared by both lists (bound with their own ScrollContainer, row-count
+# getter, and select callback): press-and-hold-still is a tap (selects the
+# row under the cursor), press-and-drag scrolls instead - same disambiguation
+# the wheel widgets elsewhere use, just against a plain vertical offset here.
+func _on_list_gui_input(event: InputEvent, scroll: ScrollContainer, row_count: Callable, on_select: Callable, columns: int, cell_pitch: Vector2) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			drag_scroll = scroll
+			drag_start_y = event.position.y
+			drag_start_scroll = scroll.scroll_vertical
+			drag_moved = false
+		elif drag_scroll == scroll:
+			if not drag_moved:
+				var col: int = int(event.position.x / cell_pitch.x)
+				var grid_row: int = int((float(scroll.scroll_vertical) + event.position.y) / cell_pitch.y)
+				var index: int = grid_row * columns + col
+				if col >= 0 and col < columns and index >= 0 and index < row_count.call():
+					on_select.call(index)
+			drag_scroll = null
+	elif event is InputEventMouseMotion and drag_scroll == scroll:
+		var dy: float = event.position.y - drag_start_y
+		if absf(dy) > DRAG_CLICK_THRESHOLD:
+			drag_moved = true
+		if drag_moved:
+			scroll.scroll_vertical = int(drag_start_scroll - dy)
 
 func _on_back_pressed() -> void:
 	sfx_back.play()

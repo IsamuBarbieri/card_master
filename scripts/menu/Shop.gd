@@ -101,6 +101,7 @@ var dc_start_y: int = 0
 var dc_card_pos: Vector2 = Vector2.ZERO
 var dc_ghost_size: Vector2 = Vector2(CARD_W, CARD_H)
 var dc_dragged_card: Card = null
+var dc_get_back_tween: Tween = null
 
 var _pointer_down := false
 
@@ -439,11 +440,20 @@ func _setup_shop_card(index: int, force_regenerate: bool) -> void:
 	if generate:
 		var r := randi_range(minv, maxv)
 		var card := CardManager.generate_card(r)
-		if index == 0:
-			card.has_zero_price = true
 		shop_cards[index] = card
 		shop_cards_time[index] = Time.get_unix_time_from_system()
 		_save_shop_cards()
+
+	# New economy rule (not in the reference, which always makes slot 0
+	# free): only free when the player doesn't have enough cards to field a
+	# deck (5), so this stays a safety net rather than a permanent freebie
+	# once they're already fully stocked. Re-checked on every visit (not
+	# just when the card is freshly rolled) so an already-offered card
+	# doesn't stay stuck at a real price if the player's count drops below
+	# 5 later (or stuck free if it climbs back up) - a stale flag from an
+	# earlier visit could otherwise price them out of the safety net.
+	if index == 0:
+		shop_cards[index].has_zero_price = Game.player.cards.size() < 5
 
 	shop_card_panels[index].visible = true
 	shop_card_views[index].visible = true
@@ -532,8 +542,30 @@ func _snap_to_box(array_index: int, horz: bool) -> void:
 ## to send it straight to the trade slot, instead of dragging it there by
 ## hand - a wheel card stages a sell, a shop offer card stages a buy. Any
 ## card already staged in the slot is bumped back to the wheel, matching
-## the drag-drop's own "swap in" behavior. Returns true if consumed.
+## the drag-drop's own "swap in" behavior. Double-clicking the staged card
+## itself is the reverse: a sell-staged card returns to the wheel, a
+## buy-staged one just clears (it's still sitting in the offer row).
+## Returns true if consumed.
 func _handle_double_click(x: int, y: int) -> bool:
+	if _hit_test(panel_card_slot, x, y):
+		if cur_sell_card != null:
+			_cancel_current_interaction()
+			deck_selector.add_card(cur_sell_card)
+			_set_sell_card(null)
+			_show_card_slot(null)
+			_update_card_info(deck_selector.central_card_stats(), true, 1)
+			_enter_waiting_input()
+			next_sel = 1
+			return true
+		elif cur_buy_card != null:
+			_cancel_current_interaction()
+			_set_buy_card(null)
+			_show_card_slot(null)
+			_update_card_info(null, false, 0)
+			_enter_waiting_input()
+			return true
+		return false
+
 	var hi := deck_selector.hit_test_h_box(x, y)
 	if hi != -1:
 		_cancel_current_interaction()
@@ -561,8 +593,15 @@ func _handle_double_click(x: int, y: int) -> bool:
 
 	return false
 
+## Also kills any in-flight "get card back" tween from a just-cancelled
+## drag - otherwise its tween_callback (which restores the slot's old card
+## visual) can fire AFTER a double-click has already cleared the slot,
+## making the card image look stuck there.
 func _cancel_current_interaction() -> void:
 	drag_ghost.visible = false
+	if is_instance_valid(dc_get_back_tween):
+		dc_get_back_tween.kill()
+		dc_get_back_tween = null
 
 func _process(delta: float) -> void:
 	deck_selector.update()
@@ -745,6 +784,7 @@ func _drag_card_on_unclick(x: int, y: int) -> void:
 
 	if get_card_back:
 		var tw := create_tween()
+		dc_get_back_tween = tw
 		tw.tween_property(drag_ghost, "position", dc_card_pos, GET_BACK_TIME) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		if dc_from_slot:
@@ -786,7 +826,10 @@ func _set_sell_card(cstats: Card) -> void:
 
 	if cstats != null:
 		label_sell_value.text = str(CardManager.card_price(cstats) / 2)
-		button_sell.disabled = false
+		# New economy rule (not in the reference, which lets any staged card
+		# be sold): zero-price cards can't be sold, closing the free-reroll
+		# loop of selling a freebie back to gamble on a better one.
+		button_sell.disabled = cstats.has_zero_price
 	else:
 		label_sell_value.text = "---"
 		button_sell.disabled = true
