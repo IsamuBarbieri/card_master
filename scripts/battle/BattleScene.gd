@@ -60,6 +60,20 @@ const HOVER_GLOW_MIN_ALPHA := 0.5
 const HOVER_GLOW_MAX_ALPHA := 0.8
 const HOVER_GLOW_FLASH_TIME := 0.8
 
+# New QoL layout (not in the reference, which sits the message right
+# against the button's left edge on the same row - reads as disconnected
+# from the button rather than "belonging" to it). The "won all cards"
+# message is long, so centering it ON the button's own x while staying on
+# one row would either run off the 960-wide screen or force the button
+# behind the text; stacking the message above a re-centered button avoids
+# both while leaving room for a bigger font. Scoped to just this branch of
+# gsEndPlayerPick_Set - every other label_central_msg/button_takeall use
+# keeps the reference's original position/alignment.
+const END_TAKEALL_MSG_POS := Vector2(40, 175)
+const END_TAKEALL_MSG_SIZE := Vector2(880, 65)
+const END_TAKEALL_MSG_FONT_SIZE := 30
+const END_TAKEALL_BUTTON_POS := Vector2(401, 255)
+
 # Battle countdown number: centered in the vertical space between
 # card_border.png's top inner edge (y=9) and the top of the stat text
 # (CardView.STAT_AREA_BOTTOM - STAT_FONT_SIZE_HEIGHT = 94). Sized with margin
@@ -1671,6 +1685,12 @@ func gsEndPlayerPick_Set(result: BattleResult) -> void:
 	if result == BattleResult.PLAYER_PERFECT:
 		end_remaining = 5
 		label_central_msg.text = StringTable.get_string(StringTable.ID_MSG_PICK_5_CARD)
+		label_central_msg.position = END_TAKEALL_MSG_POS
+		label_central_msg.size = END_TAKEALL_MSG_SIZE
+		label_central_msg.add_theme_font_size_override("font_size", END_TAKEALL_MSG_FONT_SIZE)
+		label_central_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label_central_msg.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		button_takeall.position = END_TAKEALL_BUTTON_POS
 	else:
 		end_remaining = 1
 		label_central_msg.text = StringTable.get_string(StringTable.ID_MSG_PICK_1_CARD)
