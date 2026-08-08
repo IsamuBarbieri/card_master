@@ -93,9 +93,28 @@ func _ready() -> void:
 	for card in Game.player.cards:
 		card.is_on_deck = false
 
+	# Restore the last deck played: cards captured away since then simply
+	# aren't in Game.player.cards anymore, so their slot is left empty
+	# (marked is_on_deck here, before the wheels init, so they don't also
+	# show up there).
+	var restored: Array = [null, null, null, null, null]
+	for i in 5:
+		var uid: int = Game.player.last_deck[i]
+		if uid == -1:
+			continue
+		for card in Game.player.cards:
+			if card.unique_id == uid:
+				card.is_on_deck = true
+				restored[i] = card
+				break
+
 	deck_selector_left.init(panel_left, Game.player.cards, false, false, false)
 	deck_selector_right.init(panel_right, Game.player.cards, true, false, false)
 	lower_deck.init(placeholders)
+
+	for i in 5:
+		if restored[i] != null:
+			lower_deck.add_card(i, restored[i])
 
 	_enter_waiting_input()
 
@@ -711,6 +730,9 @@ func _update_selection_outline() -> void:
 
 func _on_play_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
+	for i in 5:
+		var card: Card = lower_deck.card_stats(i)
+		Game.player.last_deck[i] = card.unique_id if card != null else -1
 	busy_indicator.visible = true
 	launch_battle_delay = LAUNCH_BATTLE_DELAY
 

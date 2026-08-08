@@ -20,6 +20,10 @@ const SCREEN_H := 544
 const ASSETS := "res://assets/"
 const FONT_SIZE := 24
 const PAGE_COUNT := 6
+## Gallery-style swipe: a small flick in either direction commits to the
+## next/prev page immediately, instead of needing to drag past half the
+## page width.
+const SWIPE_THRESHOLD := 24
 
 const DOT_SIZE := 6.0
 const DOT_GAP := 14.0
@@ -221,7 +225,11 @@ func _on_scroll_gui_input(event: InputEvent) -> void:
 		scroll.scroll_horizontal = _drag_start_scroll - int(event.position.x - _drag_start_x)
 
 func _snap_to_nearest_page() -> void:
-	_go_to_page(clampi(roundi(float(scroll.scroll_horizontal) / SCREEN_W), 0, PAGE_COUNT - 1))
+	var delta: int = scroll.scroll_horizontal - _drag_start_scroll
+	if absi(delta) >= SWIPE_THRESHOLD:
+		_go_to_page(_current_page + (1 if delta > 0 else -1))
+	else:
+		_go_to_page(_current_page)
 
 func _go_to_page(page_index: int) -> void:
 	_current_page = clampi(page_index, 0, PAGE_COUNT - 1)

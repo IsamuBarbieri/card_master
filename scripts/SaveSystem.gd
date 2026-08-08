@@ -39,16 +39,29 @@ static func _player_path(slot: int) -> String:
 static func slot_exists(slot: int) -> bool:
 	return FileAccess.file_exists(_player_path(slot))
 
-## Port of CheckForExistingPlayers(): returns an array of 3 entries, each
-## the saved player's name or null if that slot is empty.
-static func check_existing_players() -> Array:
-	var names: Array = [null, null, null]
-	for i in SLOT_COUNT:
-		if slot_exists(i):
-			var data = _read_save(i)
-			if data != null:
-				names[i] = data.get("name")
-	return names
+## Slot-select summary (name/card count/wins/saved_at) without the cost of a
+## full load_player - StartMenu's slot list needs display-only data.
+static func slot_summary(slot: int) -> Dictionary:
+	var data = _read_save(slot)
+	if data == null:
+		return {}
+
+	var seen := {}
+	var card_defs := []
+	for card_data in data["cards"]:
+		var def_id: int = card_data["def_id"]
+		if not seen.has(def_id):
+			seen[def_id] = true
+			card_defs.append(def_id)
+	card_defs.sort()  # ascending def_id - e.g. Slime (id 0) always leads if owned
+
+	return {
+		"name": data.get("name"),
+		"card_count": data["cards"].size(),
+		"wins": data.get("matches_won", 0),
+		"saved_at": data.get("saved_at", 0),
+		"card_defs": card_defs,
+	}
 
 static func create_new_player(slot: int, player_name: String) -> Player:
 	delete_player(slot)
@@ -89,8 +102,12 @@ static func save_player(player: Player) -> void:
 		"available_opponents": player.available_opponents,
 		"coins": player.coins,
 		"match_started": player.match_started,
+		"matches_won": player.matches_won,
+		"last_deck": player.last_deck,
+		"last_opponent_index": player.last_opponent_index,
 		"next_uid": CardManager.next_uid(),
 		"ai_data": ai_data,
+		"saved_at": Time.get_unix_time_from_system(),
 	}
 
 	DirAccess.make_dir_recursive_absolute(_slot_dir(player.save_slot))
@@ -114,6 +131,9 @@ static func load_player(slot: int) -> Player:
 	player.available_opponents = data["available_opponents"]
 	player.coins = data["coins"]
 	player.match_started = data["match_started"]
+	player.matches_won = data.get("matches_won", 0)
+	player.last_deck = data.get("last_deck", [-1, -1, -1, -1, -1])
+	player.last_opponent_index = data.get("last_opponent_index", -1)
 
 	for card_data in data["cards"]:
 		player.cards.append(_card_from_dict(card_data))

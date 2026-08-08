@@ -135,7 +135,7 @@ var info_type_val: Label
 var info_pdef_val: Label
 var info_mdef_val: Label
 
-var combo_label: Label
+var chain_label: Label
 var battle_value_labels: Array = []  # 2 Labels
 var vfx_sprites := {}                # Card.AttackType -> AnimatedSprite2D
 var coin_sprite: TextureRect
@@ -460,16 +460,18 @@ func _build_opponent_stack() -> void:
 	add_child(opponent_stack)
 
 func _build_battle_overlay() -> void:
-	# combo text (textCombo)
-	combo_label = Label.new()
-	combo_label.add_theme_font_override("font", font_stylish)
-	combo_label.add_theme_font_size_override("font_size", 30)
-	combo_label.add_theme_color_override("font_color", Color(1, 1, 0))
-	combo_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
-	combo_label.add_theme_constant_override("shadow_offset_x", 1)
-	combo_label.add_theme_constant_override("shadow_offset_y", 1)
-	combo_label.visible = false
-	add_child(combo_label)
+	# combo text (textCombo) - sized and outlined to read instantly against
+	# the card-flip animations it now plays alongside, not just be legible:
+	# a real outline (not a 1px shadow) holds contrast against any
+	# background, and font size roughly doubles the level-up text's.
+	chain_label = Label.new()
+	chain_label.add_theme_font_override("font", font_stylish)
+	chain_label.add_theme_font_size_override("font_size", 48)
+	chain_label.add_theme_color_override("font_color", Color(1, 0.85, 0.1))
+	chain_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	chain_label.add_theme_constant_override("outline_size", 5)
+	chain_label.visible = false
+	add_child(chain_label)
 
 	# battle numbers (textCardBattleValues), styled like CardView's stat
 	# text (ochre yellow + black outline) so they're readable over the cards.
@@ -571,21 +573,32 @@ func _build_end_panel() -> void:
 ## this sits on top of end_panel (which already has end_bkg behind it), and
 ## is driven by gsEndLevelUp/EndPlayerPick/EndCPUPick/EndNonePick below.
 func _build_battle_end_ui() -> void:
+	# As wide as the card it's pinned under (CARD_W) - _update_owned_panel_pos
+	# centers it exactly on the card using this same width - and tall enough
+	# for a readable font on a phone screen instead of the original's tiny
+	# single-purpose tooltip size.
 	panel_owned = Control.new()
-	panel_owned.size = Vector2(126, 38)
+	panel_owned.size = Vector2(CARD_W, 64)
 	panel_owned.clip_contents = true
 	panel_owned.visible = false
+	# z_index 60 matches the "always above a card" tier used elsewhere in this
+	# file (e.g. the floating chain-count label) - a selected/dragged card
+	# gets z_index 50 (_end_player_pick_click) to float above other cards,
+	# which was also outranking this panel and panel_info whenever the drag
+	# passed over them, hiding the stats entirely.
+	panel_owned.z_index = 60
 	end_panel.add_child(panel_owned)
 
 	var owned_bkg := TextureRect.new()
 	owned_bkg.texture = load(ASSETS + "common_transp_box_a.png")
 	owned_bkg.stretch_mode = TextureRect.STRETCH_SCALE
 	owned_bkg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	owned_bkg.size = Vector2(126, 38)
+	owned_bkg.size = panel_owned.size
 	panel_owned.add_child(owned_bkg)
 
-	owned_label = _make_end_label(Vector2(0, 0), Vector2(126, 38), 20)
+	owned_label = _make_end_label(Vector2(0, 0), panel_owned.size, 22)
 	owned_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	owned_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	panel_owned.add_child(owned_label)
 
 	panel_info = Control.new()
@@ -593,6 +606,7 @@ func _build_battle_end_ui() -> void:
 	panel_info.size = Vector2(228, 224)
 	panel_info.clip_contents = true
 	panel_info.visible = false
+	panel_info.z_index = 60  # see panel_owned's comment above
 	end_panel.add_child(panel_info)
 
 	var info_bkg := TextureRect.new()
@@ -1064,15 +1078,17 @@ func gsCPUTurn_Set() -> void:
 
 # ---------------------------------------------------- PreBattle / BattleCheck
 
-# Ports gsPreBattle.cs -> gsBattleCheck.cs -> gsBattle.cs -> (combo) ->
+# Ports gsPreBattle.cs -> gsBattleCheck.cs -> gsBattle.cs -> (chain) ->
 # gsBattleCheck.cs, collapsed into one recursive coroutine.
 func gsPreBattle_Set(last_placed: Card) -> void:
 	await get_tree().create_timer(0.15).timeout
 
-	for target in board.get_capturable_cards(last_placed):
-		await captureCardProcedure(last_placed, target, false)
-
+	# Battle (and its chain) resolves first; only afterward do whatever
+	# simple captures are still left get taken - a card battled/chained away
+	# is already flipped by then, so get_capturable_cards naturally skips it.
 	await gsBattleCheck_Set(last_placed)
+
+	await _capture_batch(last_placed, board.get_capturable_cards(last_placed))
 
 func gsBattleCheck_Set(last_placed: Card) -> void:
 	var fightable := board.get_adjacent_battle_cards(last_placed)
@@ -1214,32 +1230,38 @@ func gsBattle_End(card0: Card, card1: Card, result: Dictionary) -> void:
 		return
 
 	var loser: Card = result["loser"]
-	await captureCardProcedure(winner, loser, true)
+	await captureCardProcedure(winner, loser)
 
 	var last_placed: Card = card0
 	if winner == last_placed:
-		var levels := _collect_combo_levels(loser, winner.owner)
+		# Combo vs Chain is decided purely by how many levels the whole
+		# burst reaches: capture that stops after the first level (no card
+		# had a reciprocal arrow to propagate through) is a Combo; anything
+		# that reaches a 2nd level at all is a Chain. One popup for the
+		# whole cascade (total card count across every level), not one per
+		# level - fired off (not awaited) so it plays alongside the first
+		# level's capture animation instead of blocking it.
+		var levels := _collect_chain_levels(loser, winner.owner)
 		if not levels.is_empty():
+			var label_word := "Combo" if levels.size() <= 1 else "Chain"
+			var total := 0
+			for level in levels:
+				total += level.size()
 			if winner.original_owner == 0:
-				var total := 0
-				for level in levels:
-					total += level.size()
-				await _show_combo_text(winner, total)
-			# Direct arrows of the just-captured card go first (together, if
-			# more than one), then each further level cascades the same way.
+				_show_chain_text(winner, label_word, total)
 			for level in levels:
 				await _capture_batch(winner, level)
 		await gsBattleCheck_Set(last_placed)
 
-# Each combo card can itself chain into further combo cards through its own
+# Each chain card can itself chain into further cards through its own
 # arrows (e.g. a captured card pointing at another enemy card also captures
-# it, bumping the combo to x3, x4, ...) - but only if THAT capture had the
-# opposite-facing arrow connecting it back (get_combo_cards's "continues"),
-# otherwise the card is still captured but the chain stops there rather than
-# checking its arrows for a further level. Returns the chain as levels (BFS
-# depth) so the caller can animate one level at a time, in parallel within
-# a level, cascading to the next.
-func _collect_combo_levels(start: Card, winner_owner: int) -> Array:
+# it, bumping the chain to a further level) - but only if THAT capture had
+# the opposite-facing arrow connecting it back (get_chain_cards's
+# "continues"), otherwise the card is still captured but the chain stops
+# there rather than checking its arrows for a further level. Returns the
+# chain as levels (BFS depth) so the caller can animate one level at a time,
+# in parallel within a level, cascading to the next.
+func _collect_chain_levels(start: Card, winner_owner: int) -> Array:
 	var levels := []
 	var seen := {start.unique_id: true}
 	var expand_frontier := [start]
@@ -1247,7 +1269,7 @@ func _collect_combo_levels(start: Card, winner_owner: int) -> Array:
 		var captured_this_level := []
 		var next_expand := []
 		for card in expand_frontier:
-			for entry in board.get_combo_cards(card, winner_owner):
+			for entry in board.get_chain_cards(card, winner_owner):
 				var c: Card = entry["card"]
 				if seen.has(c.unique_id):
 					continue
@@ -1268,12 +1290,7 @@ func _collect_combo_levels(start: Card, winner_owner: int) -> Array:
 # midpoint. Godot's 2D canvas has no real Y-rotation, so this fakes the
 # same flip with a scale_x 1 -> 0 -> 1 tween and rebuilds the CardView with
 # the new owner's colors at the midpoint.
-func captureCardProcedure(attacker: Card, captured: Card, from_battle: bool) -> void:
-	# Only the player cards that win a battle (not an instant no-fight
-	# capture) can be upgraded post-match.
-	if from_battle and attacker.original_owner == 0:
-		attacker.level_up_points += 1
-
+func captureCardProcedure(attacker: Card, captured: Card) -> void:
 	var row := captured.row
 	var col := captured.col
 	var view: CardView = board_card_views[row][col]
@@ -1300,15 +1317,10 @@ func captureCardProcedure(attacker: Card, captured: Card, from_battle: bool) -> 
 	tw2.tween_property(new_view, "scale:x", 1.0, CAPTURE_FLIP_TIME / 2.0)
 	await tw2.finished
 
-# Same flip as captureCardProcedure but for a whole combo level at once,
-# all cards shrinking/growing in parallel instead of one after another.
-# Combo captures also count as "fromBattle" for level-up purposes in the
-# reference (gsBattle.cs's foreach comboCards loop passes fromBattle:true) -
-# every card in the chain grants a level-up point, not just the initial hit.
+# Same flip as captureCardProcedure but for a whole batch of cards at once,
+# all shrinking/growing in parallel instead of one after another - used for
+# both an instant multi-arrow capture and a chain burst.
 func _capture_batch(attacker: Card, cards: Array) -> void:
-	if attacker.original_owner == 0:
-		attacker.level_up_points += cards.size()
-
 	var animated: Array = []
 	for c in cards:
 		var view: CardView = board_card_views[c.row][c.col]
@@ -1343,20 +1355,30 @@ func _capture_batch(attacker: Card, cards: Array) -> void:
 			tw2.tween_property(view, "scale:x", 1.0, CAPTURE_FLIP_TIME / 2.0)
 		await tw2.finished
 
-func _show_combo_text(winner: Card, count: int) -> void:
+const COMBO_COLOR := Color(1, 0.85, 0.1)  # gold - single-level, the smaller event
+const CHAIN_COLOR := Color(1, 0.35, 0.05)  # hot orange-red - reaches a 2nd level, the bigger event
+
+func _show_chain_text(winner: Card, label_word: String, count: int) -> void:
 	var pos := _board_cell_pos(winner.row, winner.col) + Vector2(CARD_W, CARD_H) / 2.0
-	combo_label.text = "Combo x%d" % count
-	combo_label.position = pos - Vector2(50, 40)
-	combo_label.modulate.a = 0.0
-	combo_label.visible = true
+	chain_label.text = label_word if count == 1 else "%s x%d" % [label_word, count]
+	chain_label.add_theme_color_override("font_color", CHAIN_COLOR if label_word == "Chain" else COMBO_COLOR)
+	chain_label.position = pos - Vector2(70, 55)
+	chain_label.pivot_offset = chain_label.get_minimum_size() / 2.0
+	chain_label.modulate.a = 0.0
+	# Overshoot scale-in ("juice"): starts big and settles to 1x instead of
+	# just fading, reads as impact instead of a passive notice.
+	chain_label.scale = Vector2(1.4, 1.4)
+	chain_label.visible = true
 
 	var tw := create_tween()
-	tw.tween_property(combo_label, "modulate:a", 1.0, 0.3)
-	tw.parallel().tween_property(combo_label, "position:x", pos.x, 0.3)
+	tw.tween_property(chain_label, "modulate:a", 1.0, 0.15)
+	tw.parallel().tween_property(chain_label, "scale", Vector2.ONE, 0.25) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(chain_label, "position:x", pos.x, 0.3)
 	tw.tween_interval(0.6)
-	tw.tween_property(combo_label, "modulate:a", 0.0, 0.3)
+	tw.tween_property(chain_label, "modulate:a", 0.0, 0.3)
 	await tw.finished
-	combo_label.visible = false
+	chain_label.visible = false
 
 # ------------------------------------------------------------------- turns
 
@@ -1461,26 +1483,41 @@ func _move_cards_to_end_rows() -> void:
 # --------------------------------------------------------- end: level up
 
 func gsEndLevelUp_Set(result: BattleResult) -> void:
-	for view in end_up_cards:
-		var card: Card = view.card
-		if card.level_up_points == 0:
-			continue
-		await _level_up_card(view, card)
-		_sync_card_stats_to_collection(card)
+	# Level-up only happens on a win or draw - a card just needs to have
+	# been one of the 5 played that match, not to have personally fought,
+	# and a loss grants nothing at all.
+	var lost := result == BattleResult.CPU_PERFECT or result == BattleResult.CPU_WINS
+	if not lost:
+		for view in end_up_cards:
+			var card: Card = view.card
+			await _level_up_card(view, card)
+			_sync_card_stats_to_collection(card)
 
+	# A win or draw is already a safe outcome - clear match_started (and
+	# persist it) right away instead of waiting for the player to press
+	# Done, so quitting the app on this screen doesn't wrongly trigger the
+	# rage-quit punishment on next launch. A loss deliberately keeps
+	# match_started true until gsEndCPUPick's own close/save, since that's
+	# exactly the "quit to dodge losing cards" case rage-quit exists for.
 	match result:
 		BattleResult.PLAYER_PERFECT, BattleResult.PLAYER_WINS:
+			Game.player.match_started = false
+			SaveSystem.save_player(Game.player)
 			gsEndPlayerPick_Set(result)
 		BattleResult.CPU_PERFECT, BattleResult.CPU_WINS:
 			gsEndCPUPick_Set(result)
 		BattleResult.DRAW:
+			Game.player.match_started = false
+			SaveSystem.save_player(Game.player)
 			gsEndNonePick_Set()
 
-# Applies card.levelUpPoints worth of random stat increases (same
-# probabilities as gsEndLevelUp.cs: attack power has 2 of 5 "slots" so it's
-# twice as likely as any single other stat; attack type only advances on a
-# 5% roll per attempt, 1% once already Flexible), then shows floating text
-# for whatever actually changed.
+# One flat point per match won/drawn (see gsEndLevelUp_Set), spent on a
+# random stat: attack power has 2 of 5 "slots" so it's twice as likely as
+# any single other stat; attack type only advances on a 5% roll per
+# attempt, 1% once already Flexible. If the randomly picked slot already
+# sits at this card's own pre-programmed ceiling, the point is simply lost
+# outright (Tetra Master's "blind spot") rather than rerolling onto a
+# different stat - shows floating text for whatever actually changed.
 func _level_up_card(view: CardView, card: Card) -> void:
 	var def: CardManager.CardDef = CardManager.defs[card.def_id]
 
@@ -1497,28 +1534,18 @@ func _level_up_card(view: CardView, card: Card) -> void:
 	var old_pdef := card.physical_defense
 	var old_mdef := card.magical_defense
 
-	var remaining := card.level_up_points
-	var guard := 0
-	while remaining > 0 and guard < 1000:
-		guard += 1
-		var r := randi() % 5
-		if not possible[r]:
-			continue
-		if r < 2:
-			card.attack_power = mini(card.attack_power + 1, def.max_attack_power)
-			remaining -= 1
-		elif r == 2:
-			var roll := randi() % 100
-			var success := (roll == 17) if card.attack_type == Card.AttackType.FLEXIBLE else (roll < 5)
-			if success:
-				card.attack_type += 1
-				remaining -= 1
-		elif r == 3:
-			card.physical_defense = mini(card.physical_defense + 1, def.max_physical_defense)
-			remaining -= 1
-		elif r == 4:
-			card.magical_defense = mini(card.magical_defense + 1, def.max_magical_defense)
-			remaining -= 1
+	var r := randi() % 5
+	if r < 2:
+		card.attack_power = mini(card.attack_power + 1, def.max_attack_power)
+	elif r == 2 and card.can_level_up_a_type():
+		var roll := randi() % 100
+		var success := (roll == 17) if card.attack_type == Card.AttackType.FLEXIBLE else (roll < 5)
+		if success:
+			card.attack_type += 1
+	elif r == 3:
+		card.physical_defense = mini(card.physical_defense + 1, def.max_physical_defense)
+	elif r == 4:
+		card.magical_defense = mini(card.magical_defense + 1, def.max_magical_defense)
 
 	if card.attack_type != old_attack_type:
 		var s0 := StringTable.get_string(StringTable.ID_CARD_LVLUP_ATTACK_TYPE)
@@ -1598,14 +1625,16 @@ func _show_level_up_text(view: CardView, line0: String, line1: String) -> void:
 	label.z_index = 60
 	end_panel.add_child(label)
 
+	# 3x speedup (was 0.2/1.5/1.0/0.5s) - with up to 4 stats x 5 cards to show
+	# in sequence, the original pacing made the end-of-match screen crawl.
 	var start_y := label.position.y
 	var tw := create_tween()
-	tw.tween_property(label, "modulate:a", 1.0, 0.2)
+	tw.tween_property(label, "modulate:a", 1.0, 0.2 / 3.0)
 	var tw2 := create_tween()
-	tw2.tween_property(label, "position:y", start_y - 30.0, 1.5)
-	await get_tree().create_timer(1.0).timeout
+	tw2.tween_property(label, "position:y", start_y - 30.0, 1.5 / 3.0)
+	await get_tree().create_timer(1.0 / 3.0).timeout
 	var tw3 := create_tween()
-	tw3.tween_property(label, "modulate:a", 0.0, 0.5)
+	tw3.tween_property(label, "modulate:a", 0.0, 0.5 / 3.0)
 	await tw3.finished
 	label.queue_free()
 
@@ -1646,9 +1675,14 @@ func _show_end_card_info(card: Card) -> void:
 
 	panel_info.visible = true
 	panel_owned.visible = true
-	# "Owned" has no UIStringTable entry in the reference either - hardcoded
-	# English there too.
-	owned_label.text = "Owned: %d" % Game.player.get_num_cards_of_this_type(card)
+	var owned_word := StringTable.get_string(StringTable.ID_OWNED)
+	owned_label.text = "%s\n%d" % [owned_word, Game.player.get_num_cards_of_this_type(card)]
+	# fit_button_text doesn't handle a 2-line label correctly (get_string_size
+	# doesn't measure "\n" as a line break) - the count line is always short,
+	# so only the translated word needs a width-based shrink to stay inside
+	# the now-card-width box for longer translations (e.g. "Possédées").
+	var fitted := UIButtonStyle.fit_text_to_width(owned_word, owned_label.get_theme_font("font"), panel_owned.size.x - 8, 22)
+	owned_label.add_theme_font_size_override("font_size", fitted)
 
 	var def: CardManager.CardDef = CardManager.defs[card.def_id]
 	end_info_name.text = def.name
@@ -1657,9 +1691,11 @@ func _show_end_card_info(card: Card) -> void:
 	end_info_offense_val.text = str(card.attack_power)
 	end_info_type_val.text = CardManager.attack_type_to_string(card.attack_type)
 
+const OWNED_PANEL_GAP := 6.0
+
 func _update_owned_panel_pos(view: CardView) -> void:
 	end_owned_view = view
-	panel_owned.position = Vector2(view.position.x + CARD_W / 2.0 - panel_owned.size.x / 2.0, view.position.y + CARD_H)
+	panel_owned.position = Vector2(view.position.x + CARD_W / 2.0 - panel_owned.size.x / 2.0, view.position.y + CARD_H + OWNED_PANEL_GAP)
 
 # Cards keep moving after the panel is last positioned (drag-release tweens,
 # _relayout_row) - pin the panel to its card every frame instead of patching
@@ -1896,6 +1932,7 @@ func _end_player_pick_close() -> void:
 			AIManager.remove_card(ai, card)
 
 	Game.player.match_started = false
+	Game.player.matches_won += 1
 	SaveSystem.save_player(Game.player)
 	busy_spinner.visible = false
 	_return_to_main_menu()
@@ -1958,7 +1995,7 @@ func gsEndCPUPick_Set(result: BattleResult) -> void:
 # faster until it settles on one.
 func _end_cpu_pick_roulette() -> void:
 	while end_cpu_pick_mode:
-		end_cpu_cur_pick *= 0.99
+		end_cpu_cur_pick *= 0.9801  # 0.99 squared - decays twice as fast, half the reveal time
 		var val: int = int(end_cpu_total_picks - end_cpu_cur_pick)
 		var sel: CardView = end_cpu_pickable[val % end_cpu_pickable.size()]
 

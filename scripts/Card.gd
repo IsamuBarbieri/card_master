@@ -25,10 +25,6 @@ var is_favourite: bool = false
 # so they can't be insta-sold for free money.
 var has_zero_price: bool = false
 
-# Battle end state (Card.cs's levelUpPoints - incremented per battle win,
-# spent in BattleScene's gsEndLevelUp on this card's stats).
-var level_up_points: int = 0
-
 func can_level_up_p_def() -> bool:
 	var def: CardManager.CardDef = CardManager.defs[def_id]
 	return physical_defense < def.max_physical_defense

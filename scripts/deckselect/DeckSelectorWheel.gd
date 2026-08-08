@@ -217,26 +217,35 @@ func add_card(card: Card) -> void:
 		_on_change_type(cur_index_v)
 		return
 
-	var top_card_stats: Card = card_matrix.card_stats_at_index(cur_index_v, bbh.sorted_list[0].val)
+	var top_h_index: int = bbh.sorted_list[0].val
+	var top_card_stats: Card = card_matrix.card_stats_at_index(cur_index_v, top_h_index)
 
 	if top_card_stats.def_id == card.def_id:
-		card_matrix.add_card(card, -1, bbh.sorted_list[0].val)
+		# Insert AFTER the centered card, not at its index - inserting at
+		# its own index would push the card actually being shown one slot
+		# over, and the wheel would keep pointing at that same index, now
+		# showing the returned card instead of the one that was centered.
+		card_matrix.add_card(card, -1, top_h_index + 1)
 		cur_angle_h = 0.0
 		force_redraw = true
 		var sc = card_matrix.card_types[cur_index_v]
-		bbh.setup(sc.cards.size(), bbh.sorted_list[0].val, RADIUS, SCALE_MUL)
+		bbh.setup(sc.cards.size(), top_h_index, RADIUS, SCALE_MUL)
 		_update_boxes()
-	elif card_matrix.card_type_exists(card):
-		card_matrix.add_card(card, -1, 0)
-		cur_index_v = card_matrix.card_type_index(card)
-		cur_angle_v = 0.0
-		bbv.setup(card_matrix.card_types.size(), cur_index_v, RADIUS, SCALE_MUL)
-		_on_change_type(cur_index_v)
 	else:
-		card_matrix.add_card(card, cur_index_v, 0)
+		# Returning a card must never jump the wheel to it - append/merge it
+		# wherever, then restore both the type (cur_index_v) and the exact
+		# card (top_h_index) that were already centered: inserting can
+		# shift indices, and _on_change_type always resets to card 0 of the
+		# type, which isn't necessarily the card that was showing.
+		card_matrix.add_card(card, -1, 0)
+		cur_index_v = card_matrix.card_type_index(top_card_stats)
 		cur_angle_v = 0.0
+		cur_angle_h = 0.0
+		force_redraw = true
+		var sc = card_matrix.card_types[cur_index_v]
 		bbv.setup(card_matrix.card_types.size(), cur_index_v, RADIUS, SCALE_MUL)
-		_on_change_type(cur_index_v)
+		bbh.setup(sc.cards.size(), top_h_index, RADIUS, SCALE_MUL)
+		_update_boxes()
 
 func _update_boxes() -> void:
 	var start_x: float = 0.5 * ui_panel.size.x

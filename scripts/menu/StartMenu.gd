@@ -21,13 +21,37 @@ const SCREEN_W := 960
 const SCREEN_H := 544
 const ASSETS := "res://assets/"
 
-const SLOT_POSITIONS := [Vector2(344, 115), Vector2(344, 240), Vector2(344, 362)]
-const SLOT_SIZE := Vector2(271, 71)
-const DELETE_POSITIONS := [Vector2(660, 130), Vector2(660, 251), Vector2(660, 376)]
-const DELETE_SIZE := Vector2(42, 42)
+## Spyro-remake-style save select: 3 tall vertical slot cards side by side
+## (layout/functionality idea only - our own panel art, fonts and colors),
+## each numbered and showing name + stats, instead of the reference's thin
+## name-only bar. Sized as large as the 960x544 canvas allows (not the
+## original StartMenu's small name-only bar) since "canvas_items" stretch
+## scales this canvas up to fill the real screen - on a phone, small design-
+## canvas text reads as genuinely tiny, so every label below is sized to the
+## biggest font that still fits its box rather than an arbitrary pick.
+const SLOT_POSITIONS := [Vector2(40, 42), Vector2(340, 42), Vector2(640, 42)]
+const SLOT_SIZE := Vector2(280, 460)
+const DELETE_SIZE := Vector2(48, 48)
+const DELETE_MARGIN := 6.0  # gap from the card's top-right corner, both axes
 
-var slot_buttons: Array = []    # Button x3
-var delete_buttons: Array = []  # Button x3
+## Collection icon grid: gen_table.csv has exactly 21 card types, so a 7x3
+## grid (21 cells) covers the whole collection with no overflow/"+N" needed
+## - icon size/gap are picked to fill COLLECTION_BOX_SIZE exactly at 7x3, so
+## a full collection tiles the box precisely with no leftover slack.
+const COLLECTION_ICON_SIZE := Vector2(33, 44)
+const COLLECTION_ICON_GAP := 4.0
+const COLLECTION_COLUMNS := 7
+const COLLECTION_BOX_SIZE := Vector2(256, 140)
+
+var slot_buttons: Array = []        # Button x3
+var slot_number_labels: Array = []  # Label x3 ("1"/"2"/"3"), always visible
+var slot_name_labels: Array = []    # Label x3
+var slot_stat_labels: Array = []    # Label x3 ("Cards: N\nWins: N")
+var slot_collection_labels: Array = []  # Label x3 ("Collection:")
+var slot_collection_boxes: Array = []   # Control x3, holds the icon grid
+var slot_saved_labels: Array = []   # Label x3 (last-saved date, bottom of card)
+var slot_empty_labels: Array = []   # Label x3 ("New", centered - empty slots only)
+var delete_buttons: Array = []      # Button x3
 var slot_names: Array = [null, null, null]
 
 var selected_slot := -1
@@ -54,17 +78,61 @@ func _ready() -> void:
 		UIButtonStyle.apply(slot)
 		slot.position = SLOT_POSITIONS[i]
 		slot.size = SLOT_SIZE
-		slot.add_theme_font_override("font", font_stylish)
-		slot.add_theme_font_size_override("font_size", 36)
-		slot.add_theme_color_override("font_color", Color.BLACK)
-		slot.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
-		slot.add_theme_constant_override("shadow_offset_x", 1)
-		slot.add_theme_constant_override("shadow_offset_y", 1)
 		slot.pressed.connect(_on_slot_pressed.bind(i))
 		add_child(slot)
 		slot_buttons.append(slot)
 
-		var del := _make_delete_button(DELETE_POSITIONS[i])
+		var number_label := _make_dialog_label(Vector2(0, 6), Vector2(SLOT_SIZE.x, 46), font_stylish)
+		number_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		number_label.add_theme_font_size_override("font_size", 38)
+		number_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		number_label.text = str(i + 1)
+		slot.add_child(number_label)
+		slot_number_labels.append(number_label)
+
+		var name_label := _make_dialog_label(Vector2(12, 56), Vector2(SLOT_SIZE.x - 24, 40), font_stylish)
+		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_label.add_theme_font_size_override("font_size", 30)
+		name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(name_label)
+		slot_name_labels.append(name_label)
+
+		var stat_label := _make_dialog_label(Vector2(12, 100), Vector2(SLOT_SIZE.x - 24, 62), font_stylish)
+		stat_label.add_theme_font_size_override("font_size", 24)
+		stat_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(stat_label)
+		slot_stat_labels.append(stat_label)
+
+		var collection_label := _make_dialog_label(Vector2(12, 166), Vector2(SLOT_SIZE.x - 24, 30), font_stylish)
+		collection_label.add_theme_font_size_override("font_size", 22)
+		collection_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		collection_label.text = StringTable.get_string(StringTable.ID_COLLECTION) + ":"
+		slot.add_child(collection_label)
+		slot_collection_labels.append(collection_label)
+
+		var collection_box := Control.new()
+		collection_box.position = Vector2(12, 200)
+		collection_box.size = COLLECTION_BOX_SIZE
+		collection_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(collection_box)
+		slot_collection_boxes.append(collection_box)
+
+		var saved_label := _make_dialog_label(Vector2(12, SLOT_SIZE.y - 44), Vector2(SLOT_SIZE.x - 24, 34), font_stylish)
+		saved_label.add_theme_font_size_override("font_size", 20)
+		saved_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		saved_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(saved_label)
+		slot_saved_labels.append(saved_label)
+
+		var empty_label := _make_dialog_label(Vector2(0, 52), Vector2(SLOT_SIZE.x, SLOT_SIZE.y - 52), font_stylish)
+		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		empty_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		empty_label.add_theme_font_size_override("font_size", 40)
+		empty_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(empty_label)
+		slot_empty_labels.append(empty_label)
+
+		var del := _make_delete_button(SLOT_POSITIONS[i] + Vector2(SLOT_SIZE.x - DELETE_SIZE.x - DELETE_MARGIN, DELETE_MARGIN))
 		del.pressed.connect(_on_delete_pressed.bind(i))
 		add_child(del)
 		delete_buttons.append(del)
@@ -84,44 +152,62 @@ func _make_delete_button(pos: Vector2) -> Button:
 	btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	btn.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
 
-	var normal := StyleBoxTexture.new()
-	normal.texture = load(ASSETS + "button_9patch_normal.png")
-	normal.texture_margin_left = 21
-	normal.texture_margin_right = 21
-	normal.texture_margin_top = 21
-	normal.texture_margin_bottom = 21
-	normal.content_margin_left = 4
-	normal.content_margin_right = 4
-	normal.content_margin_top = 4
-	normal.content_margin_bottom = 4
-	btn.add_theme_stylebox_override("normal", normal)
-	btn.add_theme_stylebox_override("hover", normal)
-
-	var pressed := StyleBoxTexture.new()
-	pressed.texture = load(ASSETS + "button_9patch_press.png")
-	pressed.texture_margin_left = 21
-	pressed.texture_margin_right = 21
-	pressed.texture_margin_top = 21
-	pressed.texture_margin_bottom = 21
-	pressed.content_margin_left = 4
-	pressed.content_margin_right = 4
-	pressed.content_margin_top = 4
-	pressed.content_margin_bottom = 4
-	btn.add_theme_stylebox_override("pressed", pressed)
+	# No panel chrome here - it sits directly on the big slot card button
+	# below it, so the usual 9-patch background read as a button-on-a-button.
+	# Just the bare X icon is the pressable area.
+	var empty := StyleBoxEmpty.new()
+	btn.add_theme_stylebox_override("normal", empty)
+	btn.add_theme_stylebox_override("hover", empty)
+	btn.add_theme_stylebox_override("pressed", empty)
+	btn.add_theme_stylebox_override("focus", empty)
 
 	return btn
 
 func _refresh_slots() -> void:
-	var names := SaveSystem.check_existing_players()
 	for i in 3:
-		slot_names[i] = names[i]
-		if names[i] != null:
-			slot_buttons[i].text = names[i]
-			delete_buttons[i].visible = true
+		var summary := SaveSystem.slot_summary(i)
+		var occupied := not summary.is_empty()
+
+		slot_names[i] = summary.get("name")
+		slot_name_labels[i].visible = occupied
+		slot_stat_labels[i].visible = occupied
+		slot_collection_labels[i].visible = occupied
+		slot_collection_boxes[i].visible = occupied
+		slot_saved_labels[i].visible = occupied
+		slot_empty_labels[i].visible = not occupied
+		delete_buttons[i].visible = occupied
+
+		if occupied:
+			slot_name_labels[i].text = summary["name"]
+			slot_stat_labels[i].text = "%s: %d\n%s: %d" % [
+				StringTable.get_string(StringTable.ID_CARDS), summary["card_count"],
+				StringTable.get_string(StringTable.ID_WINS), summary["wins"],
+			]
+			slot_saved_labels[i].text = "%s: %s" % [
+				StringTable.get_string(StringTable.ID_LAST_SAVED),
+				Time.get_date_string_from_unix_time(summary["saved_at"]),
+			]
+			_rebuild_collection_icons(slot_collection_boxes[i], summary["card_defs"])
 		else:
-			slot_buttons[i].text = StringTable.get_string(StringTable.ID_NEW)
-			UIButtonStyle.fit_button_text(slot_buttons[i])
-			delete_buttons[i].visible = false
+			_rebuild_collection_icons(slot_collection_boxes[i], [])
+			slot_empty_labels[i].text = StringTable.get_string(StringTable.ID_NEW)
+			UIButtonStyle.fit_button_text(slot_empty_labels[i])
+
+func _rebuild_collection_icons(box: Control, card_defs: Array) -> void:
+	for child in box.get_children():
+		child.free()
+
+	var pitch: Vector2 = COLLECTION_ICON_SIZE + Vector2(COLLECTION_ICON_GAP, COLLECTION_ICON_GAP)
+	for idx in card_defs.size():
+		var def: CardManager.CardDef = CardManager.defs[card_defs[idx]]
+		var icon := TextureRect.new()
+		icon.texture = load(CardView.ASSETS_DIR + def.image)
+		icon.stretch_mode = TextureRect.STRETCH_SCALE
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.size = COLLECTION_ICON_SIZE
+		icon.position = Vector2(idx % COLLECTION_COLUMNS, idx / COLLECTION_COLUMNS) * pitch
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		box.add_child(icon)
 
 # --------------------------------------------------------------- dialogs
 

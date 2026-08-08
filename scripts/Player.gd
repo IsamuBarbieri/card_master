@@ -11,6 +11,9 @@ var save_slot: int
 var coins: int = 0
 var match_started: bool = false
 var available_opponents: Array = []  # bool per AIManager opponent index
+var matches_won: int = 0
+var last_deck: Array = [-1, -1, -1, -1, -1]  # unique_id per deck slot, -1 empty
+var last_opponent_index: int = -1  # -1 = none played yet, defaults to the old highest-unlocked pick
 
 func _init(new_name: String, slot: int, opponent_count: int) -> void:
 	player_name = new_name

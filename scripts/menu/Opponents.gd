@@ -44,10 +44,14 @@ func _ready() -> void:
 	_build_ui()
 
 	var start_index := 0
-	for i in range(opp_count - 1, -1, -1):
-		if Game.player.available_opponents[i]:
-			start_index = i
-			break
+	var last := Game.player.last_opponent_index
+	if last >= 0 and last < opp_count and Game.player.available_opponents[last]:
+		start_index = last
+	else:
+		for i in range(opp_count - 1, -1, -1):
+			if Game.player.available_opponents[i]:
+				start_index = i
+				break
 	_select(start_index)
 
 func _build_ui() -> void:
@@ -202,7 +206,7 @@ func _select(index: int) -> void:
 		item_outlines[i].visible = (i == index)
 
 	var ai: AIManager.AIData = AIManager.get_ai(index)
-	var prefix := StringTable.get_string(StringTable.ID_OPPONENTS_NAME) + " : "
+	var prefix := StringTable.get_string(StringTable.ID_OPPONENTS_NAME) + ": "
 	if Game.player.available_opponents[index]:
 		var card_name: String = CardManager.defs[ai.image_id].name
 		label_desc.text = prefix + card_name
@@ -217,6 +221,7 @@ func _on_back_pressed() -> void:
 
 func _on_select_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
+	Game.player.last_opponent_index = selected_index
 	if Game.rage_quit_mode:
 		Game.opponent_index = AIManager.rage_quit_index()
 	get_tree().change_scene_to_file("res://scenes/deckselect/DeckSelect.tscn")
