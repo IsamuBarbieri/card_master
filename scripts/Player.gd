@@ -42,9 +42,11 @@ func add_captured_card(cstats: Card) -> void:
 ## (RAGEQUIT) - captured rage-quit cards reset to a low level instead of
 ## keeping their real stats.
 func add_captured_rage_quit_card(cstats: Card) -> void:
-	cstats.attack_power = randi_range(1, 9)
-	cstats.physical_defense = randi_range(1, 9)
-	cstats.magical_defense = randi_range(1, 9)
+	# Rescaled with the rest of the stat table: 1-9 used to land around Slime
+	# level, which is what makes the punishment bite. Slime now rolls 6-11.
+	cstats.attack_power = randi_range(3, 12)
+	cstats.physical_defense = randi_range(3, 12)
+	cstats.magical_defense = randi_range(3, 12)
 	cstats.is_favourite = false
 	cstats.is_on_deck = false
 	cards.append(cstats)

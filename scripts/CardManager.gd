@@ -154,7 +154,16 @@ func card_price(card: Card) -> int:
 			f += 1.0
 
 	var val: float = float(card.attack_power + card.physical_defense + card.magical_defense) / 3.0
-	var total: float = 10.0 * f * pow(val, t)
+	# The reference multiplied straight by the arrow count, making an 8-arrow
+	# card worth 8x the same species at 1 arrow. That assumed "more arrows is
+	# strictly better", which isn't true here: an arrow is also an entry point
+	# for the opponent (a card with no return arrow is captured without a
+	# fight, and a losing card's own arrows are what a Chain propagates
+	# through - see Board.get_capturable_cards/get_chain_cards). A low-arrow
+	# card is a deliberate anti-chain anchor, not a dud. The +2 offset keeps
+	# arrows a price factor but compresses the spread from 8x to 3.3x so they
+	# no longer dominate the valuation.
+	var total: float = 10.0 * (2.0 + f) * pow(val, t)
 	return int(total)
 
 func generate_random_deck(count: int) -> Array:
@@ -203,3 +212,12 @@ func stat_delta(card: Card, index: int) -> float:
 			if diff > 0.0:
 				return float(card.magical_defense - def.mdef_min) / diff
 	return 1.0
+
+## How much of its own growth headroom this card has already consumed, 0..1.
+## Average of the three numeric stats (stat_delta indices 0/2/3 - index 1 is
+## the attack type, which isn't part of growth). Drives the attack-type
+## evolution thresholds in BattleScene._level_up_card: the type advances
+## partway up the curve rather than at the end, so a card's power ramps
+## continuously instead of doubling once it's already maxed out.
+func growth(card: Card) -> float:
+	return (stat_delta(card, 0) + stat_delta(card, 2) + stat_delta(card, 3)) / 3.0

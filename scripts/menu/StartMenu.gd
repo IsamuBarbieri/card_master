@@ -37,18 +37,22 @@ const DELETE_MARGIN := 6.0  # gap from the card's top-right corner, both axes
 ## Collection icon grid: gen_table.csv has exactly 21 card types, so a 7x3
 ## grid (21 cells) covers the whole collection with no overflow/"+N" needed
 ## - icon size/gap are picked to fill COLLECTION_BOX_SIZE exactly at 7x3, so
-## a full collection tiles the box precisely with no leftover slack.
-const COLLECTION_ICON_SIZE := Vector2(33, 44)
+## a full collection tiles the box precisely with no leftover slack. Sized up
+## from the original 33x44/256x140 now that dropping the "Collection:" text
+## label (redundant once the row below it is obviously a card grid) freed
+## enough vertical room to grow the icons within the same 7-wide layout the
+## slot's width was already tuned for.
+const COLLECTION_ICON_SIZE := Vector2(35, 47)
 const COLLECTION_ICON_GAP := 4.0
 const COLLECTION_COLUMNS := 7
-const COLLECTION_BOX_SIZE := Vector2(256, 140)
+const COLLECTION_BOX_SIZE := Vector2(269, 149)
 
 var slot_buttons: Array = []        # Button x3
 var slot_number_labels: Array = []  # Label x3 ("1"/"2"/"3"), always visible
 var slot_name_labels: Array = []    # Label x3
 var slot_stat_labels: Array = []    # Label x3 ("Cards: N\nWins: N")
-var slot_collection_labels: Array = []  # Label x3 ("Collection:")
 var slot_collection_boxes: Array = []   # Control x3, holds the icon grid
+var slot_coins_labels: Array = []   # RichTextLabel x3, coin icon + amount below the grid
 var slot_saved_labels: Array = []   # Label x3 (last-saved date, bottom of card)
 var slot_empty_labels: Array = []   # Label x3 ("New", centered - empty slots only)
 var delete_buttons: Array = []      # Button x3
@@ -103,19 +107,33 @@ func _ready() -> void:
 		slot.add_child(stat_label)
 		slot_stat_labels.append(stat_label)
 
-		var collection_label := _make_dialog_label(Vector2(12, 166), Vector2(SLOT_SIZE.x - 24, 30), font_stylish)
-		collection_label.add_theme_font_size_override("font_size", 22)
-		collection_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		collection_label.text = StringTable.get_string(StringTable.ID_COLLECTION) + ":"
-		slot.add_child(collection_label)
-		slot_collection_labels.append(collection_label)
-
+		# No "Collection:" caption above the grid - a row of card portraits
+		# reads as a collection on its own, and dropping the label frees the
+		# room COLLECTION_ICON_SIZE above grew into.
 		var collection_box := Control.new()
-		collection_box.position = Vector2(12, 200)
+		collection_box.position = Vector2(6, 172)
 		collection_box.size = COLLECTION_BOX_SIZE
 		collection_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(collection_box)
 		slot_collection_boxes.append(collection_box)
+
+		# Coin total, icon + number the same way the battle end screen and
+		# the shop show it (CardManager.card_price's "[center]N [img]..."
+		# pattern) rather than a text label. Bottom-right corner, as low as
+		# it can sit without crowding the saved-date row right below it.
+		var coins_label := RichTextLabel.new()
+		coins_label.bbcode_enabled = true
+		coins_label.scroll_active = false
+		coins_label.position = Vector2(12, SLOT_SIZE.y - 44 - 4 - 28)
+		coins_label.size = Vector2(SLOT_SIZE.x - 24, 28)
+		coins_label.add_theme_font_override("normal_font", font_stylish)
+		coins_label.add_theme_font_size_override("normal_font_size", 24)
+		coins_label.add_theme_color_override("default_color", Color(1, 0.85, 0.1))
+		coins_label.add_theme_constant_override("outline_size", 3)
+		coins_label.add_theme_color_override("font_outline_color", Color.BLACK)
+		coins_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(coins_label)
+		slot_coins_labels.append(coins_label)
 
 		var saved_label := _make_dialog_label(Vector2(12, SLOT_SIZE.y - 44), Vector2(SLOT_SIZE.x - 24, 34), font_stylish)
 		saved_label.add_theme_font_size_override("font_size", 20)
@@ -147,14 +165,22 @@ func _make_delete_button(pos: Vector2) -> Button:
 	var btn := Button.new()
 	btn.position = pos
 	btn.size = DELETE_SIZE
-	btn.icon = load(ASSETS + "button_delete_save.png")
-	btn.expand_icon = true
-	btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	btn.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+	# A font glyph instead of button_delete_save.png's raster X: same X at any
+	# scale reads crisp (the PNG was low-res and blurred/blocked when the
+	# canvas stretched to a real screen size), and colors as plain text
+	# theme overrides instead of needing a separately-authored asset.
+	btn.text = "X"
+	btn.add_theme_font_override("font", Game.font_stylish)
+	btn.add_theme_font_size_override("font_size", 34)
+	btn.add_theme_color_override("font_color", Color(0.85, 0.1, 0.1))
+	btn.add_theme_color_override("font_hover_color", Color(1.0, 0.25, 0.25))
+	btn.add_theme_color_override("font_pressed_color", Color(0.6, 0.0, 0.0))
+	btn.add_theme_color_override("font_outline_color", Color.BLACK)
+	btn.add_theme_constant_override("outline_size", 3)
 
 	# No panel chrome here - it sits directly on the big slot card button
 	# below it, so the usual 9-patch background read as a button-on-a-button.
-	# Just the bare X icon is the pressable area.
+	# Just the bare X glyph is the pressable area.
 	var empty := StyleBoxEmpty.new()
 	btn.add_theme_stylebox_override("normal", empty)
 	btn.add_theme_stylebox_override("hover", empty)
@@ -171,8 +197,8 @@ func _refresh_slots() -> void:
 		slot_names[i] = summary.get("name")
 		slot_name_labels[i].visible = occupied
 		slot_stat_labels[i].visible = occupied
-		slot_collection_labels[i].visible = occupied
 		slot_collection_boxes[i].visible = occupied
+		slot_coins_labels[i].visible = occupied
 		slot_saved_labels[i].visible = occupied
 		slot_empty_labels[i].visible = not occupied
 		delete_buttons[i].visible = occupied
@@ -183,6 +209,7 @@ func _refresh_slots() -> void:
 				StringTable.get_string(StringTable.ID_CARDS), summary["card_count"],
 				StringTable.get_string(StringTable.ID_WINS), summary["wins"],
 			]
+			slot_coins_labels[i].text = "[right]%d [img=20x20]res://assets/coins_icon.png[/img][/right]" % summary["coins"]
 			slot_saved_labels[i].text = "%s: %s" % [
 				StringTable.get_string(StringTable.ID_LAST_SAVED),
 				Time.get_date_string_from_unix_time(summary["saved_at"]),

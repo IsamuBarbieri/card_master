@@ -152,10 +152,18 @@ func _make_close_button() -> Button:
 	var btn := Button.new()
 	btn.position = Vector2(901, 484)
 	btn.size = Vector2(42, 42)
-	btn.icon = load(ASSETS + "button_delete_save.png")
-	btn.expand_icon = true
-	btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	btn.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+	# A font glyph instead of button_delete_save.png's raster X: same X at any
+	# scale reads crisp (the PNG was low-res and blurred/blocked when the
+	# canvas stretched to a real screen size), and colors as plain text
+	# theme overrides instead of needing a separately-authored asset.
+	btn.text = "X"
+	btn.add_theme_font_override("font", Game.font_stylish)
+	btn.add_theme_font_size_override("font_size", 26)
+	btn.add_theme_color_override("font_color", Color(0.85, 0.1, 0.1))
+	btn.add_theme_color_override("font_hover_color", Color(1.0, 0.25, 0.25))
+	btn.add_theme_color_override("font_pressed_color", Color(0.6, 0.0, 0.0))
+	btn.add_theme_color_override("font_outline_color", Color.BLACK)
+	btn.add_theme_constant_override("outline_size", 2)
 
 	var normal := StyleBoxTexture.new()
 	normal.texture = load(ASSETS + "button_9patch_normal.png")
@@ -165,7 +173,7 @@ func _make_close_button() -> Button:
 	normal.texture_margin_bottom = 21
 	# content_margin left at -1 (default) falls back to texture_margin, which
 	# on a 42x42 button eats the entire width/height (21+21=42) and leaves
-	# the icon zero room to draw in - pin it small instead so the X shows.
+	# the glyph zero room to draw in - pin it small instead so the X shows.
 	normal.content_margin_left = 4
 	normal.content_margin_right = 4
 	normal.content_margin_top = 4

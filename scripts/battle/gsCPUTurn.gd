@@ -55,23 +55,37 @@ static func _score_placement(board: Board, card: Card, row: int, col: int) -> fl
 	card.col = -1
 	return score
 
+# ai_level is ai_table.csv's Level column (0-7), which the port parsed and
+# then never read - every opponent played this same heuristic at full
+# strength, so the first opponent was as sharp as the last and difficulty
+# came only from deck quality. It now sets how well the CPU plays: the score
+# is perturbed by noise scaled to (7 - level), sized against the +2.0 that
+# _score_placement gives an instant capture. At level 0 the noise routinely
+# swamps that bonus, so the CPU visibly misses obvious captures; at level 7
+# it is zero and play is exactly as before.
+static func _noise(ai_level: int, scale: float) -> float:
+	var n: float = (7 - ai_level) * scale
+	return randf_range(-n, n) if n > 0.0 else 0.0
+
 # Returns {"card": Card, "row": int, "col": int} for the best move found.
-static func choose_move(board: Board, hand: Array) -> Dictionary:
+static func choose_move(board: Board, hand: Array, ai_level: int) -> Dictionary:
 	var best_score := -INF
 	var best := {}
 	for card in hand:
 		for slot in board.empty_slots():
-			var score := _score_placement(board, card, slot[0], slot[1])
+			var score := _score_placement(board, card, slot[0], slot[1]) + _noise(ai_level, 0.35)
 			if score > best_score:
 				best_score = score
 				best = {"card": card, "row": slot[0], "col": slot[1]}
 	return best
 
-static func choose_battle_target(attacker: Card, candidates: Array) -> Card:
+static func choose_battle_target(attacker: Card, candidates: Array, ai_level: int) -> Card:
 	var best: Card = candidates[0]
-	var best_margin := _win_margin(attacker, best)
+	# Margins live in [-1, 1] here, so the noise scale is far smaller than
+	# choose_move's - same 0..7 spread, different units.
+	var best_margin := _win_margin(attacker, best) + _noise(ai_level, 0.08)
 	for c in candidates:
-		var m := _win_margin(attacker, c)
+		var m := _win_margin(attacker, c) + _noise(ai_level, 0.08)
 		if m > best_margin:
 			best_margin = m
 			best = c

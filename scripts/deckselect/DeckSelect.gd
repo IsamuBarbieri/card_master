@@ -331,8 +331,16 @@ func _route_click(x: int, y: int) -> void:
 
 ## New QoL addition (not in the reference): double-click/double-tap a card
 ## to send it straight to its slot, instead of dragging it there by hand.
-## A wheel card goes to the next free deck slot; a deck card goes back to
-## its wheel (routed by is_favourite, same as the drag-swap-out path).
+## A deck card goes back to its wheel (routed by is_favourite, same as the
+## drag-swap-out path).
+##
+## For a WHEEL card, this only fires on the CENTERED one - hit_test_h_box
+## matches any visible box, not just the centered one, and double-clicking
+## while quickly browsing through neighboring wheel cards (the normal way to
+## move from one card to another) used to teleport whatever card got
+## double-clicked into the deck. A double-click on a neighbor card falls
+## through to _route_click instead (see the caller) and behaves like an
+## ordinary click: it just navigates/centers that card, nothing more.
 ## Returns true if the double-click was consumed.
 func _handle_double_click(x: int, y: int) -> bool:
 	var lower_index: int = lower_deck.get_valid_card_index_under_cursor(x, y)
@@ -350,18 +358,17 @@ func _handle_double_click(x: int, y: int) -> bool:
 
 	var selectors: Array[DeckSelectorWheel] = [deck_selector_left, deck_selector_right]
 	for selector in selectors:
-		var hi: int = selector.hit_test_h_box(x, y)
-		if hi != -1:
-			var free_index := lower_deck.get_unused_index()
-			if free_index == -1:
-				return true  # deck already full, nothing to do
-			_cancel_current_interaction()
-			var val: int = selector.val_at_h_box(hi)
-			var cstats: Card = selector.remove_card_at_val(val)
-			lower_deck.add_card(free_index, cstats)
-			next_sel = 10 + free_index
-			_enter_waiting_input()
-			return true
+		if not selector.central_card_hit_test(x, y):
+			continue
+		var free_index := lower_deck.get_unused_index()
+		if free_index == -1:
+			return true  # deck already full, nothing to do
+		_cancel_current_interaction()
+		var cstats: Card = selector.remove_current_card()
+		lower_deck.add_card(free_index, cstats)
+		next_sel = 10 + free_index
+		_enter_waiting_input()
+		return true
 
 	return false
 

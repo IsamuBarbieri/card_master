@@ -37,14 +37,6 @@ func can_level_up_a_pow() -> bool:
 	var def: CardManager.CardDef = CardManager.defs[def_id]
 	return attack_power < def.max_attack_power
 
-func can_level_up_a_type() -> bool:
-	var def: CardManager.CardDef = CardManager.defs[def_id]
-	if attack_type == AttackType.MAGICAL or attack_type == AttackType.PHYSICAL:
-		return def.max_attack_type >= AttackType.FLEXIBLE
-	elif attack_type == AttackType.FLEXIBLE:
-		return def.max_attack_type >= AttackType.ASSAULT
-	return false
-
 ## A fresh Card with the same stats but none of the battle/deck state
 ## (owner, row/col, is_on_deck/is_favourite) - BattleScene needs this so
 ## captures during a match (Board.capture mutates card.owner in place)

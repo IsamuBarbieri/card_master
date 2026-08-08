@@ -22,17 +22,49 @@ const GET_BACK_TIME := 0.1
 # native gap 276px * 0.5 = 138px on-screen.
 const TITLE_ICON_GAP_WIDTH := 138.0
 
-# ShopScene.cs's genTable: per shop-card-slot index, the [min,max] card
-# definitionId range to generate from - reused as availableOpponents
-# indices too (gates whether/how-shrunk each slot is), see _setup_shop_card.
-const GEN_TABLE := [[0, 1], [3, 4], [7, 9], [10, 13]]
+# Per shop-card-slot index, the [min,max] card definitionId range to generate
+# from. Whether a slot is visible at all, and how far up its range actually
+# reaches, come from _shop_def_cap() - not from this table. The reference
+# folded both meanings into these same two numbers by reading them as
+# availableOpponents indices as well, which doesn't hold up: card ids and
+# opponent indices aren't the same namespace (opponent 16 is The Void, whose
+# card is id 19).
+#
+# Nothing above Kraken Queen (15) is ever sold: Lich, Odin, Dragon, The Void
+# and Rage Quit are capture-only rewards.
+const GEN_TABLE := [
+	[0, 2],    # Slime..Ghost
+	[2, 5],    # Ghost..Goblin Sciaman
+	[5, 8],    # Goblin Sciaman..Ginger
+	[8, 11],   # Ginger..Minotaur
+	[10, 13],  # Pegasus..Elementals
+	[12, 15],  # Griffin..Kraken Queen
+]
 
-const SHOP_CARD_PANEL_POS := [Vector2(636, 115), Vector2(636, 181), Vector2(636, 247), Vector2(636, 313)]
-const SHOP_CARD_PANEL_SIZE := Vector2(306, 64)
-const SHOP_CARD_IMAGE_POS := Vector2(4, 2)
-const SHOP_CARD_IMAGE_SIZE := Vector2(46, 60)
-const SHOP_CARD_PRICE_POS := Vector2(167, 2)
-const SHOP_CARD_PRICE_SIZE := Vector2(124, 58)
+# Cards sell for price/3 but buy back at price/2. Buyback MUST stay the more
+# expensive of the two: if selling ever paid at least what buying back costs,
+# sell-then-rebuy would be an infinite coin generator. At 3 and 2 the round
+# trip loses price/6.
+const SELL_DIVISOR := 3
+const BUYBACK_DIVISOR := 2
+
+# The shop restocks every this many wins instead of every 24 real hours. A
+# long session no longer finds the shop frozen, restocking is tied to
+# progress rather than the wall clock, and changing the system date stops
+# being an exploit.
+const RESTOCK_WINS := 3
+
+# Six slots at a 45px pitch fit the 115..385 band left between the offer
+# column's top and the buyback card/button row at y 391.
+const SHOP_CARD_PANEL_POS := [
+	Vector2(636, 115), Vector2(636, 160), Vector2(636, 205),
+	Vector2(636, 250), Vector2(636, 295), Vector2(636, 340),
+]
+const SHOP_CARD_PANEL_SIZE := Vector2(306, 43)
+const SHOP_CARD_IMAGE_POS := Vector2(4, 1)
+const SHOP_CARD_IMAGE_SIZE := Vector2(30, 40)  # keeps the 96x128 card aspect
+const SHOP_CARD_PRICE_POS := Vector2(167, 1)
+const SHOP_CARD_PRICE_SIZE := Vector2(124, 41)
 const BUYBACK_SIZE := Vector2(40, 54)
 
 enum GameState { WAITING_INPUT, DECK_SCROLL, DRAG_CARD }
@@ -65,13 +97,13 @@ var label_value_type: Label
 var label_value_pdef: Label
 var label_value_mdef: Label
 
-# 4 shop offer cards.
-var shop_card_panels: Array = []  # Control x4
-var shop_card_views: Array = []   # CardView x4
-var shop_card_price_labels: Array = []  # Label x4
-var shop_cards: Array = []        # Card or null, x4
-var shop_cards_active: Array = [false, false, false, false]
-var shop_cards_time: Array = [0.0, 0.0, 0.0, 0.0]
+# One entry per GEN_TABLE slot, all filled by the build loop in _build_ui().
+var shop_card_panels: Array = []        # Control
+var shop_card_views: Array = []         # CardView
+var shop_card_price_labels: Array = []  # Label
+var shop_cards: Array = []              # Card or null
+var shop_cards_active: Array = []       # bool
+var shop_cards_time: Array = []         # float: matches_won when this slot was rolled
 
 var cur_sell_card: Card = null
 var cur_buy_card: Card = null
@@ -121,7 +153,7 @@ func _ready() -> void:
 	deck_selector.init(panel_left, Game.player.cards, false, true, true)
 
 	_load_shop_cards()
-	for i in 4:
+	for i in GEN_TABLE.size():
 		_setup_shop_card(i, false)
 
 	label_coins.text = str(Game.player.coins)
@@ -311,7 +343,7 @@ func _build_ui() -> void:
 	image_buyback_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(image_buyback_card)
 
-	for i in 4:
+	for i in GEN_TABLE.size():
 		var panel := Control.new()
 		panel.position = SHOP_CARD_PANEL_POS[i]
 		panel.size = SHOP_CARD_PANEL_SIZE
@@ -333,12 +365,16 @@ func _build_ui() -> void:
 		panel.add_child(view)
 		shop_card_views.append(view)
 
-		var price_label := _make_label(SHOP_CARD_PRICE_POS, SHOP_CARD_PRICE_SIZE, font_stylish, 46)
+		# 30 rather than the old 46: six slots share the band four used to,
+		# so the price has to fit a 41px-tall box now.
+		var price_label := _make_label(SHOP_CARD_PRICE_POS, SHOP_CARD_PRICE_SIZE, font_stylish, 30)
 		price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		panel.add_child(price_label)
 		shop_card_price_labels.append(price_label)
 
 		shop_cards.append(null)
+		shop_cards_active.append(false)
+		shop_cards_time.append(0.0)
 
 	busy_spinner = BusySpinner.new()
 	busy_spinner.position = Vector2(912, 496)
@@ -407,7 +443,10 @@ func _hit_test(control: Control, x: int, y: int) -> bool:
 
 func _load_shop_cards() -> void:
 	var loaded := SaveSystem.load_shop_cards(Game.player.save_slot)
-	for i in 4:
+	# Bounded by what was actually saved, not by the slot count: saves written
+	# when the shop had 4 slots stay loadable, the two new slots just start
+	# empty and roll on first visit.
+	for i in mini(loaded.size(), shop_cards.size()):
 		var entry = loaded[i]
 		if entry != null:
 			shop_cards[i] = entry["card"]
@@ -415,50 +454,68 @@ func _load_shop_cards() -> void:
 
 func _save_shop_cards() -> void:
 	var entries := []
-	for i in 4:
+	for i in shop_cards.size():
 		if shop_cards[i] == null:
 			entries.append(null)
 		else:
 			entries.append({"card": shop_cards[i], "time": shop_cards_time[i]})
 	SaveSystem.save_shop_cards(Game.player.save_slot, entries)
 
-## Port of ShopScene.cs's setupShopCard(): each of the 4 offer slots is
-## gated by GEN_TABLE[index] read as availableOpponents indices (slot
-## hidden until the low end is unlocked; its range narrows toward what's
-## unlocked - slot 0 always keeps its full 0..1 range regardless), and
-## re-rolls once per real day unless force_regenerate forces an immediate
-## reroll (used right after buying that slot).
+## The highest card definitionId the shop is allowed to offer: the portrait
+## (image_id) of the furthest opponent the player has actually beaten.
+##
+## The rule this enforces is that the shop never sells a card belonging to an
+## opponent still unbeaten - the first time you see a card it should be across
+## the table, and owning one should be the consequence of having beaten it.
+## Buying a Minotaur before ever facing one burns exactly the moment the
+## campaign is built around.
+##
+## Uses image_id rather than the opponent index because the two diverge at the
+## top: opponent 16 is The Void, whose card is definitionId 19.
+func _shop_def_cap() -> int:
+	var cap := -1
+	for i in AIManager.count():
+		var ai: AIManager.AIData = AIManager.get_ai(i)
+		if ai.defeated:
+			cap = maxi(cap, ai.image_id)
+	return cap
+
+## Fills one offer slot. The slot turns itself on as soon as _shop_def_cap()
+## reaches its low end and widens as the player advances, so the "a new slot
+## roughly every three opponents" pacing falls out of GEN_TABLE instead of
+## being spelled out separately. Rerolls every RESTOCK_WINS wins, or right
+## away when force_regenerate is set (used just after buying that slot).
 func _setup_shop_card(index: int, force_regenerate: bool) -> void:
+	var cap := _shop_def_cap()
 	var minv: int = GEN_TABLE[index][0]
-	var maxv: int = GEN_TABLE[index][1]
+	var maxv: int = mini(GEN_TABLE[index][1], cap)
 
-	var min_available: bool = Game.player.available_opponents[minv]
-	var max_available: bool = Game.player.available_opponents[maxv]
+	# Slot 0 is the opening safety net (see the has_zero_price rule below):
+	# it stays visible with at least Slime/Zombie even before the very first
+	# win, otherwise a new player with no cards has nowhere to get any.
+	if index == 0:
+		maxv = maxi(maxv, 1)
 
-	if not min_available:
+	if maxv < minv:
 		shop_card_price_labels[index].text = ""
 		shop_cards_active[index] = false
 		shop_card_panels[index].visible = false
 		return
 
-	if not max_available and index != 0:
-		while not Game.player.available_opponents[maxv]:
-			maxv -= 1
+	var wins: int = Game.player.matches_won
+	# shop_cards_time used to hold a unix timestamp. Saves written before the
+	# switch to win-counted restocking still do, and a timestamp is so far
+	# ahead of any win count that the slot would never expire again. Rewind it
+	# past the restock threshold so such a slot rerolls once, right now, and
+	# then keeps normal time - the stale offer was rolled from the old def
+	# ranges anyway.
+	if shop_cards_time[index] > float(wins):
+		shop_cards_time[index] = float(wins - RESTOCK_WINS)
 
-	var generate := force_regenerate
-	if not generate:
-		if shop_cards[index] != null:
-			var elapsed: float = Time.get_unix_time_from_system() - shop_cards_time[index]
-			if elapsed >= 86400.0:
-				generate = true
-		else:
-			generate = true
-
-	if generate:
-		var r := randi_range(minv, maxv)
-		var card := CardManager.generate_card(r)
-		shop_cards[index] = card
-		shop_cards_time[index] = Time.get_unix_time_from_system()
+	if force_regenerate or shop_cards[index] == null \
+			or wins - int(shop_cards_time[index]) >= RESTOCK_WINS:
+		shop_cards[index] = CardManager.generate_card(randi_range(minv, maxv))
+		shop_cards_time[index] = float(wins)
 		_save_shop_cards()
 
 	# New economy rule (not in the reference, which always makes slot 0
@@ -557,11 +614,17 @@ func _snap_to_box(array_index: int, horz: bool) -> void:
 
 ## New QoL addition (not in the reference): double-click/double-tap a card
 ## to send it straight to the trade slot, instead of dragging it there by
-## hand - a wheel card stages a sell, a shop offer card stages a buy. Any
-## card already staged in the slot is bumped back to the wheel, matching
-## the drag-drop's own "swap in" behavior. Double-clicking the staged card
+## hand - a shop offer card stages a buy. Double-clicking the trade slot
 ## itself is the reverse: a sell-staged card returns to the wheel, a
 ## buy-staged one just clears (it's still sitting in the offer row).
+##
+## For the SELL wheel, this only fires on the CENTERED card - hit_test_h_box
+## matches any visible box, not just the centered one, and double-clicking
+## while quickly browsing through neighboring wheel cards (the normal way to
+## move from one card to another) used to stage whatever card got
+## double-clicked instead of just navigating to it. A double-click on a
+## neighbor card falls through to _route_click instead (see the caller) and
+## behaves like an ordinary click: it just navigates/centers that card.
 ## Returns true if consumed.
 func _handle_double_click(x: int, y: int) -> bool:
 	if _hit_test(panel_card_slot, x, y):
@@ -583,11 +646,9 @@ func _handle_double_click(x: int, y: int) -> bool:
 			return true
 		return false
 
-	var hi := deck_selector.hit_test_h_box(x, y)
-	if hi != -1:
+	if deck_selector.central_card_hit_test(x, y):
 		_cancel_current_interaction()
-		var val := deck_selector.val_at_h_box(hi)
-		var selector_card: Card = deck_selector.remove_card_at_val(val)
+		var selector_card: Card = deck_selector.remove_current_card()
 		if cur_sell_card != null:
 			deck_selector.add_card(cur_sell_card)
 		_show_card_slot(selector_card)
@@ -596,7 +657,7 @@ func _handle_double_click(x: int, y: int) -> bool:
 		next_sel = 2
 		return true
 
-	for i in 4:
+	for i in shop_cards.size():
 		if shop_cards_active[i] and Rect2(shop_card_views[i].global_position, SHOP_CARD_IMAGE_SIZE).has_point(Vector2(x, y)):
 			_cancel_current_interaction()
 			if cur_sell_card != null:
@@ -652,7 +713,7 @@ func _waiting_input_on_click(x: int, y: int) -> void:
 			_update_card_info(buy_back_card, true, 3)
 			return
 		else:
-			for i in 4:
+			for i in shop_cards.size():
 				if shop_cards_active[i] and Rect2(shop_card_views[i].global_position, SHOP_CARD_IMAGE_SIZE).has_point(Vector2(x, y)):
 					_update_card_info(shop_cards[i], false, 4)
 					last_chosen_shop_card_index = i
@@ -823,7 +884,12 @@ func _drag_card_on_unclick(x: int, y: int) -> void:
 		_enter_waiting_input()
 
 func _shop_cards_region_intersects(rect: Rect2) -> bool:
-	var region := Rect2(shop_card_panels[0].position, Vector2(SHOP_CARD_PANEL_SIZE.x, SHOP_CARD_PANEL_SIZE.y * 4))
+	# Spans first panel top to last panel bottom. Derived from the actual
+	# panel positions rather than height * count, which silently undershoots
+	# whenever the layout pitch is larger than the panel height (it is).
+	var top: Vector2 = shop_card_panels[0].position
+	var bottom: float = shop_card_panels[-1].position.y + SHOP_CARD_PANEL_SIZE.y
+	var region := Rect2(top, Vector2(SHOP_CARD_PANEL_SIZE.x, bottom - top.y))
 	return rect.intersects(region)
 
 func _show_card_slot(card: Card) -> void:
@@ -842,7 +908,7 @@ func _set_sell_card(cstats: Card) -> void:
 	cur_buy_card = null
 
 	if cstats != null:
-		label_sell_value.text = str(CardManager.card_price(cstats) / 2)
+		label_sell_value.text = str(CardManager.card_price(cstats) / SELL_DIVISOR)
 		# New economy rule (not in the reference, which lets any staged card
 		# be sold): zero-price cards can't be sold, closing the free-reroll
 		# loop of selling a freebie back to gamble on a better one.
@@ -937,7 +1003,7 @@ func _on_sell_pressed() -> void:
 
 	_show_card_slot(null)
 
-	Game.player.coins += CardManager.card_price(cur_sell_card) / 2
+	Game.player.coins += CardManager.card_price(cur_sell_card) / SELL_DIVISOR
 	label_coins.text = str(Game.player.coins)
 	Game.player.remove_card(cur_sell_card)
 
@@ -975,7 +1041,7 @@ func _on_buy_pressed() -> void:
 	await _save_with_busy()
 
 func _on_buyback_pressed() -> void:
-	Game.player.coins -= CardManager.card_price(buy_back_card) / 2
+	Game.player.coins -= CardManager.card_price(buy_back_card) / BUYBACK_DIVISOR
 	label_coins.text = str(Game.player.coins)
 	Game.player.add_card(buy_back_card)
 	deck_selector.add_card(buy_back_card)

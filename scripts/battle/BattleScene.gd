@@ -158,6 +158,7 @@ var end_info_pdef_val: Label
 var end_info_mdef_val: Label
 var label_central_msg: Label
 var button_done: Button
+var label_coin_reward: RichTextLabel
 var button_takeall: Button
 var image_arrow: TextureRect
 var help_arrow: TextureRect
@@ -193,6 +194,10 @@ var sfx_attack_p: AudioStreamPlayer
 var sfx_attack_m: AudioStreamPlayer
 var sfx_ragequit: AudioStreamPlayer  # (RAGEQUIT)
 
+# ai_table.csv's Level for the current opponent, 0-7. Drives how sloppily
+# GsCPUTurn plays; 7 (= flawless) is the default so a skirmish with no
+# opponent set doesn't accidentally play badly.
+var cpu_level: int = 7
 var font_stylish: Font = Game.font_stylish
 var font_info: Font = Game.font_info
 
@@ -227,6 +232,10 @@ func _get_player_deck() -> Array:
 func _get_cpu_deck() -> Array:
 	if Game.opponent_index >= 0:
 		var ai: AIManager.AIData = AIManager.get_ai(Game.opponent_index)
+		# Cached here rather than re-read every turn - this is the one place
+		# the AIData is already in hand. The free-skirmish fallback below has
+		# no opponent, so it keeps cpu_level's max default and plays sharp.
+		cpu_level = ai.level
 		AIManager.ensure_dynamic_data(ai)
 		return AIManager.prepare_set(ai)
 	return CardManager.generate_playable_deck(5)
@@ -658,6 +667,28 @@ func _build_battle_end_ui() -> void:
 	label_central_msg.visible = false
 	end_panel.add_child(label_central_msg)
 
+	# Coin payout readout, filled in by gsEndPlayerPick_Set on a win. A
+	# RichTextLabel with an inline [img] rather than a Label + TextureRect
+	# pair - same trick CardView uses for the shop price tags, and it needs
+	# no StringTable entry since the whole thing is a number and an icon.
+	# Top-right corner: the bottom of the screen is already claimed by
+	# panel_info's stats (bottom-left, y 311-535) and button_done/
+	# button_takeall (bottom-right) - this is the only clear real estate
+	# left once those and the central banner/message are accounted for.
+	label_coin_reward = RichTextLabel.new()
+	label_coin_reward.bbcode_enabled = true
+	label_coin_reward.scroll_active = false
+	label_coin_reward.position = Vector2(760, 20)
+	label_coin_reward.size = Vector2(180, 46)
+	label_coin_reward.add_theme_font_override("normal_font", font_stylish)
+	label_coin_reward.add_theme_font_size_override("normal_font_size", 36)
+	label_coin_reward.add_theme_color_override("default_color", Color(1, 0.85, 0.1))
+	label_coin_reward.add_theme_constant_override("outline_size", 4)
+	label_coin_reward.add_theme_color_override("font_outline_color", Color.BLACK)
+	label_coin_reward.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label_coin_reward.visible = false
+	end_panel.add_child(label_coin_reward)
+
 	button_done = _make_end_button(StringTable.get_string(StringTable.ID_DONE), Vector2(790, 463), Vector2(122, 56))
 	button_done.visible = false
 	button_done.pressed.connect(_on_end_done_pressed)
@@ -1036,7 +1067,7 @@ func gsCPUTurn_Set() -> void:
 	await get_tree().create_timer(0.5).timeout
 
 	var live_cpu_hand: Array = cpu_hand.filter(func(c): return c != null)
-	var move := GsCPUTurn.choose_move(board, live_cpu_hand)
+	var move := GsCPUTurn.choose_move(board, live_cpu_hand, cpu_level)
 	var card: Card = move["card"]
 	var row: int = move["row"]
 	var col: int = move["col"]
@@ -1101,7 +1132,7 @@ func gsBattleCheck_Set(last_placed: Card) -> void:
 		# "pick a target" highlight/delay for the CPU too): the AI's choice
 		# isn't a real decision the player watches unfold, so skip the
 		# target-selection UI entirely and fight immediately.
-		var target := GsCPUTurn.choose_battle_target(last_placed, fightable)
+		var target := GsCPUTurn.choose_battle_target(last_placed, fightable, cpu_level)
 		await gsBattle_Set(last_placed, target)
 	else:
 		var target := await gsBattleSelTarget_Set(last_placed, fightable)
@@ -1488,9 +1519,10 @@ func gsEndLevelUp_Set(result: BattleResult) -> void:
 	# and a loss grants nothing at all.
 	var lost := result == BattleResult.CPU_PERFECT or result == BattleResult.CPU_WINS
 	if not lost:
+		var points := LEVEL_UP_POINTS.get(result, 0) as int
 		for view in end_up_cards:
 			var card: Card = view.card
-			await _level_up_card(view, card)
+			await _level_up_card(view, card, points)
 			_sync_card_stats_to_collection(card)
 
 	# A win or draw is already a safe outcome - clear match_started (and
@@ -1511,46 +1543,82 @@ func gsEndLevelUp_Set(result: BattleResult) -> void:
 			SaveSystem.save_player(Game.player)
 			gsEndNonePick_Set()
 
-# One flat point per match won/drawn (see gsEndLevelUp_Set), spent on a
-# random stat: attack power has 2 of 5 "slots" so it's twice as likely as
-# any single other stat; attack type only advances on a 5% roll per
-# attempt, 1% once already Flexible. If the randomly picked slot already
-# sits at this card's own pre-programmed ceiling, the point is simply lost
-# outright (Tetra Master's "blind spot") rather than rerolling onto a
-# different stat - shows floating text for whatever actually changed.
-func _level_up_card(view: CardView, card: Card) -> void:
-	var def: CardManager.CardDef = CardManager.defs[card.def_id]
+# Spends `points` growth points on this card (see gsEndLevelUp_Set for how
+# many a result is worth), one stat at a time.
+#
+# Two deliberate departures from the reference's rules:
+#
+# - A point is never wasted. The reference rolled 1-of-5 fixed slots and, if
+#   that slot already sat at the card's ceiling, dropped the point outright
+#   (Tetra Master's "blind spot"). Here the draw happens only among stats
+#   that can still grow, so a nearly-maxed card keeps improving instead of
+#   stalling. Attack power still gets two entries to the defenses' one each,
+#   preserving the original 2:1:1 weighting.
+#
+# - The attack type advances deterministically at growth thresholds instead
+#   of on a 5%/1% roll per attempt (which worked out to ~1% and ~0.2% per
+#   match - hundreds of matches for one step). Crossing at 45%/75% of the
+#   card's own headroom means the jump lands mid-curve, while the card still
+#   has room to grow, so its power ramps continuously rather than suddenly
+#   doubling on an already-maxed card.
+#
+# Floating text reports the net change once, after all the points are spent,
+# rather than one popup per point.
+const LEVEL_UP_POINTS := {
+	BattleResult.PLAYER_PERFECT: 5,
+	BattleResult.PLAYER_WINS: 3,
+	BattleResult.DRAW: 1,
+}
+const TYPE_UP_GROWTH_X := 0.45
+const TYPE_UP_GROWTH_A := 0.75
 
-	var possible := [
-		card.can_level_up_a_pow(), card.can_level_up_a_pow(),
-		card.can_level_up_a_type(), card.can_level_up_p_def(), card.can_level_up_m_def(),
-	]
-	if not possible.any(func(b): return b):
-		await _show_level_up_text(view, StringTable.get_string(StringTable.ID_CARD_LVLUP_MAX), " ")
-		return
+func _level_up_card(view: CardView, card: Card, points: int) -> void:
+	var def: CardManager.CardDef = CardManager.defs[card.def_id]
 
 	var old_attack_power := card.attack_power
 	var old_attack_type := card.attack_type
 	var old_pdef := card.physical_defense
 	var old_mdef := card.magical_defense
 
-	var r := randi() % 5
-	if r < 2:
-		card.attack_power = mini(card.attack_power + 1, def.max_attack_power)
-	elif r == 2 and card.can_level_up_a_type():
-		var roll := randi() % 100
-		var success := (roll == 17) if card.attack_type == Card.AttackType.FLEXIBLE else (roll < 5)
-		if success:
-			card.attack_type += 1
-	elif r == 3:
-		card.physical_defense = mini(card.physical_defense + 1, def.max_physical_defense)
-	elif r == 4:
-		card.magical_defense = mini(card.magical_defense + 1, def.max_magical_defense)
+	var spent := 0
+	for i in points:
+		var pool := []
+		if card.can_level_up_a_pow():
+			pool.append(0)
+			pool.append(0)
+		if card.can_level_up_p_def():
+			pool.append(2)
+		if card.can_level_up_m_def():
+			pool.append(3)
+		if pool.is_empty():
+			break
+		match pool[randi() % pool.size()]:
+			0: card.attack_power = mini(card.attack_power + 1, def.max_attack_power)
+			2: card.physical_defense = mini(card.physical_defense + 1, def.max_physical_defense)
+			3: card.magical_defense = mini(card.magical_defense + 1, def.max_magical_defense)
+		spent += 1
+
+	if card.attack_type < Card.AttackType.FLEXIBLE \
+			and def.max_attack_type >= Card.AttackType.FLEXIBLE \
+			and CardManager.growth(card) >= TYPE_UP_GROWTH_X:
+		card.attack_type = Card.AttackType.FLEXIBLE
+	elif card.attack_type == Card.AttackType.FLEXIBLE \
+			and def.max_attack_type >= Card.AttackType.ASSAULT \
+			and CardManager.growth(card) >= TYPE_UP_GROWTH_A:
+		card.attack_type = Card.AttackType.ASSAULT
+
+	if spent == 0 and card.attack_type == old_attack_type:
+		await _show_level_up_text(view, StringTable.get_string(StringTable.ID_CARD_LVLUP_MAX), " ")
+		return
 
 	if card.attack_type != old_attack_type:
 		var s0 := StringTable.get_string(StringTable.ID_CARD_LVLUP_ATTACK_TYPE)
 		var s1 := CardManager.attack_type_to_string(old_attack_type)
-		if old_attack_type == def.max_attack_type:
+		# "MAX" now means "this stat just hit its ceiling". The reference
+		# tested the OLD value instead, which only ever fired because a
+		# wasted point could leave a maxed stat "changing" by 0 - impossible
+		# now that the draw only picks stats with room left.
+		if card.attack_type == def.max_attack_type:
 			s1 += " " + StringTable.get_string(StringTable.ID_CARD_LVLUP_MAX)
 		await _show_level_up_text(view, s0, s1)
 
@@ -1558,7 +1626,7 @@ func _level_up_card(view: CardView, card: Card) -> void:
 		var inc := card.attack_power - old_attack_power
 		var s0 := StringTable.get_string(StringTable.ID_CARD_ATTACK) + " " + StringTable.get_string(StringTable.ID_CARD_LVLUP)
 		var s1 := "%d+%d" % [old_attack_power, inc]
-		if old_attack_power == def.max_attack_power:
+		if card.attack_power == def.max_attack_power:
 			s1 += " " + StringTable.get_string(StringTable.ID_CARD_LVLUP_MAX)
 		await _show_level_up_text(view, s0, s1)
 
@@ -1566,7 +1634,7 @@ func _level_up_card(view: CardView, card: Card) -> void:
 		var inc := card.physical_defense - old_pdef
 		var s0 := StringTable.get_string(StringTable.ID_CARD_PHYSICAL_DEFENSE) + " " + StringTable.get_string(StringTable.ID_CARD_LVLUP)
 		var s1 := "%d+%d" % [old_pdef, inc]
-		if old_pdef == def.max_physical_defense:
+		if card.physical_defense == def.max_physical_defense:
 			s1 += " " + StringTable.get_string(StringTable.ID_CARD_LVLUP_MAX)
 		await _show_level_up_text(view, s0, s1)
 
@@ -1574,7 +1642,7 @@ func _level_up_card(view: CardView, card: Card) -> void:
 		var inc := card.magical_defense - old_mdef
 		var s0 := StringTable.get_string(StringTable.ID_CARD_MAGICAL_DEFENSE) + " " + StringTable.get_string(StringTable.ID_CARD_LVLUP)
 		var s1 := "%d+%d" % [old_mdef, inc]
-		if old_mdef == def.max_magical_defense:
+		if card.magical_defense == def.max_magical_defense:
 			s1 += " " + StringTable.get_string(StringTable.ID_CARD_LVLUP_MAX)
 		await _show_level_up_text(view, s0, s1)
 
@@ -1732,6 +1800,13 @@ func gsEndPlayerPick_Set(result: BattleResult) -> void:
 	end_result = result
 	end_sel_view = null
 	end_pick_interactive = false
+
+	# Shown here rather than at payout time (_end_player_pick_close) so the
+	# player sees what they earned while picking their card, not after the
+	# screen is already gone. Both read _coin_reward(), which depends on
+	# ai.defeated still being false at this point.
+	label_coin_reward.text = "[right]+%d [img=28x28]res://assets/coins_icon.png[/img][/right]" % _coin_reward()
+	label_coin_reward.visible = true
 
 	if result == BattleResult.PLAYER_PERFECT:
 		end_remaining = 5
@@ -1915,8 +1990,32 @@ func _on_end_takeall_pressed() -> void:
 	_fade_out(button_takeall, 0.25)
 	_fade_out(label_central_msg, 0.25)
 
+const COIN_FIRST_BASE := 120
+const COIN_FIRST_STEP := 70
+const COIN_REMATCH_BASE := 25
+const COIN_REMATCH_STEP := 14
+
+# Battles paid nothing at all before this - the only way to ever get a coin
+# was selling cards, so a new player sat at 0 with nothing worth selling.
+# The first win over an opponent pays the real prize (that's when the money
+# is actually needed); every rematch after it pays about a fifth, enough
+# that replaying isn't pointless but not enough to farm.
+#
+# ai.defeated is already the persisted "I've beaten this one" flag, which is
+# why this must be called BEFORE _end_player_pick_close sets it - both the
+# readout and the actual payout go through here so they can't drift apart.
+func _coin_reward() -> int:
+	var ai: AIManager.AIData = AIManager.get_ai(Game.opponent_index)
+	var reward := (COIN_FIRST_BASE + COIN_FIRST_STEP * Game.opponent_index) if not ai.defeated \
+			else (COIN_REMATCH_BASE + COIN_REMATCH_STEP * Game.opponent_index)
+	if end_result == BattleResult.PLAYER_PERFECT:
+		reward *= 2
+	return reward
+
 func _end_player_pick_close() -> void:
 	var ai: AIManager.AIData = AIManager.get_ai(Game.opponent_index)
+	Game.player.coins += _coin_reward()
+
 	ai.defeated = true
 	if Game.opponent_index + 1 < Game.player.available_opponents.size():
 		Game.player.available_opponents[Game.opponent_index + 1] = true

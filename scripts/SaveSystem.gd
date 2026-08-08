@@ -59,6 +59,7 @@ static func slot_summary(slot: int) -> Dictionary:
 		"name": data.get("name"),
 		"card_count": data["cards"].size(),
 		"wins": data.get("matches_won", 0),
+		"coins": data.get("coins", 0),
 		"saved_at": data.get("saved_at", 0),
 		"card_defs": card_defs,
 	}
