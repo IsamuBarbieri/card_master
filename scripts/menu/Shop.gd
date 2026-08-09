@@ -246,6 +246,7 @@ func _build_ui() -> void:
 	add_child(label_buy)
 	UIButtonStyle.fit_button_text(label_buy)
 
+	UIShadow.behind(self, Vector2(867, 463), Vector2(60, 60))
 	var coins_icon := TextureRect.new()
 	coins_icon.texture = load(ASSETS + "coins_icon.png")
 	coins_icon.position = Vector2(867, 463)
@@ -392,6 +393,12 @@ func _build_ui() -> void:
 	selection_outline = SelectionOutline.new()
 	selection_outline.set_anchors_preset(Control.PRESET_FULL_RECT)
 	selection_outline.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Wheel cards set z_index up to Z_BASE (10, DeckSelectorWheel.gd) so the
+	# centered card draws above its neighbors - without a z_index of its own
+	# the outline (default 0) drew behind them despite being added last in
+	# the tree, since z_index wins over add-order. Kept under drag_ghost (60)
+	# so a dragged card still passes over the glow.
+	selection_outline.z_index = 50
 	add_child(selection_outline)
 
 	_build_audio()
@@ -990,6 +997,7 @@ func _update_selection_outline() -> void:
 	if x > 0.0:
 		selection_outline.visible = true
 		selection_outline.set_target_rect(Rect2(x, y, w, h))
+		move_child(selection_outline, get_child_count() - 1)
 	else:
 		selection_outline.visible = false
 

@@ -20,11 +20,17 @@ extends Control
 const SCREEN_W := 960
 const SCREEN_H := 544
 const ASSETS := "res://assets/"
+## CardView (used for unlocked portraits) hardcodes custom_minimum_size to
+## its own CARD_W/CARD_H = 96x128 (CardView.gd) - it silently clamps back up
+## if told a smaller .size, so it can never actually render below 96x128.
+## Matching that here (rather than shrinking below it) keeps unlocked
+## portraits and the locked card_back the same size instead of the locked
+## one reading smaller.
 const CARD_W := 96
 const CARD_H := 128
-const ITEM_MARGIN := 2
+const ITEM_MARGIN := 1
 const ITEM_SIZE := Vector2(CARD_W + ITEM_MARGIN * 2, CARD_H + ITEM_MARGIN * 2)
-const GRID_COLUMNS := 7
+const GRID_COLUMNS := 6  # opp_count (18, RAGEQUIT included) = exactly 3 rows of 6
 const LABEL_FONT_SIZE := 36
 
 var opp_count: int
@@ -39,7 +45,12 @@ var select_button: Button
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	opp_count = AIManager.rage_quit_index()  # aiCount = AIManager.Count - 1, skips RAGEQUIT
+	# RAGEQUIT is now the 18th, final opponent instead of hidden: it unlocks
+	# the same sequential way every other opponent does (BattleScene.gd's
+	# win handler unlocks available_opponents[index+1]), so it's a real
+	# "beat the whole roster" finale - on top of the existing punishment
+	# below, which still force-redirects into it early if you quit mid-match.
+	opp_count = AIManager.count()
 	Game.rage_quit_mode = Game.player.match_started
 	_build_ui()
 
@@ -88,15 +99,15 @@ func _build_ui() -> void:
 	select_button.pressed.connect(_on_select_pressed)
 
 	var scroll := ScrollContainer.new()
-	scroll.position = Vector2(73, 63)
-	scroll.size = Vector2(814, 380)
+	scroll.position = Vector2(136, 50)
+	scroll.size = Vector2(688, 402)  # exactly fits 3 rows of 6 (98x130 items, 20/6 sep) with no scrollbar
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED  # GridListScrollOrientation.Vertical
 	add_child(scroll)
 
 	var grid := GridContainer.new()
 	grid.columns = GRID_COLUMNS
-	grid.add_theme_constant_override("h_separation", 10)
-	grid.add_theme_constant_override("v_separation", 8)
+	grid.add_theme_constant_override("h_separation", 20)
+	grid.add_theme_constant_override("v_separation", 6)
 	scroll.add_child(grid)
 
 	for i in opp_count:

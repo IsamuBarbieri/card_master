@@ -10,11 +10,6 @@ extends Node
 var player: Player = null
 var opponent_index: int = -1
 var rage_quit_mode: bool = false
-## Port of UIMainMenu.cs's autoplayMusic: set true right before returning to
-## MainMenu from a battle, so it crossfades into a randomly chosen menu
-## track (Music.ChooseMenuMusic()) instead of just continuing whatever was
-## already playing.
-var autoplay_menu_music: bool = false
 
 # Port of Game.cs's Options struct. These are app-level preferences (not
 # part of any player's save data - see SaveSystem.save_settings/
@@ -107,9 +102,20 @@ func _detect_default_language() -> int:
 	var code := OS.get_locale_language()
 	return StringTable.LANGUAGE_BY_LOCALE.get(code, StringTable.DEFAULT_LANGUAGE)
 
+const MENU_TRACKS := ["res://assets/music/menu1.mp3", "res://assets/music/menu2.mp3"]
+
+var _music_tween: Tween
+
 ## Keeps a single track playing across scene changes - calling this again
-## with the same path while it's already playing is a no-op.
+## with the same path while it's already playing is a no-op. Also cancels
+## any crossfade still in flight: without this, a crossfade fired from a
+## scene that's about to change (e.g. BattleScene returning to menu music
+## right before change_scene_to_file) could still be mid-fade when the next
+## scene calls play_music/crossfade_music of its own - the earlier one's
+## delayed swap-and-play would then land after the later one and stomp it,
+## audible as the previous track suddenly cutting back in.
 func play_music(path: String) -> void:
+	_cancel_music_tween()
 	if _music_path == path and _music_player.playing:
 		return
 	_music_path = path
@@ -124,9 +130,10 @@ func play_music(path: String) -> void:
 ## slider-controlled volume) - battle1.mp3/ragequit_battle.mp3 are louder
 ## raw files than the menu tracks, so BattleScene passes -8.0 to balance.
 func crossfade_music(path: String, fade_time: float, target_volume_db: float = 0.0) -> void:
-	var tw := create_tween()
-	tw.tween_property(_music_player, "volume_db", -80.0, fade_time)
-	await tw.finished
+	_cancel_music_tween()
+	_music_tween = create_tween()
+	_music_tween.tween_property(_music_player, "volume_db", -80.0, fade_time)
+	await _music_tween.finished
 	_music_path = path
 	var stream: AudioStream = load(path)
 	stream.loop = true
@@ -134,12 +141,35 @@ func crossfade_music(path: String, fade_time: float, target_volume_db: float = 0
 	_music_player.volume_db = target_volume_db
 	_music_player.play()
 
+## A killed tween never fires `finished`, so the coroutine still parked at
+## `await _music_tween.finished` above simply never resumes - its swap-and-
+## play half is skipped entirely instead of racing the new call.
+func _cancel_music_tween() -> void:
+	if _music_tween != null and _music_tween.is_valid():
+		_music_tween.kill()
+
+## For screens that just want "some menu track playing" without caring
+## which - a no-op if one of MENU_TRACKS is already playing (returning to
+## MainMenu from Opponents, which never stops the menu music itself), so it
+## doesn't restart or switch the track under the player.
+func ensure_menu_music() -> void:
+	if _music_path in MENU_TRACKS:
+		return
+	play_music(MENU_TRACKS[randi() % MENU_TRACKS.size()])
+
+## Crossfades into a random menu track - for transitions actually coming
+## FROM a different track (battle music) that need the fade, unlike
+## ensure_menu_music's plain no-op/instant-start.
+func crossfade_to_menu_music(fade_time: float) -> void:
+	crossfade_music(MENU_TRACKS[randi() % MENU_TRACKS.size()], fade_time)
+
 ## One-shot sfx, parented to this autoload (not the calling scene) so it
 ## keeps playing even if the scene changes right after triggering it.
-func play_sfx(path: String) -> void:
+func play_sfx(path: String, pitch_scale: float = 1.0) -> void:
 	var p := AudioStreamPlayer.new()
 	p.stream = load(path)
 	p.bus = "SFX"
+	p.pitch_scale = pitch_scale
 	add_child(p)
 	p.finished.connect(p.queue_free)
 	p.play()

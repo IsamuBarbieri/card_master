@@ -23,9 +23,10 @@ func _ready() -> void:
 	bg.pressed.connect(_on_back_pressed)
 	add_child(bg)
 
-	_make_label(Vector2(320, 36), Vector2(320, 94), font_stylish, "Marco Castrucci\nProgramming")
-	_make_label(Vector2(263, 170), Vector2(432, 94), font_stylish, "Samuele Barbieri\nGame Design, Graphics")
-	_make_label(Vector2(320, 305), Vector2(320, 94), font_stylish, "Viviana Massicut\nCards Graphics")
+	_make_label(Vector2(320, 36), Vector2(320, 94), font_stylish, "Samuele Barbieri\nGame Design, Graphics")
+	_make_label(Vector2(263, 170), Vector2(432, 94), font_stylish, "Viviana Massicut\nCards Graphics")
+	_make_label(Vector2(320, 305), Vector2(320, 94), font_stylish, "Marco Castrucci\nSpecial Thanks")
+
 	_make_label(Vector2(0, 448), Vector2(958, 79), font_stylish, "Music: Essa (soundcloud)\nSFX: http://www.freesfx.co.uk")
 
 func _make_label(pos: Vector2, size: Vector2, font: Font, text: String) -> void:

@@ -52,8 +52,7 @@ var slot_number_labels: Array = []  # Label x3 ("1"/"2"/"3"), always visible
 var slot_name_labels: Array = []    # Label x3
 var slot_stat_labels: Array = []    # Label x3 ("Cards: N\nWins: N")
 var slot_collection_boxes: Array = []   # Control x3, holds the icon grid
-var slot_coins_labels: Array = []   # RichTextLabel x3, coin icon + amount below the grid
-var slot_saved_labels: Array = []   # Label x3 (last-saved date, bottom of card)
+var slot_coins_labels: Array = []   # RichTextLabel x3, coin icon + amount, bottom of card
 var slot_empty_labels: Array = []   # Label x3 ("New", centered - empty slots only)
 var delete_buttons: Array = []      # Button x3
 var slot_names: Array = [null, null, null]
@@ -119,28 +118,21 @@ func _ready() -> void:
 
 		# Coin total, icon + number the same way the battle end screen and
 		# the shop show it (CardManager.card_price's "[center]N [img]..."
-		# pattern) rather than a text label. Bottom-right corner, as low as
-		# it can sit without crowding the saved-date row right below it.
+		# pattern) rather than a text label. Bottom of the card - grown into
+		# the strip the last-saved date used to occupy below it.
 		var coins_label := RichTextLabel.new()
 		coins_label.bbcode_enabled = true
 		coins_label.scroll_active = false
-		coins_label.position = Vector2(12, SLOT_SIZE.y - 44 - 4 - 28)
-		coins_label.size = Vector2(SLOT_SIZE.x - 24, 28)
+		coins_label.position = Vector2(12, SLOT_SIZE.y - 60)
+		coins_label.size = Vector2(SLOT_SIZE.x - 24, 48)
 		coins_label.add_theme_font_override("normal_font", font_stylish)
-		coins_label.add_theme_font_size_override("normal_font_size", 24)
+		coins_label.add_theme_font_size_override("normal_font_size", 34)
 		coins_label.add_theme_color_override("default_color", Color(1, 0.85, 0.1))
 		coins_label.add_theme_constant_override("outline_size", 3)
 		coins_label.add_theme_color_override("font_outline_color", Color.BLACK)
 		coins_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(coins_label)
 		slot_coins_labels.append(coins_label)
-
-		var saved_label := _make_dialog_label(Vector2(12, SLOT_SIZE.y - 44), Vector2(SLOT_SIZE.x - 24, 34), font_stylish)
-		saved_label.add_theme_font_size_override("font_size", 20)
-		saved_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		saved_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		slot.add_child(saved_label)
-		slot_saved_labels.append(saved_label)
 
 		var empty_label := _make_dialog_label(Vector2(0, 52), Vector2(SLOT_SIZE.x, SLOT_SIZE.y - 52), font_stylish)
 		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -199,7 +191,6 @@ func _refresh_slots() -> void:
 		slot_stat_labels[i].visible = occupied
 		slot_collection_boxes[i].visible = occupied
 		slot_coins_labels[i].visible = occupied
-		slot_saved_labels[i].visible = occupied
 		slot_empty_labels[i].visible = not occupied
 		delete_buttons[i].visible = occupied
 
@@ -209,11 +200,7 @@ func _refresh_slots() -> void:
 				StringTable.get_string(StringTable.ID_CARDS), summary["card_count"],
 				StringTable.get_string(StringTable.ID_WINS), summary["wins"],
 			]
-			slot_coins_labels[i].text = "[right]%d [img=20x20]res://assets/coins_icon.png[/img][/right]" % summary["coins"]
-			slot_saved_labels[i].text = "%s: %s" % [
-				StringTable.get_string(StringTable.ID_LAST_SAVED),
-				Time.get_date_string_from_unix_time(summary["saved_at"]),
-			]
+			slot_coins_labels[i].text = "[right]%d [img=34x34]res://assets/coins_icon.png[/img][/right]" % summary["coins"]
 			_rebuild_collection_icons(slot_collection_boxes[i], summary["card_defs"])
 		else:
 			_rebuild_collection_icons(slot_collection_boxes[i], [])

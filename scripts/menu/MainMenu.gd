@@ -50,12 +50,10 @@ func _ready() -> void:
 	_make_menu_button(StringTable.get_string(StringTable.ID_COLLECTION), "button_collection.png", Vector2(556, 236), Vector2(274, 71), _on_collection_pressed)
 	_make_menu_button(StringTable.get_string(StringTable.ID_OPTIONS), "button_option.png", Vector2(343, 442), Vector2(274, 71), _on_options_pressed)
 
-	if Game.autoplay_menu_music:
-		Game.autoplay_menu_music = false
-		var track := "menu1.mp3" if randi() % 2 == 0 else "menu2.mp3"
-		Game.crossfade_music(ASSETS + "music/" + track, 0.85)
-	else:
-		Game.play_music(ASSETS + "music/menu1.mp3")
+	# No-op if a menu track is already playing (e.g. coming back from
+	# Opponents, which never touches the music itself) - keeps whatever's
+	# already going instead of restarting/switching it under the player.
+	Game.ensure_menu_music()
 
 	_build_cat()
 	cat_wait_time = randf() * 3.5

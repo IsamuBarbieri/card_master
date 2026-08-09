@@ -247,6 +247,12 @@ func _build_ui() -> void:
 	selection_outline = SelectionOutline.new()
 	selection_outline.set_anchors_preset(Control.PRESET_FULL_RECT)
 	selection_outline.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Wheel cards set z_index up to Z_BASE (10, DeckSelectorWheel.gd) so the
+	# centered card draws above its neighbors - without a z_index of its own
+	# the outline (default 0) was drawing behind them despite being added
+	# last in the tree, since z_index wins over add-order. Kept under
+	# drag_ghost (100) so a dragged card still passes over the glow.
+	selection_outline.z_index = 50
 	add_child(selection_outline)
 
 func _make_selector_panel(pos: Vector2, panel_size: Vector2) -> Control:
@@ -730,6 +736,11 @@ func _update_selection_outline() -> void:
 	if x > 0.0:
 		selection_outline.visible = true
 		selection_outline.set_target_rect(Rect2(x, y, w, h))
+		# Belt-and-suspenders on top of z_index=100 (set in _ready): keeping
+		# it the last sibling too means correct draw order even if some
+		# card's z_index math above ever changes and z_index alone stops
+		# being enough.
+		move_child(selection_outline, get_child_count() - 1)
 	else:
 		selection_outline.visible = false
 

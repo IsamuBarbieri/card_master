@@ -26,7 +26,6 @@ const CARD_H := 128
 const ROW_HEIGHT := 47.0
 const ROW_IMAGE_SIZE := Vector2(32, 43)
 const COLOR_NORMAL := Color(0.12, 0.12, 0.12, 0.3)
-const COLOR_SELECTED := Color(0.12, 0.3, 0.3, 0.7)
 const COLOR_TRANSPARENT := Color(0, 0, 0, 0)
 const DRAG_CLICK_THRESHOLD := 6.0
 
@@ -47,6 +46,11 @@ var sel_card_index := 0
 
 var type_rows: Array = []  # Panel x N
 var card_rows: Array = []  # Panel x N (rebuilt per type, laid out in a grid)
+# Selection is marked with the same blue glow the deck/shop carousels use
+# (SelectionOutline), one per item toggled visible, instead of a tinted row
+# background - consistent selection language across every browse screen.
+var type_outlines: Array = []  # SelectionOutline x N
+var card_outlines: Array = []  # SelectionOutline x N
 
 var type_list_box: VBoxContainer
 var card_list_box: GridContainer
@@ -119,6 +123,7 @@ func _build_ui() -> void:
 	image_collection.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(image_collection)
 
+	UIShadow.behind(self, Vector2(561, 21), Vector2(384, 512))
 	big_card_view = CardView.new()
 	big_card_view.position = Vector2(561, 21)
 	big_card_view.scale = Vector2(384, 512) / Vector2(CARD_W, CARD_H)
@@ -214,12 +219,28 @@ func _build_type_rows(font: Font) -> void:
 		icon.position = Vector2(4, (ROW_HEIGHT - ROW_IMAGE_SIZE.y) / 2.0)
 		icon.size = ROW_IMAGE_SIZE
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		UIShadow.behind(row, icon.position, ROW_IMAGE_SIZE, Vector2(1, 2))
 		row.add_child(icon)
 
 		var def: CardManager.CardDef = CardManager.defs[card_matrix.card_types[i].original_id]
 		var label := _make_row_label(font)
 		label.text = def.name
 		row.add_child(label)
+
+		# Full row rect (204 = type_list_box's own width, set below), not just
+		# the label's - a glow hugging only the text read wrong next to the
+		# row's own full-width background tint. Rows sit edge to edge (no
+		# separation), so there's no gap for the glow's outward falloff to
+		# bleed into without touching the next row - clip it at the row's own
+		# bounds instead of the old fix of shrinking the target rect inward
+		# (which left the crisp edge looking sized to the text, not the row).
+		row.clip_contents = true
+		var outline := SelectionOutline.new()
+		outline.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		outline.set_target_rect(Rect2(0, 0, 204, ROW_HEIGHT))
+		outline.visible = false
+		row.add_child(outline)
+		type_outlines.append(outline)
 
 func _make_row(font: Font) -> Panel:
 	var row := Panel.new()
@@ -282,12 +303,13 @@ func _make_button(text: String, pos: Vector2, btn_size: Vector2, font: Font, fon
 
 func _select_type(index: int) -> void:
 	sel_type_index = index
-	for i in type_rows.size():
-		_paint_row(type_rows[i], COLOR_SELECTED if i == index else COLOR_NORMAL)
+	for i in type_outlines.size():
+		type_outlines[i].visible = (i == index)
 
 	for row in card_rows:
 		row.queue_free()
 	card_rows.clear()
+	card_outlines.clear()
 	card_scroll.scroll_vertical = 0
 
 	var type_cards: Array = card_matrix.card_types[index].cards
@@ -296,12 +318,22 @@ func _select_type(index: int) -> void:
 		card_list_box.add_child(cell)
 		card_rows.append(cell)
 
+		var view_pos := (CARD_GRID_CELL - CARD_GRID_ART) / 2.0
+		UIShadow.behind(cell, view_pos, CARD_GRID_ART, Vector2(1, 2))
 		var view := CardView.new()
-		view.position = (CARD_GRID_CELL - CARD_GRID_ART) / 2.0
+		view.position = view_pos
 		view.scale = CARD_GRID_ART / Vector2(CARD_W, CARD_H)
 		view.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		view.setup(type_cards[i], false, true)
 		cell.add_child(view)
+
+		# Added after the view so the glow draws over the card art it rings.
+		var outline := SelectionOutline.new()
+		outline.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		outline.set_target_rect(Rect2(view_pos, CARD_GRID_ART))
+		outline.visible = false
+		cell.add_child(outline)
+		card_outlines.append(outline)
 
 	sel_card_index = 0
 	_select_card(0)
@@ -315,8 +347,8 @@ func _make_card_cell() -> Panel:
 
 func _select_card(index: int) -> void:
 	sel_card_index = index
-	for i in card_rows.size():
-		_paint_row(card_rows[i], COLOR_SELECTED if i == index else COLOR_TRANSPARENT)
+	for i in card_outlines.size():
+		card_outlines[i].visible = (i == index)
 
 	var card: Card = card_matrix.card_types[sel_type_index].cards[index]
 
