@@ -35,6 +35,7 @@ enum {
 	ID_HELP_MAIN4, ID_HELP_PRESENTATION, ID_HELP_CARDS, ID_OPPONENTS_NAME,
 	ID_TAP_TO_START, ID_CLICK_TO_START, ID_TITLE_SCREEN,
 	ID_WINS, ID_LAST_SAVED, ID_OWNED, ID_PAGE,
+	ID_PAUSE, ID_RESUME, ID_FORFEIT,
 }
 
 const TABLE := [
@@ -71,6 +72,7 @@ const TABLE := [
 		"Karten haben 4 Werte: Angriff (AT), Typ (T), Physische Verteidigung (PD) und Magische Verteidigung (MD). AT, PD und MD reichen von 0 bis 255, unterteilt in 16 Klassen von 0 bis F. Je höher der Wert, desto höher die Klasse. Eine Karte kann einen von 4 Typen haben: Physisch (P), Magisch (M), Exploit (X) oder Ansturm (A). Jeder Typ bestimmt, wie die Karte gegen andere kämpft. P greift PD an, M greift MD an, X greift den niedrigeren Wert von PD und MD an, A nutzt den höchsten eigenen Wert, um den niedrigsten Wert der gegnerischen Karte anzugreifen, egal welcher das ist. Jede Karte kann bis zu 8 Pfeile haben, die in die 8 Himmelsrichtungen zeigen. Diese Pfeile werden benutzt, um gegnerische Karten zu erobern oder anzugreifen. Zeigt der Pfeil einer Karte auf eine Karte ohne Gegenpfeil, wird diese automatisch erobert; zeigt er auf einen entgegengesetzten Pfeil, beginnt der Kampf. Die Farbe der Werte, von Grün bis Rot, zeigt den Entwicklungsstand. Rot bedeutet, der Wert ist maximal.",
 		"Gegner", "Zum Starten tippen", "Zum Starten klicken", "Titel",
 		"Siege", "Zuletzt gespeichert", "Besitz", "Seite",
+		"Pause", "Fortsetzen", "Aufgeben",
 	],
 	# English
 	[
@@ -105,6 +107,7 @@ const TABLE := [
 		"Cards have 4 stats. Attack (AT), Type (T), Phisical Defense (PD) and Magical Defense (MD). AT, PD and MD value are from 0 to 255, and are subdivided in 16 class from 0 to F. Higher the stats are, higher will be the class. A card can be of 4 Types, Phisical (P), Magical (M), Exploit (X) or Assault (A). Every type define how the card fight againts the other. P attack PD, M attack MD, X attack lowest stats between PD and MD, A use the highest stats of the card to attack the lowest stats of the opponents card, whatever they are. Every crads can have up to 8 arrows, facing the 8 cardinal points. This arrow are used by cards for capture or attack the opponents cards. If a card's arrow face a card without a facing back arrow, the card is automatically captured, but if a card's arrow face a card with a opposite facing back arrow, the fight begin. Stats color, from greens to red, indicate the evolution state of the stats. Red mean the stat is maxed out.",
 		"Opponent", "Tap to Start", "Click to Start", "Title",
 		"Wins", "Last Saved", "Owned", "Page",
+		"Pause", "Resume", "Forfeit",
 	],
 	# Español
 	[
@@ -139,6 +142,7 @@ const TABLE := [
 		"Las cartas tienen 4 estadísticas: Ataque (AT), Tipo (T), Defensa Física (DF) y Defensa Mágica (DM). Los valores de AT, DF y DM van de 0 a 255, divididos en 16 clases de 0 a F. Cuanto más alta la estadística, más alta será la clase. Una carta puede ser de 4 tipos: Física (P), Mágica (M), Exploit (X) o Asalto (A). Cada tipo define cómo lucha la carta contra las demás. P ataca DF, M ataca DM, X ataca la estadística más baja entre DF y DM, A usa la estadística más alta de la carta para atacar la más baja de la carta rival, sea cual sea. Cada carta puede tener hasta 8 flechas, orientadas hacia los 8 puntos cardinales. Estas flechas se usan para capturar o atacar cartas rivales. Si la flecha de una carta apunta a una carta sin flecha de vuelta, la carta es capturada automáticamente, pero si apunta a una carta con flecha opuesta, comienza el combate. El color de las estadísticas, de verde a rojo, indica su nivel de evolución. El rojo significa que la estadística está al máximo.",
 		"Rival", "Toca para empezar", "Haz clic para empezar", "Título",
 		"Victorias", "Último guardado", "Poseídas", "Página",
+		"Pausa", "Reanudar", "Rendirse",
 	],
 	# Français
 	[
@@ -174,6 +178,7 @@ const TABLE := [
 		"Les cartes ont 4 statistiques : Attaque (AT), Type (T), Défense Physique (DP) et Défense Magique (DM). Les valeurs d'AT, DP et DM vont de 0 à 255, réparties en 16 classes de 0 à F. Plus la statistique est élevée, plus la classe l'est aussi. Une carte peut être de 4 types : Physique (P), Magique (M), Exploit (X) ou Assaut (A). Chaque type définit comment la carte combat les autres. P attaque DP, M attaque DM, X attaque la statistique la plus faible entre DP et DM, A utilise la statistique la plus élevée de la carte pour attaquer la plus faible de la carte adverse, quelle qu'elle soit. Chaque carte peut avoir jusqu'à 8 flèches, orientées vers les 8 points cardinaux. Ces flèches servent à capturer ou attaquer les cartes adverses. Si la flèche d'une carte pointe vers une carte sans flèche opposée, la carte est automatiquement capturée ; mais si elle pointe vers une flèche opposée, le combat commence. La couleur des statistiques, du vert au rouge, indique leur niveau d'évolution. Le rouge signifie que la statistique est au maximum.",
 		"Adversaire", "Touchez pour commencer", "Cliquez pour commencer", "Titre",
 		"Victoires", "Dernière sauvegarde", "Possédées", "Page",
+		"Pause", "Reprendre", "Abandonner",
 	],
 	# Italiano
 	[
@@ -209,6 +214,7 @@ const TABLE := [
 		"Le carte hanno 4 valori. Attacco (AT), Tipo (T), Difesa Fisica (DF) e Difesa Magica (DM). AT, DF e DM hanno valori che vanno tra 0 e 255, suddivisi in 16 classi da 0 a F. Piú il valore é alto, piú la classe sará elevata. Una carta puó essere di 4 tipi, Fisica (P), Magica (M), Exploit (X) e Assalto (A). P attacca DF, M attacca DM, X attacca il valore piú basso tra DF e DM e A usa il valore piú alto della carta per attaccare quello piú basso di quella avversaria. Ogni carta puó avere fino a 8 frecce posizionate sui punti cardinali. Queste frecce vengono utilizzate per catturare o attaccare le carte avversarie. Se la freccia di una carta punta una carta che non ha a sua volta una freccia nella direzione opposta, essa viene automaticamente catturata, altrimenti se c'é una freccia opposta, ha inizio il combattimento. Il colore delle statistiche indica il livello di evoluzione delle stesse. Il colore rosso indica una statistica che ha raggiunto il suo massimo per quel tipo di carta.",
 		"Avversario", "Tocca per iniziare", "Clicca per iniziare", "Titolo",
 		"Vittorie", "Ultimo salvataggio", "Possedute", "Pagina",
+		"Pausa", "Riprendi", "Abbandona",
 	],
 	# Português (Brasil)
 	[
@@ -243,6 +249,7 @@ const TABLE := [
 		"As cartas têm 4 estatísticas: Ataque (AT), Tipo (T), Defesa Física (DF) e Defesa Mágica (DM). Os valores de AT, DF e DM vão de 0 a 255, divididos em 16 classes de 0 a F. Quanto maior a estatística, maior a classe. Uma carta pode ser de 4 tipos: Física (P), Mágica (M), Exploit (X) ou Investida (A). Cada tipo define como a carta luta contra as outras. P ataca DF, M ataca DM, X ataca o menor valor entre DF e DM, A usa o maior valor da carta para atacar o menor valor da carta adversária, seja qual for. Cada carta pode ter até 8 setas, apontando para os 8 pontos cardeais. Essas setas são usadas para capturar ou atacar cartas adversárias. Se a seta de uma carta aponta para uma carta sem seta de volta, a carta é capturada automaticamente; mas se aponta para uma seta oposta, a batalha começa. A cor das estatísticas, do verde ao vermelho, indica o nível de evolução. Vermelho significa que a estatística está no máximo.",
 		"Adversário", "Toque para começar", "Clique para começar", "Título",
 		"Vitórias", "Último salvamento", "Possuídas", "Página",
+		"Pausa", "Continuar", "Desistir",
 	],
 	# Русский
 	[
@@ -277,6 +284,7 @@ const TABLE := [
 		"У карт есть 4 характеристики: Атака (AT), Тип (T), Физическая защита (PD) и Магическая защита (MD). Значения AT, PD и MD варьируются от 0 до 255 и делятся на 16 классов от 0 до F. Чем выше значение, тем выше класс. Карта может быть одного из 4 типов: Физический (P), Магический (M), Эксплойт (X) или Штурм (A). Каждый тип определяет, как карта сражается с другими. P атакует PD, M атакует MD, X атакует более низкое значение из PD и MD, A использует самое высокое значение карты, чтобы атаковать самое низкое значение карты противника, каким бы оно ни было. У каждой карты может быть до 8 стрелок, направленных по 8 сторонам света. Эти стрелки используются для захвата или атаки карт противника. Если стрелка карты направлена на карту без ответной стрелки, карта захватывается автоматически, а если стрелка направлена на противоположную стрелку — начинается бой. Цвет характеристик, от зелёного до красного, показывает уровень их развития. Красный означает, что характеристика достигла максимума.",
 		"Соперник", "Коснитесь, чтобы начать", "Нажмите, чтобы начать", "Заставка",
 		"Победы", "Последнее сохранение", "В наличии", "Страница",
+		"Пауза", "Продолжить", "Сдаться",
 	],
 	# 日本語 - full retranslation from English (the reference table was mostly
 	# blank placeholders).
@@ -311,6 +319,7 @@ const TABLE := [
 		"カードには4つのステータスがあります。攻撃力(AT)、タイプ(T)、物理防御力(PD)、魔法防御力(MD)です。AT、PD、MDの値は0〜255で、0〜Fの16段階に分けられます。数値が高いほどクラスも高くなります。カードには物理(P)、魔法(M)、万能(X)、強襲(A)の4つのタイプがあり、タイプによって戦い方が決まります。Pの攻撃はPDを、Mの攻撃はMDを狙います。XはPDとMDのうち低い方を狙い、Aはカードの最も高いステータスで相手の最も低いステータスを攻撃します。カードには8方向に矢印を最大8個まで持てます。この矢印は相手のカードを捕獲したり攻撃したりするために使われます。矢印が反対方向の矢印を持たないカードを指している場合、そのカードは自動的に捕獲されます。逆に反対方向に矢印があると戦闘が始まります。ステータスの色は緑から赤へと進化状態を示し、赤は最大値に達したことを意味します。",
 		"対戦相手", "タップしてスタート", "クリックしてスタート", "タイトル",
 		"勝利数", "最終セーブ", "所持数", "ページ",
+		"ポーズ", "再開", "棄権",
 	],
 	# 简体中文
 	[
@@ -340,6 +349,7 @@ const TABLE := [
 		"卡牌有4项属性:攻击(AT)、类型(T)、物理防御(PD)和魔法防御(MD)。AT、PD和MD的数值范围是0到255,分为从0到F的16个等级。数值越高,等级越高。卡牌有4种类型:物理(P)、魔法(M)、万能(X)或突袭(A)。每种类型决定了卡牌如何与其他卡牌对战。P攻击PD,M攻击MD,X攻击PD和MD中较低的一项,A使用卡牌中最高的属性攻击对方卡牌中最低的属性,无论那是哪一项。每张卡牌最多可以有8个箭头,分别指向8个方位。这些箭头用于俘获或攻击对手的卡牌。如果一张卡牌的箭头指向一张没有对应反向箭头的卡牌,该卡牌会被自动俘获;但如果指向的是有相对箭头的卡牌,则会触发战斗。属性的颜色从绿到红表示其进化程度,红色表示该属性已达到最大值。",
 		"对手", "轻触开始", "点击开始", "标题",
 		"胜场", "最后保存", "拥有", "页",
+		"暂停", "继续", "认输",
 	],
 ]
 

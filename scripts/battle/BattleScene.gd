@@ -194,6 +194,13 @@ var sfx_attack_p: AudioStreamPlayer
 var sfx_attack_m: AudioStreamPlayer
 var sfx_ragequit: AudioStreamPlayer  # (RAGEQUIT)
 
+# --------------------------------------------------------------- controller
+var nav: FocusNav
+var pad_picking := false  # A on a hand card, waiting for a board cell (or B)
+var pause_overlay: Control
+var button_resume: Button
+var button_forfeit: Button
+
 # ai_table.csv's Level for the current opponent, 0-7. Drives how sloppily
 # GsCPUTurn plays; 7 (= flawless) is the default so a skirmish with no
 # opponent set doesn't accidentally play badly.
@@ -204,7 +211,139 @@ var font_info: Font = Game.font_info
 func _ready() -> void:
 	board = Board.new()
 	_build_ui()
+	_setup_nav()
 	start_new_game()
+
+## Registers every controller target once and leaves them registered for the
+## whole match: each item's enabled_fn reads the live game state (busy,
+## target_mode, pad_picking, ...) instead of being added/removed as the
+## scene moves between placement/target/end-pick sub-modes, mirroring the
+## same items real mouse input already hit-tests dynamically. Only the
+## end-of-match "pick a card" items are rebuilt on the fly (_refresh_end_pick_
+## nav), since they're keyed to CardView instances that don't exist yet here.
+func _setup_nav() -> void:
+	nav = FocusNav.new()
+	nav.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(nav)
+
+	for i in hand_slots.size():
+		nav.add_virtual(&"hand", (func(idx: int) -> Rect2: return hand_slots[idx].get_global_rect()).bind(i), i,
+			0, (func(idx: int) -> bool:
+				return active_player == 0 and not busy and not target_mode and not pad_picking \
+						and player_hand[idx] != null).bind(i))
+
+	for row in Board.NUM_ROWS:
+		for col in Board.NUM_COLS:
+			var rc := Vector2i(row, col)
+			nav.add_virtual(&"board", (func(p: Vector2i) -> Rect2: return board_slots[p.x][p.y].get_global_rect()).bind(rc), rc,
+				0, (func(p: Vector2i) -> bool:
+					if target_mode:
+						var c: Card = board.slots[p.x][p.y]
+						return c != null and target_candidates.has(c)
+					return pad_picking and board.is_playable(p.x, p.y)).bind(rc))
+
+	nav.add_control(button_done)
+	nav.add_control(button_takeall)
+
+	_build_pause_overlay()
+
+	nav.activated.connect(_on_nav_activated)
+	nav.cancelled.connect(_on_nav_cancelled)
+	nav.menu_pressed.connect(_open_pause)
+
+	add_child(ControllerUI.make_prompt_bar([
+		[&"A", StringTable.get_string(StringTable.ID_SELECT)],
+		[&"START", StringTable.get_string(StringTable.ID_PAUSE)],
+	]))
+
+func _on_nav_activated(item: FocusNav.NavItem) -> void:
+	match item.id:
+		&"hand":
+			if pad_picking:
+				return
+			var idx: int = item.meta
+			var card: Card = player_hand[idx]
+			if card == null:
+				return
+			gsCardPicking_Set(idx, card)
+			pad_picking = true
+		&"board":
+			var rc: Vector2i = item.meta
+			if target_mode:
+				_on_slot_pressed(rc.x, rc.y)
+			elif pad_picking:
+				pad_picking = false
+				gsCardPicking_Release(_board_cell_pos(rc.x, rc.y) + Vector2(CARD_W, CARD_H) / 2.0)
+		&"pick":
+			var view: CardView = item.meta
+			if end_result == BattleResult.PLAYER_PERFECT:
+				_show_end_card_info(view.card)
+				_update_owned_panel_pos(view)
+			else:
+				await _end_commit_pick(view)
+				_refresh_end_pick_nav()
+				nav.focus_first()
+		_:
+			(item.control as Button).pressed.emit()
+
+func _on_nav_cancelled() -> void:
+	if nav.get_layer() == 1:
+		_resume_battle()
+	elif pad_picking:
+		pad_picking = false
+		gsCardPicking_Release(Vector2(-9999, -9999))
+
+## Rebuilds the "pick a captured card" targets: called once when the pick
+## phase opens and again after every pad-driven pick, since end_down_cards
+## shrinks by one CardView each time (mirrors Collection.gd's remove_by_id +
+## re-add pattern for its own dynamically-rebuilt card grid).
+func _refresh_end_pick_nav() -> void:
+	nav.remove_by_id(&"pick")
+	for view in end_down_cards:
+		if end_movable.get(view, false):
+			nav.add_virtual(&"pick", (func(v: CardView) -> Rect2: return v.get_global_rect()).bind(view), view)
+
+# ------------------------------------------------------------------- pause
+func _build_pause_overlay() -> void:
+	pause_overlay = Control.new()
+	pause_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	pause_overlay.process_mode = Node.PROCESS_MODE_ALWAYS
+	pause_overlay.visible = false
+	pause_overlay.z_index = 200
+	add_child(pause_overlay)
+
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.6)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	pause_overlay.add_child(dim)
+
+	button_resume = _make_end_button(StringTable.get_string(StringTable.ID_RESUME), Vector2(370, 220), Vector2(220, 56))
+	button_resume.pressed.connect(_resume_battle)
+	pause_overlay.add_child(button_resume)
+
+	button_forfeit = _make_end_button(StringTable.get_string(StringTable.ID_FORFEIT), Vector2(370, 290), Vector2(220, 56))
+	button_forfeit.pressed.connect(_on_forfeit_pressed)
+	pause_overlay.add_child(button_forfeit)
+
+	nav.add_control(button_resume, null, 1)
+	nav.add_control(button_forfeit, null, 1)
+
+func _open_pause() -> void:
+	if nav.get_layer() == 1:
+		return
+	get_tree().paused = true
+	pause_overlay.visible = true
+	nav.push_layer(1)
+
+func _resume_battle() -> void:
+	get_tree().paused = false
+	pause_overlay.visible = false
+	nav.pop_layer()
+
+func _on_forfeit_pressed() -> void:
+	get_tree().paused = false
+	Game.crossfade_to_menu_music(0.85)
+	get_tree().change_scene_to_file("res://scenes/menu/MainMenu.tscn")
 
 ## Port of BattleScene.cs's generateCards(): the 5 Game.player.cards flagged
 ## isOnDeck by DeckSelect, cloned (clone_stats()) same as the reference's
@@ -1881,6 +2020,7 @@ func gsEndPlayerPick_Set(result: BattleResult) -> void:
 
 	await get_tree().create_timer(delay + 0.45).timeout
 	end_pick_interactive = true
+	_refresh_end_pick_nav()
 
 func _end_player_pick_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
@@ -1937,6 +2077,19 @@ func _end_player_pick_drag(pos: Vector2) -> void:
 	end_sel_view.position = end_card_start_pos + (pos - end_drag_start)
 	_update_owned_panel_pos(end_sel_view)
 
+## The "confirm this card" body shared by a mouse drag-into-the-up-row
+## (_end_player_pick_unclick's move_up branch) and a pad A-press on a
+## down-row pick target (_on_nav_activated's &"pick" branch).
+func _end_commit_pick(view: CardView) -> void:
+	end_pick_interactive = false
+	end_up_cards.append(view)
+	end_down_cards.erase(view)
+	_relayout_row(end_up_cards, END_PL0_START, END_PL0_WIDTH, 0.3)
+	end_remaining -= 1
+	_fade_in(button_done, 0.3)
+	await get_tree().create_timer(0.3).timeout
+	end_pick_interactive = true
+
 func _end_player_pick_unclick(_pos: Vector2) -> void:
 	if end_sel_view == null:
 		return
@@ -1967,12 +2120,7 @@ func _end_player_pick_unclick(_pos: Vector2) -> void:
 	end_sel_view = null
 
 	if move_up:
-		end_up_cards.append(view)
-		end_down_cards.erase(view)
-		_relayout_row(end_up_cards, END_PL0_START, END_PL0_WIDTH, 0.3)
-		end_remaining -= 1
-		_fade_in(button_done, 0.3)
-		await get_tree().create_timer(0.3).timeout
+		await _end_commit_pick(view)
 	elif move_down:
 		end_down_cards.append(view)
 		end_up_cards.erase(view)
