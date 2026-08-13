@@ -6,4 +6,10 @@
 
 # Assets no longer referenced by any script/scene - kept for reference,
 # excluded from git and from exported builds.
-/old_asset/
+/old_assets/
+
+# Kenney Input Prompts (CC0, redistributable - kenney.nl/assets/input-prompts).
+# 19MB / 3000+ icons across 17 controller families; the game only needs the
+# handful of Xbox glyphs copied into assets/prompts/, so the pack itself stays
+# out of git. addons/.gdignore also keeps Godot from importing all of it.
+/addons/

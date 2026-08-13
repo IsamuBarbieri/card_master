@@ -45,7 +45,8 @@ func _ready() -> void:
 	tw.tween_callback(_advance)
 
 func _input(event: InputEvent) -> void:
-	if (event is InputEventMouseButton or event is InputEventScreenTouch or event is InputEventKey) and event.pressed:
+	if (event is InputEventMouseButton or event is InputEventScreenTouch \
+			or event is InputEventKey or event is InputEventJoypadButton) and event.pressed:
 		_advance()
 
 func _advance() -> void:

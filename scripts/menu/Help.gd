@@ -64,6 +64,30 @@ func _ready() -> void:
 
 	_build_page_dots()
 
+	# Pages aren't discrete items to point a hand at - they're a filmstrip -
+	# so there's no FocusNav here at all: paging and closing are handled
+	# directly below.
+	ControllerUI.hide_hand()
+	add_child(ControllerUI.make_prompt_bar([
+		[&"LB", ""], [&"RB", StringTable.get_string(StringTable.ID_PAGE)],
+		[&"B", StringTable.get_string(StringTable.ID_BACK)],
+	]))
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not ControllerUI.is_gamepad():
+		return
+	# Left/right page as well as the shoulders: reaching for LB/RB isn't the
+	# obvious first instinct on a filmstrip.
+	if event.is_action_pressed(&"nav_left") or event.is_action_pressed(&"nav_page_prev"):
+		_go_to_page(_current_page - 1)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"nav_right") or event.is_action_pressed(&"nav_page_next"):
+		_go_to_page(_current_page + 1)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"nav_accept") or event.is_action_pressed(&"nav_cancel"):
+		_on_close_pressed()
+		get_viewport().set_input_as_handled()
+
 func _make_page(bg_path: String) -> Control:
 	var page := Control.new()
 	page.custom_minimum_size = Vector2(SCREEN_W, SCREEN_H)

@@ -32,8 +32,10 @@ const MENU_BUTTON_GAP_WIDTHS := {
 }
 
 var cat_sprite: AnimatedSprite2D
+var cat_button: Button
 var cat_animating := false
 var cat_wait_time := 0.0
+var nav: FocusNav
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -45,10 +47,10 @@ func _ready() -> void:
 	bg.size = Vector2(SCREEN_W, SCREEN_H)
 	add_child(bg)
 
-	_make_menu_button(StringTable.get_string(StringTable.ID_BATTLE), "button_battle.png", Vector2(343, 26), Vector2(274, 71), _on_battle_pressed)
-	_make_menu_button(StringTable.get_string(StringTable.ID_SHOP), "button_shop.png", Vector2(131, 236), Vector2(274, 71), _on_shop_pressed)
-	_make_menu_button(StringTable.get_string(StringTable.ID_COLLECTION), "button_collection.png", Vector2(556, 236), Vector2(274, 71), _on_collection_pressed)
-	_make_menu_button(StringTable.get_string(StringTable.ID_OPTIONS), "button_option.png", Vector2(343, 442), Vector2(274, 71), _on_options_pressed)
+	var btn_battle := _make_menu_button(StringTable.get_string(StringTable.ID_BATTLE), "button_battle.png", Vector2(343, 26), Vector2(274, 71), _on_battle_pressed)
+	var btn_shop := _make_menu_button(StringTable.get_string(StringTable.ID_SHOP), "button_shop.png", Vector2(131, 236), Vector2(274, 71), _on_shop_pressed)
+	var btn_collection := _make_menu_button(StringTable.get_string(StringTable.ID_COLLECTION), "button_collection.png", Vector2(556, 236), Vector2(274, 71), _on_collection_pressed)
+	var btn_options := _make_menu_button(StringTable.get_string(StringTable.ID_OPTIONS), "button_option.png", Vector2(343, 442), Vector2(274, 71), _on_options_pressed)
 
 	# No-op if a menu track is already playing (e.g. coming back from
 	# Opponents, which never touches the music itself) - keeps whatever's
@@ -57,6 +59,24 @@ func _ready() -> void:
 
 	_build_cat()
 	cat_wait_time = randf() * 3.5
+
+	_setup_nav([btn_battle, btn_shop, btn_collection, btn_options])
+
+## The cat hotspot is registered too so the Help screen is reachable without
+## a pointer - it's the only way in.
+func _setup_nav(buttons: Array) -> void:
+	nav = FocusNav.new()
+	add_child(nav)
+	for btn in buttons:
+		nav.add_control(btn)
+	if cat_button != null:
+		nav.add_control(cat_button)
+	nav.activated.connect(func(item: FocusNav.NavItem) -> void:
+		(item.control as Button).pressed.emit())
+	nav.focus_first()
+	add_child(ControllerUI.make_prompt_bar([
+		[&"A", StringTable.get_string(StringTable.ID_SELECT)],
+	]))
 
 func _build_cat() -> void:
 	var sheet: Texture2D = load(ASSETS + "help_cat.png")
@@ -82,7 +102,7 @@ func _build_cat() -> void:
 	cat_sprite.position = CAT_POS
 	add_child(cat_sprite)
 
-	var cat_button := Button.new()
+	cat_button = Button.new()
 	cat_button.flat = true
 	cat_button.position = CAT_POS
 	cat_button.size = CAT_FRAME_SIZE
@@ -101,7 +121,7 @@ func _process(delta: float) -> void:
 			cat_sprite.frame = 0
 			cat_sprite.play("idle")
 
-func _make_menu_button(label: String, texture_name: String, pos: Vector2, size: Vector2, on_pressed: Callable) -> void:
+func _make_menu_button(label: String, texture_name: String, pos: Vector2, size: Vector2, on_pressed: Callable) -> Button:
 	var font_stylish: Font = Game.font_stylish
 	var btn := Button.new()
 	UIButtonStyle.apply(btn)
@@ -126,6 +146,7 @@ func _make_menu_button(label: String, texture_name: String, pos: Vector2, size: 
 	icon.size = size
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(icon)
+	return btn
 
 func _on_battle_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")

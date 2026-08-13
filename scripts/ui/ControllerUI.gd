@@ -1,0 +1,282 @@
+extends Node
+## Autoload (declared last - reads Game.font_stylish). Owns everything that is
+## global to controller support:
+##   - which device the player is currently using (pointer vs gamepad),
+##   - the "hand" cursor that snaps onto whatever FocusNav has focused,
+##   - the button-glyph lookup and the on-screen prompt bar.
+##
+## Per-screen navigation lives in FocusNav (scripts/ui/FocusNav.gd) instead;
+## this class deliberately knows nothing about any individual screen.
+##
+## The InputMap actions are registered here in code rather than written into
+## project.godot's [input] section: that section stores serialized
+## InputEvent objects, which is both unreadable and easy to corrupt by hand,
+## and this project builds all of its UI in code anyway. The trade-off is
+## that the actions don't show up in the editor's Input Map panel.
+
+signal mode_changed(new_mode: int)
+
+enum { MODE_POINTER, MODE_GAMEPAD }
+
+## Below this, a resting-but-drifting stick must not flip the game into
+## gamepad mode (or fire navigation).
+const STICK_DEADZONE := 0.35
+## Shared auto-repeat timing so every screen scrolls at the same speed.
+const NAV_REPEAT_DELAY := 0.38
+const NAV_REPEAT_RATE := 0.11
+
+const HAND_TEXTURE_PATH := "res://assets/cursor.png"
+const HAND_SIZE := Vector2(40, 40)
+## How far left of the focused rect the fingertip sits.
+const HAND_GAP := 10.0
+const HAND_TWEEN_TIME := 0.12
+const HAND_BOB := 4.0
+const HAND_BOB_TIME := 0.55
+
+## The single indirection point for button art. Only these paths need to
+## change if the glyph set is ever swapped; everything else refers to the
+## semantic key. Sourced from Kenney's Input Prompts (CC0) - the pack itself
+## is gitignored, these few files are copied into assets/prompts/.
+const GLYPH_PATHS := {
+	&"A": "res://assets/prompts/xbox_button_color_a.png",
+	&"B": "res://assets/prompts/xbox_button_color_b.png",
+	&"X": "res://assets/prompts/xbox_button_color_x.png",
+	&"Y": "res://assets/prompts/xbox_button_color_y.png",
+	&"LB": "res://assets/prompts/xbox_lb.png",
+	&"RB": "res://assets/prompts/xbox_rb.png",
+	&"START": "res://assets/prompts/xbox_button_menu.png",
+	&"DPAD": "res://assets/prompts/xbox_dpad.png",
+}
+
+const PROMPT_GLYPH_SIZE := Vector2(34, 34)
+const PROMPT_FONT_SIZE := 20
+const PROMPT_BAR_Y := 508.0
+const PROMPT_ITEM_GAP := 6.0
+const PROMPT_ENTRY_GAP := 22.0
+
+var mode := MODE_POINTER
+
+var _layer: CanvasLayer
+var _hand: TextureRect
+var _hand_tween: Tween
+var _bob_tween: Tween
+var _hand_target := Vector2.ZERO
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS  # must keep working over a paused battle
+	_register_actions()
+	_build_hand()
+
+# ------------------------------------------------------------------ actions
+
+## Our own nav_* actions rather than reusing the built-in ui_* ones: native
+## widgets that own their input while open (OptionButton's popup, LineEdit)
+## rely on ui_*, so keeping them separate means FocusNav can never fight
+## them. Keyboard bindings are kept alongside the pad ones so the whole
+## system stays testable on a desktop with no controller plugged in.
+func _register_actions() -> void:
+	_add_action(&"nav_up", [JOY_BUTTON_DPAD_UP], [KEY_UP, KEY_W], JOY_AXIS_LEFT_Y, -1.0)
+	_add_action(&"nav_down", [JOY_BUTTON_DPAD_DOWN], [KEY_DOWN, KEY_S], JOY_AXIS_LEFT_Y, 1.0)
+	_add_action(&"nav_left", [JOY_BUTTON_DPAD_LEFT], [KEY_LEFT, KEY_A], JOY_AXIS_LEFT_X, -1.0)
+	_add_action(&"nav_right", [JOY_BUTTON_DPAD_RIGHT], [KEY_RIGHT, KEY_D], JOY_AXIS_LEFT_X, 1.0)
+	_add_action(&"nav_accept", [JOY_BUTTON_A], [KEY_ENTER, KEY_SPACE])
+	_add_action(&"nav_cancel", [JOY_BUTTON_B], [KEY_ESCAPE, KEY_BACKSPACE])
+	_add_action(&"nav_alt", [JOY_BUTTON_X], [KEY_X])
+	_add_action(&"nav_alt2", [JOY_BUTTON_Y], [KEY_Y])
+	_add_action(&"nav_page_prev", [JOY_BUTTON_LEFT_SHOULDER], [KEY_Q])
+	_add_action(&"nav_page_next", [JOY_BUTTON_RIGHT_SHOULDER], [KEY_E])
+	_add_action(&"nav_menu", [JOY_BUTTON_START], [KEY_P])
+
+func _add_action(name: StringName, buttons: Array, keys: Array, axis: int = -1, axis_value: float = 0.0) -> void:
+	if InputMap.has_action(name):
+		InputMap.erase_action(name)
+	InputMap.add_action(name, STICK_DEADZONE)
+	for b in buttons:
+		var ev := InputEventJoypadButton.new()
+		ev.button_index = b
+		InputMap.action_add_event(name, ev)
+	for k in keys:
+		var ev := InputEventKey.new()
+		ev.physical_keycode = k
+		InputMap.action_add_event(name, ev)
+	if axis >= 0:
+		var ev := InputEventJoypadMotion.new()
+		ev.axis = axis
+		ev.axis_value = axis_value
+		InputMap.action_add_event(name, ev)
+
+# --------------------------------------------------------------- device mode
+
+## Static + side-effect free so it can be unit-tested headlessly with
+## synthetic events. Returns the mode this event implies, or -1 for events
+## that shouldn't change the mode at all (a stick resting below the
+## deadzone, key repeats, everything non-input-ish).
+static func classify_event(event: InputEvent) -> int:
+	if event is InputEventJoypadButton:
+		return MODE_GAMEPAD
+	if event is InputEventJoypadMotion:
+		return MODE_GAMEPAD if absf((event as InputEventJoypadMotion).axis_value) >= STICK_DEADZONE else -1
+	if event is InputEventMouseButton or event is InputEventMouseMotion or event is InputEventScreenTouch or event is InputEventScreenDrag:
+		return MODE_POINTER
+	return -1
+
+func _input(event: InputEvent) -> void:
+	var implied := classify_event(event)
+	if implied == -1 or implied == mode:
+		return
+	_set_mode(implied)
+
+func _set_mode(new_mode: int) -> void:
+	mode = new_mode
+	# Android has no OS cursor to hide, and touching MOUSE_MODE there can
+	# interfere with touch input.
+	if OS.get_name() != "Android":
+		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN if mode == MODE_GAMEPAD else Input.MOUSE_MODE_VISIBLE
+	if mode == MODE_POINTER:
+		hide_hand()
+	mode_changed.emit(mode)
+
+func is_gamepad() -> bool:
+	return mode == MODE_GAMEPAD
+
+# ---------------------------------------------------------------- hand cursor
+
+func _build_hand() -> void:
+	_layer = CanvasLayer.new()
+	_layer.layer = 128
+	add_child(_layer)
+
+	_hand = TextureRect.new()
+	_hand.texture = load(HAND_TEXTURE_PATH)
+	_hand.stretch_mode = TextureRect.STRETCH_SCALE
+	_hand.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_hand.size = HAND_SIZE
+	_hand.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hand.visible = false
+	_layer.add_child(_hand)
+
+## Snaps the hand to the left edge of `rect`, vertically centred. Because the
+## project stretches with canvas_items/keep, CanvasLayer coordinates are the
+## same 960x544 design coordinates every screen is laid out in - no scaling
+## conversion is needed here.
+func point_at(rect: Rect2) -> void:
+	if mode != MODE_GAMEPAD:
+		return
+	var target := Vector2(
+		rect.position.x - HAND_SIZE.x - HAND_GAP,
+		rect.position.y + rect.size.y * 0.5 - HAND_SIZE.y * 0.5)
+	var first_show := not _hand.visible
+	_hand.visible = true
+	if target.is_equal_approx(_hand_target) and not first_show:
+		return
+	_hand_target = target
+
+	if _hand_tween != null and _hand_tween.is_valid():
+		_hand_tween.kill()
+	if first_show:
+		_hand.position = target
+	else:
+		_hand_tween = create_tween()
+		_hand_tween.tween_property(_hand, "position", target, HAND_TWEEN_TIME) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_start_bob()
+
+## A small looping nudge toward the thing it's pointing at - without it the
+## hand reads as a static decal once it has settled.
+func _start_bob() -> void:
+	if _bob_tween != null and _bob_tween.is_valid():
+		_bob_tween.kill()
+	_bob_tween = create_tween()
+	_bob_tween.set_loops()
+	_bob_tween.tween_property(_hand, "position:x", _hand_target.x + HAND_BOB, HAND_BOB_TIME) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_bob_tween.tween_property(_hand, "position:x", _hand_target.x, HAND_BOB_TIME) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+func hide_hand() -> void:
+	if _hand == null:
+		return
+	if _hand_tween != null and _hand_tween.is_valid():
+		_hand_tween.kill()
+	if _bob_tween != null and _bob_tween.is_valid():
+		_bob_tween.kill()
+	_hand.visible = false
+	# So the next point_at() snaps instead of sliding in from wherever it
+	# happened to be left on a previous screen.
+	_hand_target = Vector2.ZERO
+
+# -------------------------------------------------------------------- glyphs
+
+## Returns null when the art isn't present, which is what lets the prompt bar
+## degrade to a text label instead of erroring - see make_prompt_bar.
+static func glyph(name: StringName) -> Texture2D:
+	if not GLYPH_PATHS.has(name):
+		return null
+	var path: String = GLYPH_PATHS[name]
+	if not ResourceLoader.exists(path):
+		return null
+	return load(path)
+
+## `entries` is an Array of [glyph_name: StringName, label: String] pairs.
+## The returned Control positions itself along the bottom of the 960x544
+## canvas and shows itself only in gamepad mode; add it as a child of the
+## screen and forget about it (Godot drops the mode_changed connection
+## automatically when the bar is freed with its screen).
+func make_prompt_bar(entries: Array) -> Control:
+	var bar := Control.new()
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.position = Vector2(0, PROMPT_BAR_Y)
+	bar.size = Vector2(960, 36)
+	bar.visible = mode == MODE_GAMEPAD
+
+	var x := 0.0
+	for entry in entries:
+		var key: StringName = entry[0]
+		var text: String = entry[1]
+
+		var tex := glyph(key)
+		if tex != null:
+			var icon := TextureRect.new()
+			icon.texture = tex
+			icon.stretch_mode = TextureRect.STRETCH_SCALE
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon.size = PROMPT_GLYPH_SIZE
+			icon.position = Vector2(x, 0)
+			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			bar.add_child(icon)
+			x += PROMPT_GLYPH_SIZE.x + PROMPT_ITEM_GAP
+		else:
+			# Text fallback: the game stays fully playable and readable even
+			# with no glyph art present at all.
+			var tag := _make_prompt_label("[%s]" % key)
+			tag.position = Vector2(x, 0)
+			bar.add_child(tag)
+			x += tag.size.x + PROMPT_ITEM_GAP
+
+		var label := _make_prompt_label(text)
+		label.position = Vector2(x, 0)
+		bar.add_child(label)
+		x += label.size.x + PROMPT_ENTRY_GAP
+
+	# Centre the finished row horizontally.
+	for child in bar.get_children():
+		(child as Control).position.x += (960.0 - (x - PROMPT_ENTRY_GAP)) * 0.5
+
+	mode_changed.connect(func(m: int) -> void:
+		if is_instance_valid(bar):
+			bar.visible = m == MODE_GAMEPAD)
+	return bar
+
+func _make_prompt_label(text: String) -> Label:
+	var label := Label.new()
+	label.text = text
+	if Game.font_stylish != null:
+		label.add_theme_font_override("font", Game.font_stylish)
+	label.add_theme_font_size_override("font_size", PROMPT_FONT_SIZE)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 4)
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.size = Vector2(label.get_minimum_size().x, PROMPT_GLYPH_SIZE.y)
+	return label

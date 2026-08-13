@@ -24,6 +24,11 @@ static func apply(btn: Button) -> void:
 	btn.add_theme_stylebox_override("hover", normal)
 	btn.add_theme_stylebox_override("pressed", _make_stylebox("button_9patch_press.png"))
 	btn.add_theme_stylebox_override("disabled", _make_stylebox("button_9patch_disable.png"))
+	# Controller focus: the hand cursor is the primary indicator, but a
+	# brightened pressed-skin underneath makes it unambiguous which button
+	# would fire. Not used by mouse input - FocusNav sets focus_mode = NONE
+	# on everything it registers, so nothing gets a focus ring by accident.
+	btn.add_theme_stylebox_override("focus", _make_stylebox("button_9patch_press.png"))
 
 static func _make_stylebox(texture_name: String) -> StyleBoxTexture:
 	var sb := StyleBoxTexture.new()
