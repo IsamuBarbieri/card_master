@@ -22,12 +22,12 @@ func _init(new_name: String, slot: int, opponent_count: int) -> void:
 	available_opponents.fill(false)
 	available_opponents[0] = true
 
-## Port of Player.cs's GenerateBaseSet(): 5 starter cards from definitions
-## 0 or 1 only (Slime/whatever gen_table.csv's 2nd row is), randomly chosen
-## per card.
+## Port of Player.cs's GenerateBaseSet(): 5 Slime starter cards - Slime
+## (def_id 0) is the only species that's ever free, matching Shop.gd's
+## slot-0 safety net.
 func generate_base_set() -> void:
 	for i in 5:
-		var card := CardManager.generate_card(randi() % 2)
+		var card := CardManager.generate_card(0)
 		card.has_zero_price = true
 		cards.append(card)
 

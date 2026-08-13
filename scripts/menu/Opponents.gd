@@ -30,7 +30,7 @@ const CARD_W := 96
 const CARD_H := 128
 const ITEM_MARGIN := 1
 const ITEM_SIZE := Vector2(CARD_W + ITEM_MARGIN * 2, CARD_H + ITEM_MARGIN * 2)
-const GRID_COLUMNS := 6  # opp_count (18, RAGEQUIT included) = exactly 3 rows of 6
+const GRID_COLUMNS := 7  # opp_count (21, RAGEQUIT included) = exactly 3 rows of 7
 const LABEL_FONT_SIZE := 36
 
 var opp_count: int
@@ -99,14 +99,14 @@ func _build_ui() -> void:
 	select_button.pressed.connect(_on_select_pressed)
 
 	var scroll := ScrollContainer.new()
-	scroll.position = Vector2(136, 50)
-	scroll.size = Vector2(688, 402)  # exactly fits 3 rows of 6 (98x130 items, 20/6 sep) with no scrollbar
+	scroll.position = Vector2(95, 50)
+	scroll.size = Vector2(770, 402)  # exactly fits 3 rows of 7 (98x130 items, 14/6 sep) with no scrollbar
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED  # GridListScrollOrientation.Vertical
 	add_child(scroll)
 
 	var grid := GridContainer.new()
 	grid.columns = GRID_COLUMNS
-	grid.add_theme_constant_override("h_separation", 20)
+	grid.add_theme_constant_override("h_separation", 14)
 	grid.add_theme_constant_override("v_separation", 6)
 	scroll.add_child(grid)
 

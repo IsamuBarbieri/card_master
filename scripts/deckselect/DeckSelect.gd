@@ -748,12 +748,20 @@ func _update_selection_outline() -> void:
 
 func _on_play_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
-	for i in 5:
-		var card: Card = lower_deck.card_stats(i)
-		Game.player.last_deck[i] = card.unique_id if card != null else -1
+	_sync_last_deck()
 	busy_indicator.visible = true
 	launch_battle_delay = LAUNCH_BATTLE_DELAY
 
 func _on_back_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_back_sound.wav")
+	# Unlike _on_play_pressed (whose save piggybacks on the launch-delay
+	# timer in _process), leaving without playing had no save path at all -
+	# the in-progress deck selection was silently lost on every "Back".
+	_sync_last_deck()
+	SaveSystem.save_player(Game.player)
 	get_tree().change_scene_to_file("res://scenes/menu/Opponents.tscn")
+
+func _sync_last_deck() -> void:
+	for i in 5:
+		var card: Card = lower_deck.card_stats(i)
+		Game.player.last_deck[i] = card.unique_id if card != null else -1

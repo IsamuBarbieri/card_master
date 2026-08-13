@@ -498,9 +498,16 @@ func _setup_shop_card(index: int, force_regenerate: bool) -> void:
 	var maxv: int = mini(GEN_TABLE[index][1], cap)
 
 	# Slot 0 is the opening safety net (see the has_zero_price rule below):
-	# it stays visible with at least Slime/Zombie even before the very first
-	# win, otherwise a new player with no cards has nowhere to get any.
-	if index == 0:
+	# while the player can't field a full deck (fewer than 5 cards), it
+	# forces Slime specifically instead of its normal roll - Slime is the
+	# only species that's ever free, matching the player's own starter deck
+	# (Player.generate_base_set()), not whatever species the normal range
+	# would have rolled.
+	var free_slime := index == 0 and Game.player.cards.size() < 5
+	if free_slime:
+		minv = 0
+		maxv = 0
+	elif index == 0:
 		maxv = maxi(maxv, 1)
 
 	if maxv < minv:
@@ -520,7 +527,8 @@ func _setup_shop_card(index: int, force_regenerate: bool) -> void:
 		shop_cards_time[index] = float(wins - RESTOCK_WINS)
 
 	if force_regenerate or shop_cards[index] == null \
-			or wins - int(shop_cards_time[index]) >= RESTOCK_WINS:
+			or wins - int(shop_cards_time[index]) >= RESTOCK_WINS \
+			or (free_slime and shop_cards[index].def_id != 0):
 		shop_cards[index] = CardManager.generate_card(randi_range(minv, maxv))
 		shop_cards_time[index] = float(wins)
 		_save_shop_cards()
@@ -534,7 +542,7 @@ func _setup_shop_card(index: int, force_regenerate: bool) -> void:
 	# 5 later (or stuck free if it climbs back up) - a stale flag from an
 	# earlier visit could otherwise price them out of the safety net.
 	if index == 0:
-		shop_cards[index].has_zero_price = Game.player.cards.size() < 5
+		shop_cards[index].has_zero_price = free_slime
 
 	shop_card_panels[index].visible = true
 	shop_card_views[index].visible = true
