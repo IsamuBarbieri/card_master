@@ -100,33 +100,6 @@ func get_capturable_cards(card: Card) -> Array:
 			result.append(other)
 	return result
 
-# Adjacent cards (along `card`'s own arrows) still owned by the loser's side
-# -> Chain capture. `winner_owner` is passed explicitly (rather than read
-# from `card.owner`) so this works uniformly whether `card` has already been
-# flipped to the winner or not, which lets the chain collect the whole next
-# level before any of it is actually captured.
-#
-# Every matched card gets captured unconditionally - even a "simple capture"
-# with no return arrow. Whether that capture itself keeps the chain going
-# another level is a separate, explicit rule the caller applies via
-# "continues": only if the captured card has the opposite-facing arrow
-# connecting it back does its own arrows get checked for a further level -
-# a simple-capture card is a dead end, it doesn't propagate.
-func get_chain_cards(card: Card, winner_owner: int) -> Array:
-	var result := []
-	for i in 8:
-		if not card.arrows[i]:
-			continue
-		var row: int = card.row + SLOT_OFFSETS[i][0]
-		var col: int = card.col + SLOT_OFFSETS[i][1]
-		if not has_card(row, col):
-			continue
-		var other: Card = slots[row][col]
-		if other.owner == winner_owner:
-			continue
-		result.append({"card": other, "continues": other.arrows[arrow_opposite_index(i)]})
-	return result
-
 func count_cards(owner: int) -> int:
 	var count := 0
 	for r in NUM_ROWS:

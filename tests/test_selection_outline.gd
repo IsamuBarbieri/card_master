@@ -1,16 +1,11 @@
 extends SceneTree
 ## Geometry checks for SelectionOutline's 9-patch glow, plus a load check on
-## the generated glow/FX textures.
+## the generated glow texture.
 ## Run: godot --headless --quit-after 5 --script res://tests/test_selection_outline.gd
 
 func _init() -> void:
-	# 1. new assets all load
-	for path in [
-		"res://assets/cards/card_sel_glow_ring.png",
-		"res://assets/battle/fx_shockwave.png",
-		"res://assets/battle/fx_burst.png",
-	]:
-		assert(load(path) != null, "failed to load " + path)
+	# 1. the generated glow texture loads
+	assert(load("res://assets/cards/card_sel_glow_ring.png") != null, "failed to load the glow texture")
 
 	var pad: float = SelectionOutline.GLOW_PAD
 

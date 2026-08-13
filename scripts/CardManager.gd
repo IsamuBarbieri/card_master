@@ -20,7 +20,6 @@ class CardDef:
 	var max_attack_type: int
 	var max_physical_defense: int
 	var max_magical_defense: int
-	var arrow_ranges: Array = []  # Array of [min,max] per direction
 
 var defs: Array = []  # Array of CardDef
 var _next_uid := 0
@@ -111,10 +110,6 @@ func load_definitions() -> void:
 		def.max_physical_defense = int(data[9])
 		def.max_magical_defense = int(data[10])
 
-		def.arrow_ranges = []
-		for i in 8:
-			def.arrow_ranges.append(parse_range(data[11 + i]))
-
 		defs.append(def)
 
 func generate_card(def_id: int) -> Card:
@@ -127,11 +122,42 @@ func generate_card(def_id: int) -> Card:
 	card.attack_power = randi_range(def.atk_min, def.atk_max)
 	card.physical_defense = randi_range(def.pdef_min, def.pdef_max)
 	card.magical_defense = randi_range(def.mdef_min, def.mdef_max)
-	card.arrows = []
-	for i in 8:
-		var r: Array = def.arrow_ranges[i]
-		card.arrows.append(randi_range(r[0], r[1]) == 1)
+	card.arrows = generate_arrows()
 	return card
+
+## Each additional arrow beyond the first is strictly rarer than the last,
+## instead of every direction rolling an independent 50/50 (the old system -
+## every card averaged ~4.5/8 arrows regardless of species, which is why a
+## captured card's Chain almost always found a way to keep going: ~32%
+## chance any two adjacent enemies had a mutual return arrow). ARROW_BASE is
+## the odds of getting a 2nd arrow at all; each arrow past that multiplies
+## the odds by ARROW_DECAY again, so the chain of rolls stops at the first
+## failure - a monotonically decreasing count distribution (1 arrow ~35% of
+## cards, 8 arrows ~0.08%, average ~2.2) instead of a bell curve centered on
+## "most cards have half the compass covered."
+const ARROW_BASE := 0.65
+const ARROW_DECAY := 0.82
+
+## The guaranteed 1st arrow is random in direction too, same as every arrow
+## after it - "guaranteed" only means the count never drops below 1, not
+## that any particular direction is predictable. A shuffled direction order
+## decides which slot is the guaranteed one and which order the rest are
+## attempted in.
+func generate_arrows() -> Array:
+	var arrows := [false, false, false, false, false, false, false, false]
+	var order: Array = range(8)
+	order.shuffle()
+
+	arrows[order[0]] = true
+
+	var continue_chance := ARROW_BASE
+	for i in range(1, 8):
+		if randf() >= continue_chance:
+			break
+		arrows[order[i]] = true
+		continue_chance *= ARROW_DECAY
+
+	return arrows
 
 ## Port of CardManager.cs's CardPrice(). Flexible/Assault types command a
 ## premium (exponent > 1 on the average stat), more arrows raise the price
@@ -158,12 +184,21 @@ func card_price(card: Card) -> int:
 	# card worth 8x the same species at 1 arrow. That assumed "more arrows is
 	# strictly better", which isn't true here: an arrow is also an entry point
 	# for the opponent (a card with no return arrow is captured without a
-	# fight, and a losing card's own arrows are what a Chain propagates
-	# through - see Board.get_capturable_cards/get_chain_cards). A low-arrow
-	# card is a deliberate anti-chain anchor, not a dud. The +2 offset keeps
-	# arrows a price factor but compresses the spread from 8x to 3.3x so they
-	# no longer dominate the valuation.
-	var total: float = 10.0 * (2.0 + f) * pow(val, t)
+	# fight, and a captured card's own arrows are what lets a Chain keep
+	# going - see Board.get_capturable_cards/get_adjacent_battle_cards). A
+	# low-arrow card is a deliberate anti-chain anchor, not a dud. The +2
+	# offset keeps arrows a price factor but compresses the spread from 8x
+	# to 3.3x so they no longer dominate the valuation.
+	#
+	# 15.4 (was 10.0): generate_arrows' rarer-each-time curve dropped the
+	# average arrow count from ~4.5 to ~2.2, which would silently shrink
+	# every price (and, since buy/sell/buyback in Shop.gd all derive from
+	# this same number, the whole coin economy) by ~35% as a side effect.
+	# Rescaled so the average (2.0 + f) factor lands back on the same ~6.5
+	# it was before (10.0 * 6.5 == 15.4 * (2.0 + ~2.22)) - same prices on
+	# average, same 3.3x spread between a 1-arrow and an 8-arrow card, just
+	# priced against the new rarity curve instead of the old one.
+	var total: float = 15.4 * (2.0 + f) * pow(val, t)
 	return int(total)
 
 func generate_random_deck(count: int) -> Array:

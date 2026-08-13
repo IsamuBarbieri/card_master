@@ -25,6 +25,14 @@ var is_favourite: bool = false
 # so they can't be insta-sold for free money.
 var has_zero_price: bool = false
 
+# How many cards THIS card personally captured this match (battle win, chain
+# link, or combo burst) - a transient per-match tally, not persistent state,
+# so it's deliberately left out of clone_stats() below (same as owner/row/
+# col): every fresh battle clone starts at 0 with no reset needed. Read by
+# BattleScene.gd's level-up pass to reward cards that actually did
+# something, on top of (or in place of) the flat per-match result bonus.
+var battle_captures: int = 0
+
 func can_level_up_p_def() -> bool:
 	var def: CardManager.CardDef = CardManager.defs[def_id]
 	return physical_defense < def.max_physical_defense

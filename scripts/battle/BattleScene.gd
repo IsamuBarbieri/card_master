@@ -480,7 +480,7 @@ func _build_battle_overlay() -> void:
 	chain_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	chain_label.add_theme_constant_override("outline_size", 5)
 	chain_label.visible = false
-	chain_label.z_index = 70  # above FX_Z_INDEX, the burst must never cover the word
+	chain_label.z_index = 70  # stays above the cards mid-capture-flip
 	add_child(chain_label)
 
 	# battle numbers (textCardBattleValues), styled like CardView's stat
@@ -1114,37 +1114,64 @@ func gsCPUTurn_Set() -> void:
 # gsBattleCheck.cs, collapsed into one recursive coroutine.
 func gsPreBattle_Set(last_placed: Card) -> void:
 	await get_tree().create_timer(0.15).timeout
+	await gsResolveCardTurn_Set(last_placed, 0)
 
-	# Battle (and its chain) resolves first; only afterward do whatever
-	# simple captures are still left get taken - a card battled/chained away
-	# is already flipped by then, so get_capturable_cards naturally skips it.
-	await gsBattleCheck_Set(last_placed)
+## Design doc: "Flusso Logico del Turno e Priorità". Every capture - the
+## just-placed card, or any card captured deeper in the chain - resolves
+## the SAME two sub-phases on itself, in order:
+##   1. Combo: free instant captures through arrows with no return arrow.
+##   2. Chain: real battles against arrows WITH a return arrow. Winning one
+##      makes the just-captured card the new epicenter and repeats this
+##      whole function on it (one level deeper) - a chain link can now lose
+##      or tie instead of being a guaranteed geometric capture, which is
+##      what gives the chain real risk instead of being deterministic
+##      once arrows happen to line up.
+## `depth` counts consecutive battle wins in this lineage (0 = the initial
+## placement, not yet a chain - a Chain popup only starts once it reaches 2).
+func gsResolveCardTurn_Set(card: Card, depth: int) -> void:
+	var simple := board.get_capturable_cards(card)
+	if not simple.is_empty():
+		# Counts toward this card's level-up credit even at depth 0 (no
+		# popup shown there) - the popup is cosmetic, the capture itself
+		# still happened.
+		card.battle_captures += simple.size()
+		# Combo is specifically the bonus a WON battle cascades into, not
+		# just placing a card next to undefended neighbors - depth 0 (the
+		# initial placement) still captures them, just silently, same as
+		# any other ordinary capture.
+		if card.owner == 0 and depth >= 1:
+			await _show_chain_text(card, "Combo", simple.size())
+		await _capture_batch(card, simple)
 
-	await _capture_batch(last_placed, board.get_capturable_cards(last_placed))
+	await gsBattleChainBattle_Set(card, depth, [])
 
-## `tied` accumulates opponents last_placed has already drawn against this
-## placement: get_adjacent_battle_cards is pure board state (position/owner/
-## arrows), so a tied card - still on the board, still adjacent, still an
-## enemy - would otherwise be offered right back as a "fightable" target
-## forever instead of moving on to any other neighbor.
-func gsBattleCheck_Set(last_placed: Card, tied: Array = []) -> void:
-	var fightable := board.get_adjacent_battle_cards(last_placed)
+## `tied` accumulates opponents `card` has already drawn against this turn:
+## get_adjacent_battle_cards is pure board state (position/owner/arrows), so
+## a tied card - still on the board, still adjacent, still an enemy - would
+## otherwise be offered right back as a "fightable" target forever instead
+## of moving on to the next one in the player's chosen order.
+func gsBattleChainBattle_Set(card: Card, depth: int, tied: Array) -> void:
+	var fightable := board.get_adjacent_battle_cards(card)
 	for t in tied:
 		fightable.erase(t)
 	if fightable.is_empty():
 		return
 	elif fightable.size() == 1:
-		await gsBattle_Set(last_placed, fightable[0], tied)
-	elif last_placed.owner != 0:
+		await gsBattle_Set(card, fightable[0], depth, tied)
+	elif card.owner != 0:
 		# New QoL addition (not in the reference, which shows the same
 		# "pick a target" highlight/delay for the CPU too): the AI's choice
 		# isn't a real decision the player watches unfold, so skip the
 		# target-selection UI entirely and fight immediately.
-		var target := GsCPUTurn.choose_battle_target(last_placed, fightable, cpu_level)
-		await gsBattle_Set(last_placed, target, tied)
+		var target := GsCPUTurn.choose_battle_target(card, fightable, cpu_level)
+		await gsBattle_Set(card, target, depth, tied)
 	else:
-		var target := await gsBattleSelTarget_Set(last_placed, fightable)
-		await gsBattle_Set(last_placed, target, tied)
+		# The player picking which candidate to fight next - and getting a
+		# fresh choice again after a tie - IS "scegliere l'ordine con cui
+		# farle attaccare" from the design doc: no separate up-front queue
+		# needed, this already resolves the order one decision at a time.
+		var target := await gsBattleSelTarget_Set(card, fightable)
+		await gsBattle_Set(card, target, depth, tied)
 
 func gsBattleSelTarget_Set(last_placed: Card, candidates: Array) -> Card:
 	_highlight_targets(candidates, true)
@@ -1166,12 +1193,12 @@ func _on_slot_pressed(row: int, col: int) -> void:
 
 # ------------------------------------------------------------------- battle
 
-func gsBattle_Set(card0: Card, card1: Card, tied: Array = []) -> void:
+func gsBattle_Set(card0: Card, card1: Card, depth: int, tied: Array) -> void:
 	var result := GsBattle.resolve_battle(card0, card1)
 
 	await gsBattle_StartRumble(card0, card1, result)
 	await gsBattle_Countdown(card0, card1, result)
-	await gsBattle_End(card0, card1, result, tied)
+	await gsBattle_End(card0, card1, result, depth, tied)
 
 func gsBattle_StartRumble(card0: Card, card1: Card, result: Dictionary) -> void:
 	var view0: CardView = board_card_views[card0.row][card0.col]
@@ -1239,7 +1266,7 @@ func gsBattle_Countdown(card0: Card, card1: Card, result: Dictionary) -> void:
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	await tw.finished
 
-func gsBattle_End(card0: Card, card1: Card, result: Dictionary, tied: Array = []) -> void:
+func gsBattle_End(card0: Card, card1: Card, result: Dictionary, depth: int, tied: Array) -> void:
 	for i in 2:
 		battle_value_labels[i].visible = false
 		# unparent before the capture flip below can free the CardView
@@ -1264,122 +1291,50 @@ func gsBattle_End(card0: Card, card1: Card, result: Dictionary, tied: Array = []
 	await tw_back.finished
 
 	var winner: Card = result["winner"]
-	if winner == null:
+	if winner == null or (winner != card0 and depth >= 1):
+		# A tie never captures either side. A LOSS is treated the same way,
+		# but only for a chain battle (depth >= 1, card0 is itself a card
+		# captured earlier this cascade): fighting onward wasn't the
+		# player's deliberate choice the way placing the original card was,
+		# so a losing chain link shouldn't cost them the card either - it
+		# just stays put and this line stops, exactly like a tie. Only the
+		# very first battle (depth 0, the one the player actually chose by
+		# placing there) keeps real capture-on-loss risk, handled below.
 		await get_tree().create_timer(0.3).timeout
-		# A tie captures neither side - card0 is still standing and may still
-		# have other neighbors left to challenge (see gsBattleCheck_Set's
-		# `tied` doc comment on why card1 must be excluded, not just dropped).
-		await gsBattleCheck_Set(card0, tied + [card1])
+		# card0 is still standing and may still have other neighbors left
+		# to challenge, in the player's next chosen order (see
+		# gsBattleChainBattle_Set's `tied` doc comment on why card1 must be
+		# excluded, not just dropped).
+		await gsBattleChainBattle_Set(card0, depth, tied + [card1])
 		return
 
 	var loser: Card = result["loser"]
 	await captureCardProcedure(winner, loser)
+	# Counts for the winner regardless of which side it is - a defender that
+	# beats an attacker still captured a card and earns level-up credit for
+	# it, even though (unlike an attacker's win) it doesn't cascade further.
+	winner.battle_captures += 1
 
-	var last_placed: Card = card0
-	if winner == last_placed:
-		# A card can capture through several of its own arrows at once, and
-		# each of THOSE captured cards can independently either dead-end
-		# (Combo, depth 1) or itself propagate further (Chain, depth 2+) -
-		# two branches off the same win can land differently. Chain is the
-		# bigger/priority event: its popup+fx+sfx always shows (and
-		# finishes) first; any dead-end branch still gets its own Combo
-		# popup afterward instead of being silently folded into whichever
-		# label the deepest branch happened to earn.
-		var split := _collect_chain_levels(loser, winner.owner)
-		var chain_levels: Array = split["chain_levels"]
-		var combo_cards: Array = split["combo_cards"]
+	if winner != card0:
+		# Only reachable at depth 0 now (see the tie/chain-loss branch
+		# above): the initial battle the player chose by placing card0
+		# there, lost outright. Normal capture rules apply - card0 is
+		# recaptured and this lineage ends here, same as any other loss.
+		return
 
-		if not chain_levels.is_empty():
-			var chain_total := 0
-			for level in chain_levels:
-				chain_total += level.size()
-			if winner.original_owner == 0:
-				if combo_cards.is_empty():
-					# Nothing queued after it - let it play alongside the
-					# capture flip instead of blocking on the full ~1.6s tween.
-					_show_chain_text(winner, "Chain", chain_total)
-				else:
-					# A Combo popup is coming next on the same label node -
-					# it must finish first or the two tweens fight over it.
-					await _show_chain_text(winner, "Chain", chain_total)
-				_play_combo_chain_fx(winner, "Chain")
-			for level in chain_levels:
-				await _capture_batch(winner, level)
+	# card0 won: `loser` becomes the new epicenter, one link deeper in the
+	# chain. Design doc: "la Fase 2 si ripete da capo prendendo come
+	# riferimento quest'ultima carta" - card0 does NOT go on to try any
+	# other candidates it might have had; the moment it wins, focus shifts
+	# entirely to what it just captured.
+	var new_depth := depth + 1
+	if new_depth >= 2 and winner.owner == 0:
+		# Always awaited so Chain fully finishes before anything else -
+		# the new epicenter's own Combo/Chain popups on the same label
+		# node, or the next battle in this lineage - can start.
+		await _show_chain_text(winner, "Chain", new_depth)
 
-		if not combo_cards.is_empty():
-			if winner.original_owner == 0:
-				_show_chain_text(winner, "Combo", combo_cards.size())
-				_play_combo_chain_fx(winner, "Combo")
-			await _capture_batch(winner, combo_cards)
-
-		await gsBattleCheck_Set(last_placed, tied)
-
-# Each chain card can itself chain into further cards through its own
-# arrows (e.g. a captured card pointing at another enemy card also captures
-# it, bumping the chain to a further level) - but only if THAT capture had
-# the opposite-facing arrow connecting it back (get_chain_cards's
-# "continues"), otherwise the card is still captured but the chain stops
-# there rather than checking its arrows for a further level.
-#
-# Tracks which top-level (depth-1) capture each further card descends from,
-# so branches can be classified independently: a branch that never gets
-# past depth 1 is Combo-only, one that reaches depth 2+ is Chain (its whole
-# branch, including its own depth-1 root). Returns:
-#   chain_levels: Array[Array[Card]], BFS-depth-grouped (for the cascading
-#                 capture animation), chain branches only.
-#   combo_cards:  Array[Card], the depth-1 dead-end branches.
-func _collect_chain_levels(start: Card, winner_owner: int) -> Dictionary:
-	var seen := {start.unique_id: true}
-	var branch_root := {}   # card.unique_id -> its depth-1 ancestor Card
-	var branch_deep := {}   # depth-1 root's unique_id -> bool, reached depth 2+
-
-	var level1_cards := []
-	var frontier := []
-	for entry in board.get_chain_cards(start, winner_owner):
-		var c: Card = entry["card"]
-		if seen.has(c.unique_id):
-			continue
-		seen[c.unique_id] = true
-		branch_root[c.unique_id] = c
-		branch_deep[c.unique_id] = false
-		level1_cards.append(c)
-		if entry["continues"]:
-			frontier.append(c)
-
-	var deeper_levels := []
-	while not frontier.is_empty():
-		var next_frontier := []
-		var this_level := []
-		for parent in frontier:
-			var root: Card = branch_root[parent.unique_id]
-			for entry in board.get_chain_cards(parent, winner_owner):
-				var c: Card = entry["card"]
-				if seen.has(c.unique_id):
-					continue
-				seen[c.unique_id] = true
-				branch_root[c.unique_id] = root
-				branch_deep[root.unique_id] = true
-				this_level.append(c)
-				if entry["continues"]:
-					next_frontier.append(c)
-		if not this_level.is_empty():
-			deeper_levels.append(this_level)
-		frontier = next_frontier
-
-	var chain_level1 := []
-	var combo_cards := []
-	for c in level1_cards:
-		if branch_deep[c.unique_id]:
-			chain_level1.append(c)
-		else:
-			combo_cards.append(c)
-
-	var chain_levels := []
-	if not chain_level1.is_empty():
-		chain_levels.append(chain_level1)
-	chain_levels.append_array(deeper_levels)
-
-	return {"chain_levels": chain_levels, "combo_cards": combo_cards}
+	await gsResolveCardTurn_Set(loser, new_depth)
 
 # --------------------------------------------------------------- captures
 
@@ -1477,62 +1432,6 @@ func _show_chain_text(winner: Card, label_word: String, count: int) -> void:
 	tw.tween_property(chain_label, "modulate:a", 0.0, 0.3)
 	await tw.finished
 	chain_label.visible = false
-
-# Combo and Chain read as the same family of event escalated, not as two
-# unrelated effects: same centre, same timing language, Chain simply adds
-# layers (starburst over the ring, screen shake) and gets the heavier sfx.
-# Both FX textures are authored white so a single asset serves both tints.
-const CHAIN_SHAKE_TIME := 0.35
-const CHAIN_SHAKE_DISTANCE := 6.0
-const FX_Z_INDEX := 40  # above the cards, below the panels/labels tier (50-60)
-
-func _play_combo_chain_fx(winner: Card, label_word: String) -> void:
-	var center := _board_cell_pos(winner.row, winner.col) + Vector2(CARD_W, CARD_H) / 2.0
-	# No dedicated combo/chain sfx - replaying the same attack sound the
-	# winner just hit with (magical/physical) ties the cascade back to the
-	# card that caused it instead of introducing an unrelated cue.
-	var attack_sfx := "sfx/attack_m.wav" if winner.attack_type == Card.AttackType.MAGICAL else "sfx/attack_p.wav"
-	if label_word == "Chain":
-		_spawn_fx(center, "fx_shockwave.png", CHAIN_COLOR, 70.0, 300.0, 0.55, 0.0)
-		_spawn_fx(center, "fx_burst.png", CHAIN_COLOR, 90.0, 340.0, 0.5, 22.0)
-		_screen_shake()
-		Game.play_sfx(ASSETS + attack_sfx)
-	else:
-		_spawn_fx(center, "fx_shockwave.png", COMBO_COLOR, 60.0, 230.0, 0.45, 0.0)
-		Game.play_sfx(ASSETS + attack_sfx)
-
-# One expanding + fading sprite, centred on `center` and growing from
-# start_diam to end_diam. spin_deg > 0 adds a slow rotation, which keeps the
-# starburst's rays from reading as a static decal.
-func _spawn_fx(center: Vector2, tex_name: String, color: Color, start_diam: float, end_diam: float, dur: float, spin_deg: float) -> void:
-	var fx := TextureRect.new()
-	fx.texture = load(ASSETS + "battle/" + tex_name)
-	fx.stretch_mode = TextureRect.STRETCH_SCALE
-	fx.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	fx.size = Vector2(start_diam, start_diam)
-	fx.position = center - fx.size / 2.0
-	fx.pivot_offset = fx.size / 2.0
-	fx.modulate = color
-	fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	fx.z_index = FX_Z_INDEX
-	add_child(fx)
-
-	var grow := end_diam / start_diam
-	var tw := create_tween()
-	tw.tween_property(fx, "scale", Vector2(grow, grow), dur) \
-		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(fx, "modulate:a", 0.0, dur).set_ease(Tween.EASE_IN)
-	if spin_deg != 0.0:
-		tw.parallel().tween_property(fx, "rotation", deg_to_rad(spin_deg), dur)
-	tw.tween_callback(fx.queue_free)
-
-func _screen_shake() -> void:
-	var tw := create_tween()
-	var steps := 5
-	for i in steps:
-		var offset := Vector2(randf_range(-CHAIN_SHAKE_DISTANCE, CHAIN_SHAKE_DISTANCE), randf_range(-CHAIN_SHAKE_DISTANCE, CHAIN_SHAKE_DISTANCE))
-		tw.tween_property(self, "position", offset, CHAIN_SHAKE_TIME / steps)
-	tw.tween_property(self, "position", Vector2.ZERO, CHAIN_SHAKE_TIME / steps)
 
 # ------------------------------------------------------------------- turns
 
@@ -1637,14 +1536,19 @@ func _move_cards_to_end_rows() -> void:
 # --------------------------------------------------------- end: level up
 
 func gsEndLevelUp_Set(result: BattleResult) -> void:
-	# Level-up only happens on a win or draw - a card just needs to have
-	# been one of the 5 played that match, not to have personally fought,
-	# and a loss grants nothing at all.
-	var lost := result == BattleResult.CPU_PERFECT or result == BattleResult.CPU_WINS
-	if not lost:
-		var points := LEVEL_UP_POINTS.get(result, 0) as int
-		for view in end_up_cards:
-			var card: Card = view.card
+	# Hybrid: a small flat bonus only on an actual match win (LEVEL_UP_POINTS
+	# has no Draw/loss entry - a draw used to grant 1 point per card just for
+	# surviving, which made repeatedly drawing a farmable source of free
+	# growth), plus battle_captures - points for cards that personally won a
+	# battle, chain link, or combo this match, regardless of the match's
+	# overall result. A card that fought well in an otherwise-drawn or lost
+	# match still grows for what IT did; one that never fought gets nothing
+	# unless the match was an outright win.
+	var base_points := LEVEL_UP_POINTS.get(result, 0) as int
+	for view in end_up_cards:
+		var card: Card = view.card
+		var points := base_points + card.battle_captures
+		if points > 0:
 			await _level_up_card(view, card, points)
 			_sync_card_stats_to_collection(card)
 
@@ -1688,9 +1592,9 @@ func gsEndLevelUp_Set(result: BattleResult) -> void:
 # Floating text reports the net change once, after all the points are spent,
 # rather than one popup per point.
 const LEVEL_UP_POINTS := {
-	BattleResult.PLAYER_PERFECT: 5,
-	BattleResult.PLAYER_WINS: 3,
-	BattleResult.DRAW: 1,
+	BattleResult.PLAYER_PERFECT: 2,  # was 5 - most of the growth is now the battle_captures bonus
+	BattleResult.PLAYER_WINS: 1,     # was 3
+	# No Draw entry - see gsEndLevelUp_Set.
 }
 const TYPE_UP_GROWTH_X := 0.45
 const TYPE_UP_GROWTH_A := 0.75
