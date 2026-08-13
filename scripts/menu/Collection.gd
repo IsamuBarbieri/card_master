@@ -64,6 +64,8 @@ var label_value_pdef: Label
 var label_value_mdef: Label
 
 var sfx_back: AudioStreamPlayer
+var back_button: Button
+var nav: FocusNav
 
 # New QoL addition (not in the reference, which relies on the thin native
 # scrollbar handle): drag anywhere on either list to scroll it, like the
@@ -86,7 +88,7 @@ func _ready() -> void:
 		return CardManager.defs[a.original_id].name < CardManager.defs[b.original_id].name)
 
 	_build_ui()
-
+	_setup_nav()
 	_select_type(0)
 
 func _build_ui() -> void:
@@ -102,7 +104,7 @@ func _build_ui() -> void:
 	# font_size 36 to match every other screen's Back button (DeckSelect,
 	# Opponents, Options) - this helper's other buttons stay at the default
 	# 25, tuned for their own tighter boxes.
-	var back_button := _make_button(StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56), font_stylish, 36)
+	back_button = _make_button(StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56), font_stylish, 36)
 	back_button.pressed.connect(_on_back_pressed)
 
 	# Label first, icon on top - same "icon has a transparent gap the label
@@ -242,6 +244,37 @@ func _build_type_rows(font: Font) -> void:
 		row.add_child(outline)
 		type_outlines.append(outline)
 
+func _setup_nav() -> void:
+	nav = FocusNav.new()
+	add_child(nav)
+	for i in type_rows.size():
+		var item := nav.add_control(type_rows[i], i)
+		item.id = &"type"
+		nav.set_scroll(item, type_scroll)
+	nav.add_control(back_button)
+
+	var on_activated := func(item: FocusNav.NavItem) -> void:
+		match item.id:
+			&"type": _select_type(item.meta)
+			&"card": _select_card(item.meta)
+			_: (item.control as Button).pressed.emit()
+	nav.activated.connect(on_activated)
+	# Shoulders jump straight between the two lists instead of relying on
+	# the spatial scorer to cross the gap between them.
+	nav.page.connect(func(dir: int) -> void:
+		if dir < 0:
+			nav.focus_by_meta(sel_type_index, &"type")
+		else:
+			nav.focus_by_meta(sel_card_index, &"card"))
+	nav.cancelled.connect(_on_back_pressed)
+	nav.focus_by_meta(sel_type_index, &"type")
+
+	add_child(ControllerUI.make_prompt_bar([
+		[&"A", StringTable.get_string(StringTable.ID_SELECT)],
+		[&"LB", ""], [&"RB", StringTable.get_string(StringTable.ID_CARDS)],
+		[&"B", StringTable.get_string(StringTable.ID_BACK)],
+	]))
+
 func _make_row(font: Font) -> Panel:
 	var row := Panel.new()
 	row.custom_minimum_size = Vector2(0, ROW_HEIGHT)
@@ -306,6 +339,8 @@ func _select_type(index: int) -> void:
 	for i in type_outlines.size():
 		type_outlines[i].visible = (i == index)
 
+	if nav != null:
+		nav.remove_by_id(&"card")
 	for row in card_rows:
 		row.queue_free()
 	card_rows.clear()
@@ -334,6 +369,10 @@ func _select_type(index: int) -> void:
 		outline.visible = false
 		cell.add_child(outline)
 		card_outlines.append(outline)
+
+		if nav != null:
+			var card_item := nav.add_virtual(&"card", (func(c: Control) -> Rect2: return c.get_global_rect()).bind(cell), i, 0, Callable(), cell)
+			nav.set_scroll(card_item, card_scroll)
 
 	sel_card_index = 0
 	_select_card(0)

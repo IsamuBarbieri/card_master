@@ -42,6 +42,9 @@ var item_outlines: Array = []      # SelectionOutline per opponent
 
 var label_desc: Label
 var select_button: Button
+var back_button: Button
+var scroll: ScrollContainer
+var nav: FocusNav
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -64,6 +67,24 @@ func _ready() -> void:
 				start_index = i
 				break
 	_select(start_index)
+	_setup_nav()
+
+func _setup_nav() -> void:
+	nav = FocusNav.new()
+	add_child(nav)
+	for i in opp_count:
+		var item := nav.add_control(item_buttons[i], i)
+		nav.set_scroll(item, scroll)
+	nav.add_control(back_button)
+	nav.add_control(select_button)
+	nav.activated.connect(func(item: FocusNav.NavItem) -> void:
+		(item.control as Button).pressed.emit())
+	nav.cancelled.connect(_on_back_pressed)
+	nav.focus_by_meta(selected_index)
+	add_child(ControllerUI.make_prompt_bar([
+		[&"A", StringTable.get_string(StringTable.ID_SELECT)],
+		[&"B", StringTable.get_string(StringTable.ID_BACK)],
+	]))
 
 func _build_ui() -> void:
 	var font_stylish: Font = Game.font_stylish
@@ -92,13 +113,13 @@ func _build_ui() -> void:
 	label_desc = _make_label(Vector2(231, 473), Vector2(498, 36), font_stylish)
 	add_child(label_desc)
 
-	var back_button := _make_text_button(StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56), font_stylish)
+	back_button = _make_text_button(StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56), font_stylish)
 	back_button.pressed.connect(_on_back_pressed)
 
 	select_button = _make_text_button(StringTable.get_string(StringTable.ID_SELECT), Vector2(805, 463), Vector2(115, 56), font_stylish)
 	select_button.pressed.connect(_on_select_pressed)
 
-	var scroll := ScrollContainer.new()
+	scroll = ScrollContainer.new()
 	scroll.position = Vector2(95, 50)
 	scroll.size = Vector2(770, 402)  # exactly fits 3 rows of 7 (98x130 items, 14/6 sep) with no scrollbar
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED  # GridListScrollOrientation.Vertical

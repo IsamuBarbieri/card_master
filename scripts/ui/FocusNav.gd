@@ -88,13 +88,18 @@ func add_control(c: Control, meta: Variant = null, item_layer: int = 0) -> NavIt
 	items.append(item)
 	return item
 
-func add_virtual(id: StringName, rect_fn: Callable, meta: Variant = null, item_layer: int = 0, enabled_fn: Callable = Callable()) -> NavItem:
+## `control`, when given, is used only for scroll_into_view (ensure_control_
+## visible needs a real Control) - rect_fn/enabled_fn stay in charge of
+## everything else, so a virtual item can still track a moving target a
+## plain add_control() couldn't.
+func add_virtual(id: StringName, rect_fn: Callable, meta: Variant = null, item_layer: int = 0, enabled_fn: Callable = Callable(), control: Control = null) -> NavItem:
 	var item := NavItem.new()
 	item.id = id
 	item.rect_fn = rect_fn
 	item.enabled_fn = enabled_fn if enabled_fn.is_valid() else (func() -> bool: return true)
 	item.meta = meta
 	item.layer = item_layer
+	item.control = control
 	items.append(item)
 	return item
 
@@ -105,6 +110,13 @@ func link(a: NavItem, b: NavItem, dir: Vector2i, bidirectional: bool = true) -> 
 
 func set_scroll(item: NavItem, sc: ScrollContainer) -> void:
 	item.scroll = sc
+
+## For screens that rebuild part of their item list on the fly (Collection's
+## card grid changes every time the type selection changes).
+func remove_by_id(id: StringName) -> void:
+	items = items.filter(func(it: NavItem) -> bool: return it.id != id)
+	if current != null and current.id == id:
+		current = null
 
 func clear() -> void:
 	items.clear()
@@ -141,9 +153,13 @@ func set_focus(item: NavItem) -> void:
 	_scroll_into_view(item)
 	focus_changed.emit(item)
 
-func focus_by_meta(meta: Variant) -> void:
+## `id`, when given, disambiguates screens that reuse the same meta value
+## across two different item groups (Collection's type index 0 and its
+## first card cell both have meta == 0).
+func focus_by_meta(meta: Variant, id: Variant = null) -> void:
 	for item in items:
-		if item.layer == _layer and item.meta == meta and item.enabled():
+		if item.layer == _layer and item.meta == meta and item.enabled() \
+				and (id == null or item.id == id):
 			set_focus(item)
 			return
 
