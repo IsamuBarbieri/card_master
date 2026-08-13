@@ -15,6 +15,8 @@ const LABEL_FONT_SIZE := 36
 # 222px * (265/428) scale = ~137.5px on-screen.
 const TITLE_ICON_GAP_WIDTH := 137.5
 
+const SLIDER_NUDGE := 5.0
+
 var sfx_cat: AudioStreamPlayer
 var _sfx_dragging := false
 
@@ -25,6 +27,11 @@ var label_lang: Label
 var back_button: Button
 var credits_button: Button
 var title_screen_button: Button
+
+var slider_music: HSlider
+var slider_sfx: HSlider
+var lang_popup: OptionButton
+var nav: FocusNav
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -64,17 +71,17 @@ func _ready() -> void:
 	label_lang.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	add_child(label_lang)
 
-	var slider_music := _make_slider(Vector2(298, 170), Vector2(362, 58), Game.music_volume * 100.0)
+	slider_music = _make_slider(Vector2(298, 170), Vector2(362, 58), Game.music_volume * 100.0)
 	slider_music.value_changed.connect(_on_music_value_changed)
 	add_child(slider_music)
 
-	var slider_sfx := _make_slider(Vector2(298, 243), Vector2(362, 58), Game.sfx_volume * 100.0)
+	slider_sfx = _make_slider(Vector2(298, 243), Vector2(362, 58), Game.sfx_volume * 100.0)
 	slider_sfx.value_changed.connect(_on_sfx_value_changed)
 	slider_sfx.drag_started.connect(_on_sfx_drag_started)
 	slider_sfx.drag_ended.connect(_on_sfx_drag_ended)
 	add_child(slider_sfx)
 
-	var lang_popup := OptionButton.new()
+	lang_popup = OptionButton.new()
 	lang_popup.position = Vector2(300, 328)
 	lang_popup.size = Vector2(360, 56)
 	# Order must match StringTable.TABLE (sorted alphabetically by each
@@ -113,6 +120,41 @@ func _ready() -> void:
 	add_child(sfx_cat)
 
 	_update_language_texts()
+	_setup_nav()
+
+func _setup_nav() -> void:
+	nav = FocusNav.new()
+	add_child(nav)
+
+	var music_item := nav.add_control(slider_music)
+	music_item.axis_fn = func(d: int) -> void:
+		slider_music.value = clampf(slider_music.value + d * SLIDER_NUDGE, slider_music.min_value, slider_music.max_value)
+
+	var sfx_item := nav.add_control(slider_sfx)
+	sfx_item.axis_fn = func(d: int) -> void:
+		slider_sfx.value = clampf(slider_sfx.value + d * SLIDER_NUDGE, slider_sfx.min_value, slider_sfx.max_value)
+		sfx_cat.play()  # drag_started/ended never fire for a value set from code
+
+	var lang_item := nav.add_control(lang_popup)
+	nav.add_control(back_button)
+	nav.add_control(credits_button)
+	nav.add_control(title_screen_button)
+
+	nav.activated.connect(func(item: FocusNav.NavItem) -> void:
+		if item == lang_item:
+			lang_popup.show_popup()  # a real Window, handles ui_* itself
+			nav.active = false
+			ControllerUI.hide_hand()
+		elif item.control is Button:
+			(item.control as Button).pressed.emit())
+	lang_popup.get_popup().popup_hide.connect(func() -> void: nav.active = true)
+	nav.cancelled.connect(_on_back_pressed)
+	nav.focus_first()
+
+	add_child(ControllerUI.make_prompt_bar([
+		[&"A", StringTable.get_string(StringTable.ID_SELECT)],
+		[&"B", StringTable.get_string(StringTable.ID_BACK)],
+	]))
 
 func _make_label(pos: Vector2, size: Vector2, font: Font, font_size: int) -> Label:
 	var label := FixedSizeLabel.new()

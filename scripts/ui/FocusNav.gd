@@ -36,6 +36,10 @@ class NavItem:
 	var meta: Variant = null
 	var control: Control = null
 	var links := {}  # Vector2i dir -> NavItem, explicit neighbour overrides
+	## When set, left/right (dir.x != 0) call this with -1/+1 instead of
+	## moving focus - for sliders. Vertical movement is unaffected, so
+	## up/down still leaves the slider normally.
+	var axis_fn: Callable
 
 	func rect() -> Rect2:
 		return rect_fn.call()
@@ -197,6 +201,9 @@ static func pick_neighbour(from: Rect2, candidates: Array, dir: Vector2i, wrap: 
 func move(dir: Vector2i) -> void:
 	if current == null:
 		focus_first()
+		return
+	if dir.x != 0 and current.axis_fn.is_valid():
+		current.axis_fn.call(dir.x)
 		return
 	if current.links.has(dir):
 		var linked: NavItem = current.links[dir]

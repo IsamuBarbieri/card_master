@@ -22,10 +22,35 @@ func _grid_rects(cols: int, rows: int) -> Array:
 func _ready() -> void:
 	_test_scorer()
 	_test_layers()
+	_test_axis_fn()
 	_test_classify()
 	_test_glyph_fallback()
 	print("OK - focus nav checks passed")
 	get_tree().quit()
+
+## A slider's left/right must nudge its value instead of moving focus away.
+func _test_axis_fn() -> void:
+	var nav := FocusNav.new()
+	add_child(nav)
+	# GDScript lambdas capture outer locals by value, not reference - a
+	# plain int wouldn't see mutations from inside the closure. An Array's
+	# identity IS captured, so indexing into it works.
+	var nudges := [0]
+	var a := nav.add_virtual(&"slider", func() -> Rect2: return Rect2(0, 0, 10, 10), "a")
+	a.axis_fn = func(d: int) -> void: nudges[0] += d
+	nav.add_virtual(&"other", func() -> Rect2: return Rect2(50, 0, 10, 10), "b")
+	nav.focus_first()
+	assert(nav.current == a)
+
+	nav.move(FocusNav.DIR_RIGHT)
+	assert(nudges[0] == 1, "right on a slider should nudge, not move focus")
+	assert(nav.current == a, "focus must stay on the slider")
+
+	nav.move(FocusNav.DIR_LEFT)
+	assert(nudges[0] == 0)
+	assert(nav.current == a)
+
+	nav.queue_free()
 
 func _test_scorer() -> void:
 	var rects := _grid_rects(7, 3)  # 21 opponents, indices 0..20 row-major

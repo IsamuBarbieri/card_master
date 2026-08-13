@@ -62,8 +62,15 @@ var confirm_slot := -1
 
 var name_dialog: Control
 var name_edit: LineEdit
+var name_ok_btn: Button
+var name_cancel_btn: Button
 var confirm_dialog: Control
 var confirm_title_label: Label
+var confirm_ok_btn: Button
+var confirm_cancel_btn: Button
+
+var nav: FocusNav
+var keyboard: OnScreenKeyboard = null
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -150,8 +157,65 @@ func _ready() -> void:
 	_build_name_dialog()
 	_build_confirm_dialog()
 	_refresh_slots()
+	_setup_nav()
 
 	Game.play_music(ASSETS + "music/menu1.mp3")
+
+## Layer 0 = the 3 slots. Layer 1 = whichever dialog is open - both dialogs'
+## OK/Cancel share it since only one is ever visible at a time (enabled_fn
+## already excludes the hidden one).
+func _setup_nav() -> void:
+	nav = FocusNav.new()
+	add_child(nav)
+	for i in 3:
+		nav.add_control(slot_buttons[i], i)
+	nav.add_control(name_ok_btn, "name_ok", 1)
+	nav.add_control(name_cancel_btn, "name_cancel", 1)
+	nav.add_control(confirm_ok_btn, "confirm_ok", 1)
+	nav.add_control(confirm_cancel_btn, "confirm_cancel", 1)
+
+	nav.activated.connect(func(item: FocusNav.NavItem) -> void:
+		(item.control as Button).pressed.emit())
+	# X on a focused occupied slot deletes it, instead of making the small
+	# corner X button separately focusable.
+	nav.alt_activated.connect(func(item: FocusNav.NavItem) -> void:
+		if item.control is FixedSizeButton and item.meta is int and delete_buttons[item.meta].visible:
+			(delete_buttons[item.meta] as Button).pressed.emit())
+	nav.cancelled.connect(func() -> void:
+		if nav.get_layer() == 1:
+			if name_dialog.visible:
+				_on_name_cancel_pressed()
+			elif confirm_dialog.visible:
+				_on_confirm_delete_cancel())
+	nav.focus_first()
+
+	add_child(ControllerUI.make_prompt_bar([
+		[&"A", StringTable.get_string(StringTable.ID_SELECT)],
+		[&"X", StringTable.get_string(StringTable.ID_DELETE_SLOT_TITLE)],
+	]))
+
+func _open_keyboard() -> void:
+	keyboard = OnScreenKeyboard.new("PlayerName")
+	keyboard.position = (Vector2(SCREEN_W, SCREEN_H) - OnScreenKeyboard.PANEL_SIZE) / 2.0
+	add_child(keyboard)
+	nav.active = false
+	ControllerUI.hide_hand()
+	keyboard.confirmed.connect(_on_keyboard_confirmed)
+	keyboard.cancelled.connect(_on_keyboard_cancelled)
+
+func _close_keyboard() -> void:
+	keyboard.queue_free()
+	keyboard = null
+	nav.active = true
+
+func _on_keyboard_confirmed(text: String) -> void:
+	_close_keyboard()
+	name_edit.text = text
+	_on_name_ok_pressed()
+
+func _on_keyboard_cancelled() -> void:
+	_close_keyboard()
+	_on_name_cancel_pressed()
 
 func _make_delete_button(pos: Vector2) -> Button:
 	var btn := Button.new()
@@ -301,13 +365,13 @@ func _build_name_dialog() -> void:
 	name_edit.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	panel.add_child(name_edit)
 
-	var ok_btn := _make_dialog_button(StringTable.get_string(StringTable.ID_OK), Vector2(19, 225), Vector2(214, 56), font_stylish)
-	ok_btn.pressed.connect(_on_name_ok_pressed)
-	panel.add_child(ok_btn)
+	name_ok_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_OK), Vector2(19, 225), Vector2(214, 56), font_stylish)
+	name_ok_btn.pressed.connect(_on_name_ok_pressed)
+	panel.add_child(name_ok_btn)
 
-	var cancel_btn := _make_dialog_button(StringTable.get_string(StringTable.ID_CANCEL), Vector2(267, 225), Vector2(214, 56), font_stylish)
-	cancel_btn.pressed.connect(_on_name_cancel_pressed)
-	panel.add_child(cancel_btn)
+	name_cancel_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_CANCEL), Vector2(267, 225), Vector2(214, 56), font_stylish)
+	name_cancel_btn.pressed.connect(_on_name_cancel_pressed)
+	panel.add_child(name_cancel_btn)
 
 func _build_confirm_dialog() -> void:
 	var font_stylish: Font = Game.font_stylish
@@ -326,13 +390,13 @@ func _build_confirm_dialog() -> void:
 	msg_label.text = StringTable.get_string(StringTable.ID_DELETE_SLOT_MSG)
 	panel.add_child(msg_label)
 
-	var ok_btn := _make_dialog_button(StringTable.get_string(StringTable.ID_OK), Vector2(23, 190), Vector2(150, 56), font_stylish)
-	ok_btn.pressed.connect(_on_confirm_delete_ok)
-	panel.add_child(ok_btn)
+	confirm_ok_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_OK), Vector2(23, 190), Vector2(150, 56), font_stylish)
+	confirm_ok_btn.pressed.connect(_on_confirm_delete_ok)
+	panel.add_child(confirm_ok_btn)
 
-	var cancel_btn := _make_dialog_button(StringTable.get_string(StringTable.ID_CANCEL), Vector2(187, 190), Vector2(150, 56), font_stylish)
-	cancel_btn.pressed.connect(_on_confirm_delete_cancel)
-	panel.add_child(cancel_btn)
+	confirm_cancel_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_CANCEL), Vector2(187, 190), Vector2(150, 56), font_stylish)
+	confirm_cancel_btn.pressed.connect(_on_confirm_delete_cancel)
+	panel.add_child(confirm_cancel_btn)
 
 # --------------------------------------------------------------- handlers
 
@@ -341,8 +405,12 @@ func _on_slot_pressed(slot_index: int) -> void:
 	selected_slot = slot_index
 
 	if slot_names[slot_index] == null:
-		name_edit.text = "PlayerName"
-		name_dialog.visible = true
+		nav.push_layer(1)
+		if ControllerUI.is_gamepad():
+			_open_keyboard()
+		else:
+			name_edit.text = "PlayerName"
+			name_dialog.visible = true
 	else:
 		Game.player = SaveSystem.load_player(slot_index)
 		get_tree().change_scene_to_file("res://scenes/menu/MainMenu.tscn")
@@ -353,25 +421,30 @@ func _on_name_ok_pressed() -> void:
 	if new_name.is_empty():
 		new_name = "PlayerName"
 	name_dialog.visible = false
+	nav.pop_layer()
 	Game.player = SaveSystem.create_new_player(selected_slot, new_name)
 	_refresh_slots()
 
 func _on_name_cancel_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_back_sound.wav")
 	name_dialog.visible = false
+	nav.pop_layer()
 
 func _on_delete_pressed(slot_index: int) -> void:
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 	confirm_slot = slot_index
 	confirm_title_label.text = StringTable.get_string(StringTable.ID_DELETE_SLOT_TITLE) + ":\n" + str(slot_names[slot_index])
 	confirm_dialog.visible = true
+	nav.push_layer(1)
 
 func _on_confirm_delete_ok() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 	SaveSystem.delete_player(confirm_slot)
 	confirm_dialog.visible = false
+	nav.pop_layer()
 	_refresh_slots()
 
 func _on_confirm_delete_cancel() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_back_sound.wav")
+	nav.pop_layer()
 	confirm_dialog.visible = false
