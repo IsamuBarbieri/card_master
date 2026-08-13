@@ -40,6 +40,10 @@ class NavItem:
 	## moving focus - for sliders. Vertical movement is unaffected, so
 	## up/down still leaves the slider normally.
 	var axis_fn: Callable
+	## Same idea, vertical axis - for DeckSelect/Shop wheels, where up/down
+	## should snap the wheel to its next/previous card instead of moving
+	## focus, while left/right still moves between wheels and deck slots.
+	var axis_fn_v: Callable
 
 	func rect() -> Rect2:
 		return rect_fn.call()
@@ -220,6 +224,9 @@ func move(dir: Vector2i) -> void:
 		return
 	if dir.x != 0 and current.axis_fn.is_valid():
 		current.axis_fn.call(dir.x)
+		return
+	if dir.y != 0 and current.axis_fn_v.is_valid():
+		current.axis_fn_v.call(dir.y)
 		return
 	if current.links.has(dir):
 		var linked: NavItem = current.links[dir]

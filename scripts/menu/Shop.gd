@@ -115,6 +115,9 @@ var sfx_back: AudioStreamPlayer
 var sfx_sell: AudioStreamPlayer
 var sfx_buy: AudioStreamPlayer
 
+var nav: FocusNav
+var back_button: Button
+
 # --- WaitingInput state ---
 var wi_x: int = 0
 var wi_y: int = 0
@@ -159,6 +162,82 @@ func _ready() -> void:
 	label_coins.text = str(Game.player.coins)
 
 	_enter_waiting_input()
+	_setup_nav()
+
+## A's semantics mirror _handle_double_click, keyed by the focused nav item
+## instead of a click point - one branch per role (wheel/slot/offer), same
+## as DeckSelect.gd's equivalent. The buyback purchase and the sell/buy
+## confirms are already real Buttons (button_buy_back/button_sell/button_buy)
+## so they're registered directly and need no extra dispatch: FocusNav's
+## default branch just emits their own .pressed.
+func _setup_nav() -> void:
+	nav = FocusNav.new()
+	add_child(nav)
+
+	nav.add_virtual(&"wheel", func() -> Rect2:
+		return Rect2(deck_selector.central_card_x(), deck_selector.central_card_y(), deck_selector.card_width, deck_selector.card_height), 1)
+	nav.add_virtual(&"slot", func() -> Rect2:
+		return Rect2(panel_card_slot.global_position, panel_card_slot.size), 2)
+	for i in shop_cards.size():
+		nav.add_virtual(&"offer", (func(idx: int) -> Rect2:
+			return Rect2(shop_card_views[idx].global_position, SHOP_CARD_IMAGE_SIZE)).bind(i), i,
+			0, (func(idx: int) -> bool: return shop_cards_active[idx]).bind(i))
+
+	nav.add_control(button_sell)
+	nav.add_control(button_buy)
+	nav.add_control(button_buy_back)
+	nav.add_control(back_button)
+
+	nav.activated.connect(_on_nav_activated)
+	nav.cancelled.connect(_on_back_pressed)
+	nav.focus_by_meta(1, &"wheel")
+
+	add_child(ControllerUI.make_prompt_bar([
+		[&"A", StringTable.get_string(StringTable.ID_SELECT)],
+		[&"B", StringTable.get_string(StringTable.ID_BACK)],
+	]))
+
+func _on_nav_activated(item: FocusNav.NavItem) -> void:
+	if game_state != GameState.WAITING_INPUT:
+		return
+	if item.id == &"wheel":
+		_cancel_current_interaction()
+		var selector_card: Card = deck_selector.remove_current_card()
+		if cur_sell_card != null:
+			deck_selector.add_card(cur_sell_card)
+		_show_card_slot(selector_card)
+		_set_sell_card(selector_card)
+		_enter_waiting_input()
+		next_sel = 2
+		nav.focus_by_meta(2, &"slot")
+	elif item.id == &"offer":
+		var i: int = item.meta
+		_cancel_current_interaction()
+		if cur_sell_card != null:
+			deck_selector.add_card(cur_sell_card)
+		_show_card_slot(shop_cards[i])
+		_set_buy_card(shop_cards[i])
+		last_chosen_shop_card_index = i
+		_enter_waiting_input()
+		next_sel = 2
+		nav.focus_by_meta(2, &"slot")
+	elif item.id == &"slot":
+		if cur_sell_card != null:
+			_cancel_current_interaction()
+			deck_selector.add_card(cur_sell_card)
+			_set_sell_card(null)
+			_show_card_slot(null)
+			_update_card_info(deck_selector.central_card_stats(), true, 1)
+			_enter_waiting_input()
+			nav.focus_by_meta(1, &"wheel")
+		elif cur_buy_card != null:
+			_cancel_current_interaction()
+			_set_buy_card(null)
+			_show_card_slot(null)
+			_update_card_info(null, false, 0)
+			_enter_waiting_input()
+	else:
+		(item.control as Button).pressed.emit()
 
 # ---------------------------------------------------------------- UI build
 
@@ -225,7 +304,7 @@ func _build_ui() -> void:
 	# font_size 36 to match every other screen's Back button (DeckSelect,
 	# Opponents, Options) - this helper's other buttons stay at the default
 	# 25, tuned for their own tighter boxes.
-	var back_button := _make_button(StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56), font_stylish, 36)
+	back_button = _make_button(StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56), font_stylish, 36)
 	back_button.pressed.connect(_on_back_pressed)
 
 	var label_shop := _make_label(Vector2(348, 21), Vector2(264, 47), font_stylish, 46)
@@ -1028,6 +1107,7 @@ func _on_sell_pressed() -> void:
 	button_sell.disabled = true
 
 	_update_card_info(null, false, 0)
+	nav.focus_by_meta(1, &"wheel")
 
 	sfx_sell.play()
 	await _save_with_busy()
@@ -1052,6 +1132,7 @@ func _on_buy_pressed() -> void:
 	button_buy.disabled = true
 
 	_update_card_info(deck_selector.central_card_stats(), true, 1)
+	nav.focus_by_meta(1, &"wheel")
 
 	sfx_buy.play()
 	await _save_with_busy()
@@ -1067,6 +1148,7 @@ func _on_buyback_pressed() -> void:
 	image_buyback_card.visible = false
 
 	_update_card_info(deck_selector.central_card_stats(), true, 1)
+	nav.focus_by_meta(1, &"wheel")
 
 	sfx_buy.play()
 	await _save_with_busy()
@@ -1074,10 +1156,12 @@ func _on_buyback_pressed() -> void:
 func _save_with_busy() -> void:
 	busy_spinner.visible = true
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	nav.active = false
 	await get_tree().create_timer(1.0).timeout
 	SaveSystem.save_player(Game.player)
 	busy_spinner.visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	nav.active = true
 
 func _on_back_pressed() -> void:
 	sfx_back.play()

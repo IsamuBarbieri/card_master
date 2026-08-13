@@ -52,6 +52,7 @@ var busy_indicator: BusySpinner
 
 var drag_ghost: CardView
 var selection_outline: SelectionOutline
+var nav: FocusNav
 
 # --- WaitingInput state (SWaitingInput) ---
 var wi_x: int = 0
@@ -117,6 +118,84 @@ func _ready() -> void:
 			lower_deck.add_card(i, restored[i])
 
 	_enter_waiting_input()
+	_setup_nav()
+
+## Mirrors next_sel's own 7-state model (1=left wheel, 2=right wheel,
+## 10+i=deck slot i) rather than the spatial scorer: a spatial jump from the
+## left wheel (y~246) straight to the right wheel (y~246, x~786) scores
+## lower than reaching the deck slots below (y~455, penalized by
+## CROSS_AXIS_PENALTY) and would skip them entirely. Explicit link()s make
+## left/right walk the same 7 states next_sel already models; wrap links are
+## added asymmetrically at the two ends so the chain cycles.
+func _setup_nav() -> void:
+	nav = FocusNav.new()
+	add_child(nav)
+
+	var left_item := nav.add_virtual(&"wheel", func() -> Rect2:
+		return Rect2(deck_selector_left.central_card_x(), deck_selector_left.central_card_y(), deck_selector_left.card_width, deck_selector_left.card_height), 1)
+	left_item.axis_fn_v = func(d: int) -> void: _snap_to_box(deck_selector_left, 1 if d > 0 else 3, false)
+
+	var slot_items: Array = []
+	for i in 5:
+		slot_items.append(nav.add_virtual(&"slot", (func(idx: int) -> Rect2:
+			return Rect2(lower_deck.card_x(idx), lower_deck.card_y(idx), lower_deck.card_width(idx), lower_deck.card_height(idx))).bind(i), 10 + i))
+
+	var right_item := nav.add_virtual(&"wheel", func() -> Rect2:
+		return Rect2(deck_selector_right.central_card_x(), deck_selector_right.central_card_y(), deck_selector_right.card_width, deck_selector_right.card_height), 2)
+	right_item.axis_fn_v = func(d: int) -> void: _snap_to_box(deck_selector_right, 1 if d > 0 else 3, false)
+
+	nav.link(left_item, slot_items[0], FocusNav.DIR_RIGHT)
+	for i in 4:
+		nav.link(slot_items[i], slot_items[i + 1], FocusNav.DIR_RIGHT)
+	nav.link(slot_items[4], right_item, FocusNav.DIR_RIGHT)
+	nav.link(right_item, left_item, FocusNav.DIR_RIGHT, false)
+	nav.link(left_item, right_item, FocusNav.DIR_LEFT, false)
+
+	nav.activated.connect(_on_nav_activated)
+	nav.alt2_activated.connect(func(_item: FocusNav.NavItem) -> void:
+		if not button_play.disabled:
+			button_play.pressed.emit())
+	nav.cancelled.connect(_on_back_pressed)
+	nav.focus_by_meta(next_sel if next_sel != 0 else 1)
+
+	add_child(ControllerUI.make_prompt_bar([
+		[&"A", StringTable.get_string(StringTable.ID_SELECT)],
+		[&"Y", StringTable.get_string(StringTable.ID_PLAY_BATTLE)],
+		[&"B", StringTable.get_string(StringTable.ID_BACK)],
+	]))
+
+## A's semantics mirror _handle_double_click, keyed by the focused nav item
+## instead of a click point: a wheel sends its centered card to the first
+## free deck slot, a slot returns its card to the matching wheel.
+func _on_nav_activated(item: FocusNav.NavItem) -> void:
+	if game_state != GameState.WAITING_INPUT:
+		return
+	if item.id == &"wheel":
+		var selector: DeckSelectorWheel = deck_selector_left if item.meta == 1 else deck_selector_right
+		var free_index := lower_deck.get_unused_index()
+		if free_index == -1:
+			return
+		_cancel_current_interaction()
+		var cstats: Card = selector.remove_current_card()
+		lower_deck.add_card(free_index, cstats)
+		next_sel = 10 + free_index
+	elif item.id == &"slot":
+		var index: int = item.meta - 10
+		var cstats: Card = lower_deck.card_stats(index)
+		if cstats == null:
+			return
+		_cancel_current_interaction()
+		lower_deck.remove_card(index)
+		if cstats.is_favourite:
+			deck_selector_right.add_card(cstats)
+			next_sel = 2
+		else:
+			deck_selector_left.add_card(cstats)
+			next_sel = 1
+	else:
+		return
+	_enter_waiting_input()
+	nav.focus_by_meta(next_sel)
 
 func _build_ui() -> void:
 	var font_stylish: Font = Game.font_stylish
@@ -751,6 +830,7 @@ func _on_play_pressed() -> void:
 	_sync_last_deck()
 	busy_indicator.visible = true
 	launch_battle_delay = LAUNCH_BATTLE_DELAY
+	nav.active = false
 
 func _on_back_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_back_sound.wav")
