@@ -117,6 +117,7 @@ var sfx_buy: AudioStreamPlayer
 
 var nav: FocusNav
 var back_button: Button
+var _wheel_stick_locked := false
 
 # --- WaitingInput state ---
 var wi_x: int = 0
@@ -187,7 +188,27 @@ func _setup_nav() -> void:
 	nav.add_control(button_buy)
 	nav.add_control(button_buy_back)
 
+	# The cursor moving previews a card's stats on its own now (matches the
+	# mouse's own hover-without-clicking preview) - A still does the real,
+	# state-changing stage-into-the-slot action separately, see below.
+	var on_focus_changed := func(item: FocusNav.NavItem) -> void:
+		match item.id:
+			&"wheel":
+				var c := deck_selector.central_card_stats()
+				if c != null:
+					_update_card_info(c, true, 1)
+			&"offer":
+				var i: int = item.meta
+				_update_card_info(shop_cards[i], false, 4)
+				last_chosen_shop_card_index = i
+			&"slot":
+				if cur_sell_card != null:
+					_update_card_info(cur_sell_card, true, 2)
+				elif cur_buy_card != null:
+					_update_card_info(cur_buy_card, false, 2)
+	nav.focus_changed.connect(on_focus_changed)
 	nav.activated.connect(_on_nav_activated)
+	nav.alt_activated.connect(func(_item: FocusNav.NavItem) -> void: _cancel_staged_card())
 	nav.cancelled.connect(_on_back_pressed)
 	# B already backs out via nav.cancelled above - hide the button itself in
 	# gamepad mode rather than also making it a redundant focus stop.
@@ -196,6 +217,7 @@ func _setup_nav() -> void:
 
 	add_child(ControllerUI.make_prompt_bar([
 		[&"A", StringTable.get_string(StringTable.ID_SELECT)],
+		[&"X", StringTable.get_string(StringTable.ID_CANCEL)],
 		[&"B", StringTable.get_string(StringTable.ID_BACK)],
 	]))
 
@@ -224,22 +246,28 @@ func _on_nav_activated(item: FocusNav.NavItem) -> void:
 		next_sel = 2
 		nav.focus_by_meta(2, &"slot")
 	elif item.id == &"slot":
-		if cur_sell_card != null:
-			_cancel_current_interaction()
-			deck_selector.add_card(cur_sell_card)
-			_set_sell_card(null)
-			_show_card_slot(null)
-			_update_card_info(deck_selector.central_card_stats(), true, 1)
-			_enter_waiting_input()
-			nav.focus_by_meta(1, &"wheel")
-		elif cur_buy_card != null:
-			_cancel_current_interaction()
-			_set_buy_card(null)
-			_show_card_slot(null)
-			_update_card_info(null, false, 0)
-			_enter_waiting_input()
+		_cancel_staged_card()
 	else:
 		(item.control as Button).pressed.emit()
+
+## X un-stages whatever's currently sitting in the trade slot, from anywhere
+## - not just when the slot itself is focused (which still does the same
+## thing via A, see &"slot" above; this is the same body either way).
+func _cancel_staged_card() -> void:
+	if cur_sell_card != null:
+		_cancel_current_interaction()
+		deck_selector.add_card(cur_sell_card)
+		_set_sell_card(null)
+		_show_card_slot(null)
+		_update_card_info(deck_selector.central_card_stats(), true, 1)
+		_enter_waiting_input()
+		nav.focus_by_meta(1, &"wheel")
+	elif cur_buy_card != null:
+		_cancel_current_interaction()
+		_set_buy_card(null)
+		_show_card_slot(null)
+		_update_card_info(null, false, 0)
+		_enter_waiting_input()
 
 # ---------------------------------------------------------------- UI build
 
@@ -783,6 +811,23 @@ func _process(delta: float) -> void:
 
 	if game_state == GameState.DECK_SCROLL and game_state_mode == 1:
 		_deck_scroll_process(delta)
+	_process_wheel_stick()
+
+## Right stick spins the wheel one card per push, same "must return to
+## centre before it counts again" gating Help.gd's page stick uses - nav_left/
+## nav_right already own the left stick/d-pad for moving focus between the
+## wheel/slot/offer items, so the wheel itself needed its own axis entirely.
+func _process_wheel_stick() -> void:
+	if not ControllerUI.is_gamepad() or game_state != GameState.WAITING_INPUT:
+		_wheel_stick_locked = false
+		return
+	var left := Input.get_action_strength(&"nav_wheel_left") > 0.0
+	var right := Input.get_action_strength(&"nav_wheel_right") > 0.0
+	if not left and not right:
+		_wheel_stick_locked = false
+	elif not _wheel_stick_locked:
+		_wheel_stick_locked = true
+		_snap_to_box(1 if right else 3, true)
 
 # --------------------------------------------------------- WaitingInput ---
 

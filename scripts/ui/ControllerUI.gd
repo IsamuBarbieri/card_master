@@ -28,11 +28,10 @@ const NAV_REPEAT_RATE := 0.11
 const HAND_TEXTURE_PATH := "res://assets/cursor.png"
 const HAND_SIZE := Vector2(40, 40)
 ## The fingertip's landing spot within the target rect, as a fraction of its
-## size: horizontally centered, 3/4 of the way down - not the exact center
-## (reads as pointing INTO the item rather than sitting concentrically on
-## top of it) and not the top edge (which crowded a focused item's own label/
-## art on several screens).
-const HAND_ANCHOR_FRACTION := Vector2(0.5, 0.75)
+## size: bottom-right corner. Center-ish fractions read as "correct" on some
+## rect sizes and "off" on others depending on aspect ratio; the corner is
+## the one spot that's unambiguous regardless of the target's shape.
+const HAND_ANCHOR_FRACTION := Vector2(1.0, 1.0)
 const HAND_TWEEN_TIME := 0.07
 ## Idle bob: a small diagonal nudge toward/away from the anchor point along
 ## the same up-left/down-right line the hand travels in on arrival, so it
@@ -56,6 +55,11 @@ const GLYPH_PATHS := {
 }
 
 const PROMPT_GLYPH_SIZE := Vector2(34, 34)
+## Small black backing behind every glyph icon, bled out past its edges -
+## Kenney's button art alone washes out against light or busy backgrounds
+## (several screens' backgrounds are exactly that), the backing is what
+## actually makes it read as a distinct button at a glance.
+const GLYPH_BORDER_PAD := Vector2(2.0, 2.0)
 const PROMPT_FONT_SIZE := 20
 const PROMPT_BAR_Y := 508.0
 const PROMPT_BAR_X := 20.0  # default: bottom-left, not centered
@@ -94,6 +98,11 @@ func _register_actions() -> void:
 	_add_action(&"nav_page_prev", [JOY_BUTTON_LEFT_SHOULDER], [KEY_Q])
 	_add_action(&"nav_page_next", [JOY_BUTTON_RIGHT_SHOULDER], [KEY_E])
 	_add_action(&"nav_menu", [JOY_BUTTON_START], [KEY_P])
+	# Right stick only, no button/key equivalent - Shop's card wheel (see
+	# Shop.gd), which needs its own axis separate from nav_left/right (those
+	# already move focus between the wheel/slot/offer items).
+	_add_action(&"nav_wheel_left", [], [], JOY_AXIS_RIGHT_X, -1.0)
+	_add_action(&"nav_wheel_right", [], [], JOY_AXIS_RIGHT_X, 1.0)
 
 func _add_action(name: StringName, buttons: Array, keys: Array, axis: int = -1, axis_value: float = 0.0) -> void:
 	if InputMap.has_action(name):
@@ -164,11 +173,11 @@ func _build_hand() -> void:
 	_layer.add_child(_hand)
 
 ## Snaps the hand so its fingertip (the texture's bottom-right corner) lands
-## on HAND_ANCHOR_FRACTION of `rect` - centered horizontally, 3/4 down -
-## approaching it diagonally from up-left. Because the project stretches with
-## canvas_items/keep, CanvasLayer coordinates are the same 960x544 design
-## coordinates every screen is laid out in - no scaling conversion is needed
-## here. Clamped to stay on-canvas for anything sitting right at an edge.
+## exactly on `rect`'s own bottom-right corner, approaching it diagonally
+## from up-left. Because the project stretches with canvas_items/keep,
+## CanvasLayer coordinates are the same 960x544 design coordinates every
+## screen is laid out in - no scaling conversion is needed here. Clamped to
+## stay on-canvas for anything sitting right at an edge.
 func point_at(rect: Rect2) -> void:
 	if mode != MODE_GAMEPAD:
 		return
@@ -258,10 +267,42 @@ static func glyph(name: StringName) -> Texture2D:
 		return null
 	return load(path)
 
+## One glyph "chip", PROMPT_GLYPH_SIZE regardless of which path it takes: the
+## button art on a small black backing, or - if the art isn't present - the
+## same bracketed text tag make_prompt_bar always fell back to. Shared by
+## make_prompt_bar and make_button_hint so both draw identically.
+func _make_glyph_visual(key: StringName) -> Control:
+	var tex := glyph(key)
+	if tex == null:
+		return _make_prompt_label("[%s]" % key)
+
+	var cell := Control.new()
+	cell.size = PROMPT_GLYPH_SIZE
+	cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var border_style := StyleBoxFlat.new()
+	border_style.bg_color = Color.BLACK
+	border_style.set_corner_radius_all(6)
+	var border := Panel.new()
+	border.add_theme_stylebox_override("panel", border_style)
+	border.position = -GLYPH_BORDER_PAD
+	border.size = PROMPT_GLYPH_SIZE + GLYPH_BORDER_PAD * 2.0
+	border.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cell.add_child(border)
+
+	var icon := TextureRect.new()
+	icon.texture = tex
+	icon.stretch_mode = TextureRect.STRETCH_SCALE
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.size = PROMPT_GLYPH_SIZE
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cell.add_child(icon)
+	return cell
+
 ## `entries` is an Array of [glyph_name: StringName, label: String] pairs.
-## The returned Control positions itself along the bottom of the 960x544
-## canvas and shows itself only in gamepad mode; add it as a child of the
-## screen and forget about it (Godot drops the mode_changed connection
+## The returned Control positions itself along the bottom-left of the
+## 960x544 canvas and shows itself only in gamepad mode; add it as a child of
+## the screen and forget about it (Godot drops the mode_changed connection
 ## automatically when the bar is freed with its screen).
 func make_prompt_bar(entries: Array) -> Control:
 	var bar := Control.new()
@@ -275,24 +316,10 @@ func make_prompt_bar(entries: Array) -> Control:
 		var key: StringName = entry[0]
 		var text: String = entry[1]
 
-		var tex := glyph(key)
-		if tex != null:
-			var icon := TextureRect.new()
-			icon.texture = tex
-			icon.stretch_mode = TextureRect.STRETCH_SCALE
-			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			icon.size = PROMPT_GLYPH_SIZE
-			icon.position = Vector2(x, 0)
-			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			bar.add_child(icon)
-			x += PROMPT_GLYPH_SIZE.x + PROMPT_ITEM_GAP
-		else:
-			# Text fallback: the game stays fully playable and readable even
-			# with no glyph art present at all.
-			var tag := _make_prompt_label("[%s]" % key)
-			tag.position = Vector2(x, 0)
-			bar.add_child(tag)
-			x += tag.size.x + PROMPT_ITEM_GAP
+		var glyph_visual := _make_glyph_visual(key)
+		glyph_visual.position = Vector2(x, 0)
+		bar.add_child(glyph_visual)
+		x += glyph_visual.size.x + PROMPT_ITEM_GAP
 
 		var label := _make_prompt_label(text)
 		label.position = Vector2(x, 0)
@@ -303,6 +330,48 @@ func make_prompt_bar(entries: Array) -> Control:
 		if is_instance_valid(bar):
 			bar.visible = m == MODE_GAMEPAD)
 	return bar
+
+## Physically replaces a real button at its own (pos, size) with a glyph +
+## label - for the handful of cases where the pad binding is direct and
+## fixed enough that hiding the button and pointing only at the generic
+## bottom bar would leave a confusing blank spot where a control used to be.
+## Pair with hide_in_gamepad() on the button being stood in for.
+func make_button_hint(key: StringName, text: String, pos: Vector2, size: Vector2) -> Control:
+	var hint := Control.new()
+	hint.position = pos
+	hint.size = size
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var glyph_visual := _make_glyph_visual(key)
+	var label := _make_prompt_label(text)
+	var total_w := glyph_visual.size.x + PROMPT_ITEM_GAP + label.size.x
+	var start_x := (size.x - total_w) * 0.5
+	var mid_y := (size.y - PROMPT_GLYPH_SIZE.y) * 0.5
+
+	glyph_visual.position = Vector2(start_x, mid_y)
+	hint.add_child(glyph_visual)
+	label.position = Vector2(start_x + glyph_visual.size.x + PROMPT_ITEM_GAP, mid_y)
+	hint.add_child(label)
+
+	show_in_gamepad(hint)
+	return hint
+
+## Icon-only variant of make_button_hint, for a spot too small to also fit a
+## label (Help's close button is a 42x42 corner box) - the bottom-left prompt
+## bar already spells the action out in words, so the glyph alone is enough
+## in place of the button it's replacing.
+func make_icon_hint(key: StringName, pos: Vector2, size: Vector2) -> Control:
+	var hint := Control.new()
+	hint.position = pos
+	hint.size = size
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var glyph_visual := _make_glyph_visual(key)
+	glyph_visual.position = (size - glyph_visual.size) * 0.5
+	hint.add_child(glyph_visual)
+
+	show_in_gamepad(hint)
+	return hint
 
 func _make_prompt_label(text: String) -> Label:
 	var label := Label.new()

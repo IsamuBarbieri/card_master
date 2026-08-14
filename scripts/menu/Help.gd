@@ -35,6 +35,8 @@ var _drag_start_scroll := 0
 var _drag_start_x := 0.0
 var _current_page := 0
 var _dots: Array = []  # ColorRect per page
+var _page_stick_locked := false
+var close_button: Button
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -58,7 +60,7 @@ func _ready() -> void:
 	pages.add_child(_build_battle_page())
 	pages.add_child(_build_shop_page())
 
-	var close_button := _make_close_button()
+	close_button = _make_close_button()
 	close_button.pressed.connect(_on_close_pressed)
 	add_child(close_button)
 
@@ -66,25 +68,41 @@ func _ready() -> void:
 
 	# Pages aren't discrete items to point a hand at - they're a filmstrip -
 	# so there's no FocusNav here at all: paging and closing are handled
-	# directly below.
+	# directly below. The X close button is mouse/touch-only in gamepad mode,
+	# physically replaced by a B hint at its own spot - B already closes via
+	# _unhandled_input below either way.
 	ControllerUI.hide_hand()
+	ControllerUI.hide_in_gamepad(close_button)
+	# Icon-only: the button's own 42x42 corner box has no room for a label
+	# too (make_button_hint's centered glyph+text pair would run off the
+	# right edge of the whole 960-wide screen) - the bottom bar already
+	# spells out "B Indietro" in words.
+	add_child(ControllerUI.make_icon_hint(&"B", close_button.position, close_button.size))
 	add_child(ControllerUI.make_prompt_bar([
-		[&"LB", ""], [&"RB", StringTable.get_string(StringTable.ID_PAGE)],
 		[&"B", StringTable.get_string(StringTable.ID_BACK)],
 	]))
+
+func _process(_delta: float) -> void:
+	# Left stick moves at most one page per push, same as the d-pad/keyboard
+	# already do naturally (they're discrete button events) - without this
+	# gate, holding the stick over at full deflection re-fires nav_left/
+	# nav_right's "just pressed" edge on nearly every analog sample, flipping
+	# several pages in a single push instead of one.
+	if not ControllerUI.is_gamepad():
+		_page_stick_locked = false
+		return
+	var left := Input.get_action_strength(&"nav_left") > 0.0
+	var right := Input.get_action_strength(&"nav_right") > 0.0
+	if not left and not right:
+		_page_stick_locked = false
+	elif not _page_stick_locked:
+		_page_stick_locked = true
+		_go_to_page(_current_page + (1 if right else -1))
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not ControllerUI.is_gamepad():
 		return
-	# Left/right page as well as the shoulders: reaching for LB/RB isn't the
-	# obvious first instinct on a filmstrip.
-	if event.is_action_pressed(&"nav_left") or event.is_action_pressed(&"nav_page_prev"):
-		_go_to_page(_current_page - 1)
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(&"nav_right") or event.is_action_pressed(&"nav_page_next"):
-		_go_to_page(_current_page + 1)
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(&"nav_accept") or event.is_action_pressed(&"nav_cancel"):
+	if event.is_action_pressed(&"nav_accept") or event.is_action_pressed(&"nav_cancel"):
 		_on_close_pressed()
 		get_viewport().set_input_as_handled()
 

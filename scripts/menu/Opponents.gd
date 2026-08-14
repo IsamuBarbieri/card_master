@@ -75,17 +75,24 @@ func _setup_nav() -> void:
 	for i in opp_count:
 		var item := nav.add_control(item_buttons[i], i)
 		nav.set_scroll(item, scroll)
-	nav.add_control(select_button)
-	nav.activated.connect(func(item: FocusNav.NavItem) -> void:
-		(item.control as Button).pressed.emit())
+	# The cursor moving IS the preview now - no A press needed to see an
+	# opponent's card, so A is freed up to always mean "Play" instead
+	# (select_button.disabled still gates a locked opponent either way).
+	nav.focus_changed.connect(func(item: FocusNav.NavItem) -> void: _select(item.meta))
+	nav.activated.connect(func(_item: FocusNav.NavItem) -> void:
+		if not select_button.disabled:
+			_on_select_pressed())
 	nav.cancelled.connect(_on_back_pressed)
 	# B already backs out via nav.cancelled above - the button itself would
 	# just be a second, redundant way to reach the same place, so it hides
 	# in gamepad mode instead of also being a focus stop.
 	ControllerUI.hide_in_gamepad(back_button)
+	# select_button is physically replaced by this A hint, at its own spot -
+	# there's no longer a nav item for it to land focus on anyway.
+	ControllerUI.hide_in_gamepad(select_button)
+	add_child(ControllerUI.make_button_hint(&"A", StringTable.get_string(StringTable.ID_PLAY_BATTLE), select_button.position, select_button.size))
 	nav.focus_by_meta(selected_index)
 	add_child(ControllerUI.make_prompt_bar([
-		[&"A", StringTable.get_string(StringTable.ID_SELECT)],
 		[&"B", StringTable.get_string(StringTable.ID_BACK)],
 	]))
 
@@ -119,7 +126,10 @@ func _build_ui() -> void:
 	back_button = _make_text_button(StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56), font_stylish)
 	back_button.pressed.connect(_on_back_pressed)
 
-	select_button = _make_text_button(StringTable.get_string(StringTable.ID_SELECT), Vector2(805, 463), Vector2(115, 56), font_stylish)
+	# ID_PLAY_BATTLE ("Play"/"Gioca") rather than ID_SELECT - the button
+	# commits to the currently-previewed opponent and launches deck select,
+	# "Play" says that more directly, in both mouse and gamepad mode.
+	select_button = _make_text_button(StringTable.get_string(StringTable.ID_PLAY_BATTLE), Vector2(805, 463), Vector2(115, 56), font_stylish)
 	select_button.pressed.connect(_on_select_pressed)
 
 	scroll = ScrollContainer.new()

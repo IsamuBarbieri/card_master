@@ -112,6 +112,13 @@ func link(a: NavItem, b: NavItem, dir: Vector2i, bidirectional: bool = true) -> 
 	if bidirectional:
 		b.links[-dir] = a
 
+## Like link(), but `dir` runs an arbitrary Callable instead of jumping to a
+## fixed NavItem - for edges whose destination isn't a static item (Collection's
+## card grid's left column jumping back to "whichever type row was selected",
+## which changes every time the type list moves).
+func link_action(a: NavItem, dir: Vector2i, action: Callable) -> void:
+	a.links[dir] = action
+
 func set_scroll(item: NavItem, sc: ScrollContainer) -> void:
 	item.scroll = sc
 
@@ -229,8 +236,11 @@ func move(dir: Vector2i) -> void:
 		current.axis_fn_v.call(dir.y)
 		return
 	if current.links.has(dir):
-		var linked: NavItem = current.links[dir]
-		if linked.enabled():
+		var linked: Variant = current.links[dir]
+		if linked is Callable:
+			(linked as Callable).call()
+			return
+		if (linked as NavItem).enabled():
 			set_focus(linked)
 			return
 

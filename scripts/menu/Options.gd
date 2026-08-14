@@ -158,15 +158,20 @@ func _setup_nav() -> void:
 		var count := lang_popup.item_count
 		lang_popup.selected = wrapi(lang_popup.selected + d, 0, count)
 		_on_language_selected(lang_popup.selected)
-	nav.add_control(credits_button)
-	nav.add_control(title_screen_button)
-	# B already backs out via nav.cancelled below - hide the button itself in
-	# gamepad mode rather than also making it a redundant focus stop.
+	# B already backs out via nav.cancelled below; X/Y below always mean
+	# Title Screen/Credits regardless of focus - neither button is a focus
+	# stop anymore, so none of the three are registered as nav items.
 	ControllerUI.hide_in_gamepad(back_button)
+	ControllerUI.hide_in_gamepad(credits_button)
+	ControllerUI.hide_in_gamepad(title_screen_button)
+	add_child(ControllerUI.make_button_hint(&"X", StringTable.get_string(StringTable.ID_TITLE_SCREEN), title_screen_button.position, title_screen_button.size))
+	add_child(ControllerUI.make_button_hint(&"Y", StringTable.get_string(StringTable.ID_CREDITS), credits_button.position, credits_button.size))
 
 	nav.activated.connect(func(item: FocusNav.NavItem) -> void:
 		if item.control is Button:
 			(item.control as Button).pressed.emit())
+	nav.alt_activated.connect(func(_item: FocusNav.NavItem) -> void: _on_title_screen_pressed())
+	nav.alt2_activated.connect(func(_item: FocusNav.NavItem) -> void: _on_credits_pressed())
 	nav.cancelled.connect(_on_back_pressed)
 	nav.focus_first()
 

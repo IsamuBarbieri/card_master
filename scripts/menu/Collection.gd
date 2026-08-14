@@ -88,8 +88,7 @@ func _ready() -> void:
 		return CardManager.defs[a.original_id].name < CardManager.defs[b.original_id].name)
 
 	_build_ui()
-	_setup_nav()
-	_select_type(0)
+	_setup_nav()  # focus_changed already runs _select_type(0) via focus_by_meta
 
 func _build_ui() -> void:
 	var font_stylish: Font = Game.font_stylish
@@ -251,29 +250,29 @@ func _setup_nav() -> void:
 		var item := nav.add_control(type_rows[i], i)
 		item.id = &"type"
 		nav.set_scroll(item, type_scroll)
+		# A single-column list: left/right never has a normal meaning here,
+		# so it's free to always mean "go to the card grid instead" - the
+		# grid rebuilds every time _select_type runs below, so by the time
+		# this fires the &"card" items for the CURRENT type already exist.
+		nav.link_action(item, FocusNav.DIR_LEFT, func() -> void:
+			nav.focus_by_meta(sel_card_index, &"card"))
+		nav.link_action(item, FocusNav.DIR_RIGHT, func() -> void:
+			nav.focus_by_meta(sel_card_index, &"card"))
 	# B already backs out via nav.cancelled below - hide the button itself in
 	# gamepad mode rather than also making it a redundant focus stop.
 	ControllerUI.hide_in_gamepad(back_button)
 
-	var on_activated := func(item: FocusNav.NavItem) -> void:
+	# The cursor moving IS the selection now - no A press needed to preview a
+	# type or a card, so there's nothing left for activated to dispatch.
+	var on_focus_changed := func(item: FocusNav.NavItem) -> void:
 		match item.id:
 			&"type": _select_type(item.meta)
 			&"card": _select_card(item.meta)
-			_: (item.control as Button).pressed.emit()
-	nav.activated.connect(on_activated)
-	# Shoulders jump straight between the two lists instead of relying on
-	# the spatial scorer to cross the gap between them.
-	nav.page.connect(func(dir: int) -> void:
-		if dir < 0:
-			nav.focus_by_meta(sel_type_index, &"type")
-		else:
-			nav.focus_by_meta(sel_card_index, &"card"))
+	nav.focus_changed.connect(on_focus_changed)
 	nav.cancelled.connect(_on_back_pressed)
 	nav.focus_by_meta(sel_type_index, &"type")
 
 	add_child(ControllerUI.make_prompt_bar([
-		[&"A", StringTable.get_string(StringTable.ID_SELECT)],
-		[&"LB", ""], [&"RB", StringTable.get_string(StringTable.ID_CARDS)],
 		[&"B", StringTable.get_string(StringTable.ID_BACK)],
 	]))
 
@@ -375,6 +374,13 @@ func _select_type(index: int) -> void:
 		if nav != null:
 			var card_item := nav.add_virtual(&"card", (func(c: Control) -> Rect2: return c.get_global_rect()).bind(cell), i, 0, Callable(), cell)
 			nav.set_scroll(card_item, card_scroll)
+			# Left from the grid's own first column returns to the type list
+			# instead of wrapping to the row's last column - the type list is
+			# a single column, so nothing else on the card side ever needs
+			# left/right; that's what frees it up for this list-to-list jump.
+			if i % CARD_GRID_COLUMNS == 0:
+				nav.link_action(card_item, FocusNav.DIR_LEFT, func() -> void:
+					nav.focus_by_meta(sel_type_index, &"type"))
 
 	sel_card_index = 0
 	_select_card(0)
