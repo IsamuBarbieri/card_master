@@ -61,7 +61,7 @@ const PROMPT_GLYPH_SIZE := Vector2(34, 34)
 ## (several screens' backgrounds are exactly that); a flat backing box behind
 ## it read as a giant black blob, so this outlines the glyph's actual shape
 ## instead.
-const GLYPH_OUTLINE_WIDTH := 2.0
+const GLYPH_OUTLINE_WIDTH := 1.0
 const PROMPT_FONT_SIZE := 20
 const PROMPT_BAR_Y := 508.0
 const PROMPT_BAR_X := 20.0  # default: bottom-left, not centered
