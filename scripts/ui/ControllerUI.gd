@@ -271,13 +271,18 @@ static func glyph(name: StringName) -> Texture2D:
 
 var _outline_shader: Shader
 
-## A cheap edge-detect outline: for every transparent texel, check its 8
-## neighbours (node_size apart, in real rendered pixels rather than texture
-## texels - a Kenney source PNG can be a very different resolution from the
-## 34x34 box it's stretched into here, so texel-space offsets would draw a
-## wildly wrong-looking outline width) and paint it solid if any neighbour
-## isn't transparent. Built once and reused via a single ShaderMaterial per
-## icon instance (materials aren't shared, the Shader resource is).
+## Edge-detect outline, anti-aliased: a ring of samples (node_size apart, in
+## real rendered pixels rather than texture texels - a Kenney source PNG can
+## be a very different resolution from the 34x34 box it's stretched into
+## here, so texel-space offsets would draw a wildly wrong-looking outline
+## width) feeds the outline's own alpha directly from the MAX alpha found,
+## instead of a hard "any hit -> fully opaque" branch - since the source
+## art's edges are themselves antialiased (fractional alpha), that max
+## varies smoothly as the ring sweeps across a curve, and mixing by the
+## center pixel's own alpha (rather than an a<0.5 cutoff) blends the outline
+## and the icon's real color across that same soft edge instead of a jagged
+## step. Built once and reused via a single ShaderMaterial per icon instance
+## (materials aren't shared, the Shader resource is).
 func _get_outline_shader() -> Shader:
 	if _outline_shader == null:
 		_outline_shader = Shader.new()
@@ -288,24 +293,21 @@ uniform vec2 node_size = vec2(34.0, 34.0);
 uniform float outline_width = 2.0;
 uniform vec4 outline_color : source_color = vec4(0.0, 0.0, 0.0, 1.0);
 
+const int RING_SAMPLES = 16;
+
 void fragment() {
 	vec4 col = texture(TEXTURE, UV);
-	if (col.a < 0.5) {
-		vec2 texel = outline_width / node_size;
-		float hit = 0.0;
-		hit += texture(TEXTURE, UV + vec2(-texel.x, 0.0)).a;
-		hit += texture(TEXTURE, UV + vec2(texel.x, 0.0)).a;
-		hit += texture(TEXTURE, UV + vec2(0.0, -texel.y)).a;
-		hit += texture(TEXTURE, UV + vec2(0.0, texel.y)).a;
-		hit += texture(TEXTURE, UV + vec2(-texel.x, -texel.y)).a;
-		hit += texture(TEXTURE, UV + vec2(texel.x, -texel.y)).a;
-		hit += texture(TEXTURE, UV + vec2(-texel.x, texel.y)).a;
-		hit += texture(TEXTURE, UV + vec2(texel.x, texel.y)).a;
-		if (hit > 0.0) {
-			col = outline_color;
-		}
+	vec2 texel = outline_width / node_size;
+
+	float outline_alpha = 0.0;
+	for (int i = 0; i < RING_SAMPLES; i++) {
+		float angle = float(i) / float(RING_SAMPLES) * TAU;
+		vec2 offset = vec2(cos(angle), sin(angle)) * texel;
+		outline_alpha = max(outline_alpha, texture(TEXTURE, UV + offset).a);
 	}
-	COLOR = col;
+
+	vec4 outline = vec4(outline_color.rgb, outline_alpha);
+	COLOR = mix(outline, col, col.a);
 }
 """
 	return _outline_shader
