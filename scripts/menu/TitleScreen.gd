@@ -45,12 +45,11 @@ func _ready() -> void:
 	prompt_label.add_theme_color_override("font_color", Color.WHITE)
 	prompt_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	prompt_label.add_theme_constant_override("outline_size", 3)
-	var string_id := StringTable.ID_TAP_TO_START if OS.has_feature("mobile") else StringTable.ID_CLICK_TO_START
-	prompt_label.text = StringTable.get_string(string_id)
 	prompt_label.pivot_offset = prompt_label.size / 2.0
 	prompt_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(prompt_label)
-	UIButtonStyle.fit_button_text(prompt_label)
+	_update_prompt_text()
+	ControllerUI.mode_changed.connect(func(_m: int) -> void: _update_prompt_text())
 
 	Game.play_music(ASSETS + "music/menu1.mp3")
 
@@ -75,3 +74,17 @@ func _advance() -> void:
 	_advanced = true
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 	get_tree().change_scene_to_file("res://scenes/menu/StartMenu.tscn")
+
+## Re-picked live (not just once at _ready) since a player can plug in a pad
+## - or let go of the stick and touch the screen - while this prompt is
+## still pulsing on screen.
+func _update_prompt_text() -> void:
+	var string_id: int
+	if ControllerUI.is_gamepad():
+		string_id = StringTable.ID_PAD_TO_START
+	elif OS.has_feature("mobile"):
+		string_id = StringTable.ID_TAP_TO_START
+	else:
+		string_id = StringTable.ID_CLICK_TO_START
+	prompt_label.text = StringTable.get_string(string_id)
+	UIButtonStyle.fit_button_text(prompt_label)

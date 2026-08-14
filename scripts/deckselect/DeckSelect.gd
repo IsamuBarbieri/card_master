@@ -237,6 +237,9 @@ func _build_ui() -> void:
 
 	var back_button := _make_text_button(StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56), font_stylish)
 	back_button.pressed.connect(_on_back_pressed)
+	# B already backs out via nav.cancelled (_setup_nav) - hide the button
+	# itself in gamepad mode rather than also making it a redundant focus stop.
+	ControllerUI.hide_in_gamepad(back_button)
 
 	var info_bkg := TextureRect.new()
 	info_bkg.texture = load(ASSETS + "common_transp_box_a.png")

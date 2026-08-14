@@ -186,10 +186,12 @@ func _setup_nav() -> void:
 	nav.add_control(button_sell)
 	nav.add_control(button_buy)
 	nav.add_control(button_buy_back)
-	nav.add_control(back_button)
 
 	nav.activated.connect(_on_nav_activated)
 	nav.cancelled.connect(_on_back_pressed)
+	# B already backs out via nav.cancelled above - hide the button itself in
+	# gamepad mode rather than also making it a redundant focus stop.
+	ControllerUI.hide_in_gamepad(back_button)
 	nav.focus_by_meta(1, &"wheel")
 
 	add_child(ControllerUI.make_prompt_bar([

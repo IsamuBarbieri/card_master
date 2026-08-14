@@ -75,11 +75,14 @@ func _setup_nav() -> void:
 	for i in opp_count:
 		var item := nav.add_control(item_buttons[i], i)
 		nav.set_scroll(item, scroll)
-	nav.add_control(back_button)
 	nav.add_control(select_button)
 	nav.activated.connect(func(item: FocusNav.NavItem) -> void:
 		(item.control as Button).pressed.emit())
 	nav.cancelled.connect(_on_back_pressed)
+	# B already backs out via nav.cancelled above - the button itself would
+	# just be a second, redundant way to reach the same place, so it hides
+	# in gamepad mode instead of also being a focus stop.
+	ControllerUI.hide_in_gamepad(back_button)
 	nav.focus_by_meta(selected_index)
 	add_child(ControllerUI.make_prompt_bar([
 		[&"A", StringTable.get_string(StringTable.ID_SELECT)],

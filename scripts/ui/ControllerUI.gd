@@ -27,9 +27,13 @@ const NAV_REPEAT_RATE := 0.11
 
 const HAND_TEXTURE_PATH := "res://assets/cursor.png"
 const HAND_SIZE := Vector2(40, 40)
-## How far left of the focused rect the fingertip sits.
-const HAND_GAP := 10.0
-const HAND_TWEEN_TIME := 0.12
+## Diagonal offset from the target rect's top-left corner: the hand rests
+## just up-and-left of the item, pointing down-right into it (FF9-style),
+## instead of the old fixed 50px-left-of-rect offset - that pushed anything
+## near the left edge of the 960-wide canvas (most Back buttons sit at
+## x=42) off-screen entirely.
+const HAND_OFFSET := Vector2(-10, -10)
+const HAND_TWEEN_TIME := 0.07
 const HAND_BOB := 4.0
 const HAND_BOB_TIME := 0.55
 
@@ -155,16 +159,19 @@ func _build_hand() -> void:
 	_hand.visible = false
 	_layer.add_child(_hand)
 
-## Snaps the hand to the left edge of `rect`, vertically centred. Because the
-## project stretches with canvas_items/keep, CanvasLayer coordinates are the
-## same 960x544 design coordinates every screen is laid out in - no scaling
-## conversion is needed here.
+## Snaps the hand to just up-and-left of `rect`'s top-left corner, diagonally
+## overlapping its corner so the fingertip reads as pointing down-right into
+## the item. Because the project stretches with canvas_items/keep, CanvasLayer
+## coordinates are the same 960x544 design coordinates every screen is laid
+## out in - no scaling conversion is needed here. Clamped to stay on-canvas
+## since HAND_OFFSET alone would still push it negative for anything sitting
+## right at the screen edge (several Back buttons do).
 func point_at(rect: Rect2) -> void:
 	if mode != MODE_GAMEPAD:
 		return
 	var target := Vector2(
-		rect.position.x - HAND_SIZE.x - HAND_GAP,
-		rect.position.y + rect.size.y * 0.5 - HAND_SIZE.y * 0.5)
+		clampf(rect.position.x + HAND_OFFSET.x, 0.0, 960.0 - HAND_SIZE.x),
+		clampf(rect.position.y + HAND_OFFSET.y, 0.0, 544.0 - HAND_SIZE.y))
 	var first_show := not _hand.visible
 	_hand.visible = true
 	if target.is_equal_approx(_hand_target) and not first_show:
@@ -192,6 +199,20 @@ func _start_bob() -> void:
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_bob_tween.tween_property(_hand, "position:x", _hand_target.x, HAND_BOB_TIME) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+## For a Control whose whole job is already covered by a fixed prompt-bar
+## entry (a Back button always bound to B via FocusNav.cancelled, a save
+## slot's small delete X always bound to X via alt_activated): pointless
+## clutter once the prompt bar spells the same action out, and a competing
+## thing to navigate to that doesn't actually need its own focus stop. Ties
+## the control's visibility to the current mode immediately and keeps it
+## synced as the mode changes; mouse/touch players still see and click it
+## normally.
+func hide_in_gamepad(control: Control) -> void:
+	control.visible = mode != MODE_GAMEPAD
+	mode_changed.connect(func(m: int) -> void:
+		if is_instance_valid(control):
+			control.visible = m != MODE_GAMEPAD)
 
 func hide_hand() -> void:
 	if _hand == null:

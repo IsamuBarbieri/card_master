@@ -136,9 +136,11 @@ func _setup_nav() -> void:
 		sfx_cat.play()  # drag_started/ended never fire for a value set from code
 
 	var lang_item := nav.add_control(lang_popup)
-	nav.add_control(back_button)
 	nav.add_control(credits_button)
 	nav.add_control(title_screen_button)
+	# B already backs out via nav.cancelled below - hide the button itself in
+	# gamepad mode rather than also making it a redundant focus stop.
+	ControllerUI.hide_in_gamepad(back_button)
 
 	nav.activated.connect(func(item: FocusNav.NavItem) -> void:
 		if item == lang_item:

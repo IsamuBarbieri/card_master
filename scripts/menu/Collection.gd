@@ -251,7 +251,9 @@ func _setup_nav() -> void:
 		var item := nav.add_control(type_rows[i], i)
 		item.id = &"type"
 		nav.set_scroll(item, type_scroll)
-	nav.add_control(back_button)
+	# B already backs out via nav.cancelled below - hide the button itself in
+	# gamepad mode rather than also making it a redundant focus stop.
+	ControllerUI.hide_in_gamepad(back_button)
 
 	var on_activated := func(item: FocusNav.NavItem) -> void:
 		match item.id:

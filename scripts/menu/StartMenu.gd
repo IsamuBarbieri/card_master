@@ -159,6 +159,13 @@ func _ready() -> void:
 	_refresh_slots()
 	_setup_nav()
 
+	# X already deletes a focused slot directly (see alt_activated in
+	# _setup_nav) - the info panel underneath is enough, this small corner X
+	# is just mouse/touch clutter once the prompt bar spells the same action
+	# out. _refresh_slots also gates delete_buttons on `occupied`, so mode is
+	# folded in there rather than a plain hide_in_gamepad per button.
+	ControllerUI.mode_changed.connect(func(_m: int) -> void: _refresh_slots())
+
 	Game.play_music(ASSETS + "music/menu1.mp3")
 
 ## Layer 0 = the 3 slots. Layer 1 = whichever dialog is open - both dialogs'
@@ -256,7 +263,7 @@ func _refresh_slots() -> void:
 		slot_collection_boxes[i].visible = occupied
 		slot_coins_labels[i].visible = occupied
 		slot_empty_labels[i].visible = not occupied
-		delete_buttons[i].visible = occupied
+		delete_buttons[i].visible = occupied and not ControllerUI.is_gamepad()
 
 		if occupied:
 			slot_name_labels[i].text = summary["name"]
