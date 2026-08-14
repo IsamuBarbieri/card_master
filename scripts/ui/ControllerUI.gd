@@ -27,14 +27,17 @@ const NAV_REPEAT_RATE := 0.11
 
 const HAND_TEXTURE_PATH := "res://assets/cursor.png"
 const HAND_SIZE := Vector2(40, 40)
-## Diagonal offset from the target rect's top-left corner: the hand rests
-## just up-and-left of the item, pointing down-right into it (FF9-style),
-## instead of the old fixed 50px-left-of-rect offset - that pushed anything
-## near the left edge of the 960-wide canvas (most Back buttons sit at
-## x=42) off-screen entirely.
-const HAND_OFFSET := Vector2(-10, -10)
+## The fingertip's landing spot within the target rect, as a fraction of its
+## size: horizontally centered, 3/4 of the way down - not the exact center
+## (reads as pointing INTO the item rather than sitting concentrically on
+## top of it) and not the top edge (which crowded a focused item's own label/
+## art on several screens).
+const HAND_ANCHOR_FRACTION := Vector2(0.5, 0.75)
 const HAND_TWEEN_TIME := 0.07
-const HAND_BOB := 4.0
+## Idle bob: a small diagonal nudge toward/away from the anchor point along
+## the same up-left/down-right line the hand travels in on arrival, so it
+## keeps reading as "still pointing at this" rather than a static decal.
+const HAND_BOB := Vector2(4.0, 4.0)
 const HAND_BOB_TIME := 0.55
 
 ## The single indirection point for button art. Only these paths need to
@@ -159,19 +162,19 @@ func _build_hand() -> void:
 	_hand.visible = false
 	_layer.add_child(_hand)
 
-## Snaps the hand to just up-and-left of `rect`'s top-left corner, diagonally
-## overlapping its corner so the fingertip reads as pointing down-right into
-## the item. Because the project stretches with canvas_items/keep, CanvasLayer
-## coordinates are the same 960x544 design coordinates every screen is laid
-## out in - no scaling conversion is needed here. Clamped to stay on-canvas
-## since HAND_OFFSET alone would still push it negative for anything sitting
-## right at the screen edge (several Back buttons do).
+## Snaps the hand so its fingertip (the texture's bottom-right corner) lands
+## on HAND_ANCHOR_FRACTION of `rect` - centered horizontally, 3/4 down -
+## approaching it diagonally from up-left. Because the project stretches with
+## canvas_items/keep, CanvasLayer coordinates are the same 960x544 design
+## coordinates every screen is laid out in - no scaling conversion is needed
+## here. Clamped to stay on-canvas for anything sitting right at an edge.
 func point_at(rect: Rect2) -> void:
 	if mode != MODE_GAMEPAD:
 		return
+	var anchor := rect.position + rect.size * HAND_ANCHOR_FRACTION
 	var target := Vector2(
-		clampf(rect.position.x + HAND_OFFSET.x, 0.0, 960.0 - HAND_SIZE.x),
-		clampf(rect.position.y + HAND_OFFSET.y, 0.0, 544.0 - HAND_SIZE.y))
+		clampf(anchor.x - HAND_SIZE.x, 0.0, 960.0 - HAND_SIZE.x),
+		clampf(anchor.y - HAND_SIZE.y, 0.0, 544.0 - HAND_SIZE.y))
 	var first_show := not _hand.visible
 	_hand.visible = true
 	if target.is_equal_approx(_hand_target) and not first_show:
@@ -180,24 +183,31 @@ func point_at(rect: Rect2) -> void:
 
 	if _hand_tween != null and _hand_tween.is_valid():
 		_hand_tween.kill()
+	if _bob_tween != null and _bob_tween.is_valid():
+		_bob_tween.kill()
 	if first_show:
 		_hand.position = target
+		_start_bob()
 	else:
+		# Bob only starts once the hand actually arrives - starting it
+		# immediately raced position/position:x against this same move tween
+		# every time focus changed, each frame fighting over which tween's
+		# result won, which is what read as a jarring mechanical stutter.
 		_hand_tween = create_tween()
 		_hand_tween.tween_property(_hand, "position", target, HAND_TWEEN_TIME) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	_start_bob()
+		_hand_tween.tween_callback(_start_bob)
 
-## A small looping nudge toward the thing it's pointing at - without it the
-## hand reads as a static decal once it has settled.
+## A small looping diagonal nudge back along the up-left approach line -
+## without it the hand reads as a static decal once it has settled.
 func _start_bob() -> void:
 	if _bob_tween != null and _bob_tween.is_valid():
 		_bob_tween.kill()
 	_bob_tween = create_tween()
 	_bob_tween.set_loops()
-	_bob_tween.tween_property(_hand, "position:x", _hand_target.x + HAND_BOB, HAND_BOB_TIME) \
+	_bob_tween.tween_property(_hand, "position", _hand_target + HAND_BOB, HAND_BOB_TIME) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	_bob_tween.tween_property(_hand, "position:x", _hand_target.x, HAND_BOB_TIME) \
+	_bob_tween.tween_property(_hand, "position", _hand_target, HAND_BOB_TIME) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 ## For a Control whose whole job is already covered by a fixed prompt-bar

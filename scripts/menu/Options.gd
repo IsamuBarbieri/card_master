@@ -135,7 +135,18 @@ func _setup_nav() -> void:
 		slider_sfx.value = clampf(slider_sfx.value + d * SLIDER_NUDGE, slider_sfx.min_value, slider_sfx.max_value)
 		sfx_cat.play()  # drag_started/ended never fire for a value set from code
 
+	# Left/right nudges the selection directly instead of opening the native
+	# popup, same as the sliders above - the popup is a real Window that's
+	# supposed to handle ui_accept/ui_cancel itself once opened, but in
+	# practice that left the player stuck inside it with no working A or B on
+	# a pad. Cycling in place sidesteps that whole native-widget input path
+	# rather than debugging it further; mouse/touch still gets the ordinary
+	# popup untouched, since this only wires the pad's axis_fn.
 	var lang_item := nav.add_control(lang_popup)
+	lang_item.axis_fn = func(d: int) -> void:
+		var count := lang_popup.item_count
+		lang_popup.selected = wrapi(lang_popup.selected + d, 0, count)
+		_on_language_selected(lang_popup.selected)
 	nav.add_control(credits_button)
 	nav.add_control(title_screen_button)
 	# B already backs out via nav.cancelled below - hide the button itself in
@@ -143,13 +154,8 @@ func _setup_nav() -> void:
 	ControllerUI.hide_in_gamepad(back_button)
 
 	nav.activated.connect(func(item: FocusNav.NavItem) -> void:
-		if item == lang_item:
-			lang_popup.show_popup()  # a real Window, handles ui_* itself
-			nav.active = false
-			ControllerUI.hide_hand()
-		elif item.control is Button:
+		if item.control is Button:
 			(item.control as Button).pressed.emit())
-	lang_popup.get_popup().popup_hide.connect(func() -> void: nav.active = true)
 	nav.cancelled.connect(_on_back_pressed)
 	nav.focus_first()
 
