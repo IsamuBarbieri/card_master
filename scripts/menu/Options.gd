@@ -31,6 +31,8 @@ var title_screen_button: Button
 var slider_music: HSlider
 var slider_sfx: HSlider
 var lang_popup: OptionButton
+var lang_arrow_left: Label
+var lang_arrow_right: Label
 var nav: FocusNav
 
 func _ready() -> void:
@@ -98,6 +100,15 @@ func _ready() -> void:
 	lang_popup.selected = Game.language
 	lang_popup.item_selected.connect(_on_language_selected)
 	add_child(lang_popup)
+
+	# Pad left/right cycles the language directly (see _setup_nav's axis_fn)
+	# instead of opening lang_popup's own native dropdown arrow - that arrow
+	# means nothing to a pad, so these two only show up in gamepad mode to
+	# spell out what the d-pad actually does here.
+	lang_arrow_left = _make_lang_arrow("<", Vector2(lang_popup.position.x - 30, lang_popup.position.y))
+	lang_arrow_right = _make_lang_arrow(">", Vector2(lang_popup.position.x + lang_popup.size.x + 6, lang_popup.position.y))
+	ControllerUI.show_in_gamepad(lang_arrow_left)
+	ControllerUI.show_in_gamepad(lang_arrow_right)
 
 	back_button = _make_text_button("", Vector2(42, 463), Vector2(115, 56), font_stylish)
 	back_button.pressed.connect(_on_back_pressed)
@@ -190,6 +201,22 @@ func _make_text_button(label: String, pos: Vector2, size: Vector2, font: Font) -
 	btn.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(btn)
 	return btn
+
+func _make_lang_arrow(text: String, pos: Vector2) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.position = pos
+	label.size = Vector2(24, 56)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_override("font", Game.font_stylish)
+	label.add_theme_font_size_override("font_size", 30)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 3)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(label)
+	return label
 
 func _make_slider(pos: Vector2, size: Vector2, value: float) -> HSlider:
 	var slider := HSlider.new()

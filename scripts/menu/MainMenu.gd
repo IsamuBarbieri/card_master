@@ -37,6 +37,11 @@ var cat_animating := false
 var cat_wait_time := 0.0
 var nav: FocusNav
 
+## Survives scene reloads (this file's own class, not an instance field) so
+## coming back from Shop/Collection/Options/Help re-focuses whichever button
+## sent the player there instead of always resetting to Battle.
+static var _last_focus_meta := 0
+
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 
@@ -67,16 +72,22 @@ func _ready() -> void:
 func _setup_nav(buttons: Array) -> void:
 	nav = FocusNav.new()
 	add_child(nav)
-	for btn in buttons:
-		nav.add_control(btn)
+	for i in buttons.size():
+		var btn: Button = buttons[i]
+		nav.add_control(btn, i)
+		btn.pressed.connect(_remember_focus.bind(i))
 	if cat_button != null:
-		nav.add_control(cat_button)
+		nav.add_control(cat_button, buttons.size())
+		cat_button.pressed.connect(_remember_focus.bind(buttons.size()))
 	nav.activated.connect(func(item: FocusNav.NavItem) -> void:
 		(item.control as Button).pressed.emit())
-	nav.focus_first()
+	nav.focus_by_meta(_last_focus_meta)
 	add_child(ControllerUI.make_prompt_bar([
 		[&"A", StringTable.get_string(StringTable.ID_SELECT)],
 	]))
+
+func _remember_focus(meta: int) -> void:
+	_last_focus_meta = meta
 
 func _build_cat() -> void:
 	var sheet: Texture2D = load(ASSETS + "help_cat.png")

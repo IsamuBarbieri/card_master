@@ -58,6 +58,7 @@ const GLYPH_PATHS := {
 const PROMPT_GLYPH_SIZE := Vector2(34, 34)
 const PROMPT_FONT_SIZE := 20
 const PROMPT_BAR_Y := 508.0
+const PROMPT_BAR_X := 20.0  # default: bottom-left, not centered
 const PROMPT_ITEM_GAP := 6.0
 const PROMPT_ENTRY_GAP := 22.0
 
@@ -224,6 +225,15 @@ func hide_in_gamepad(control: Control) -> void:
 		if is_instance_valid(control):
 			control.visible = m != MODE_GAMEPAD)
 
+## The mirror image: a control that only makes sense with a pad in hand (the
+## left/right cycle-hint arrows next to the language OptionButton, which the
+## pad drives directly instead of opening its native popup - see Options.gd).
+func show_in_gamepad(control: Control) -> void:
+	control.visible = mode == MODE_GAMEPAD
+	mode_changed.connect(func(m: int) -> void:
+		if is_instance_valid(control):
+			control.visible = m == MODE_GAMEPAD)
+
 func hide_hand() -> void:
 	if _hand == null:
 		return
@@ -260,7 +270,7 @@ func make_prompt_bar(entries: Array) -> Control:
 	bar.size = Vector2(960, 36)
 	bar.visible = mode == MODE_GAMEPAD
 
-	var x := 0.0
+	var x := PROMPT_BAR_X
 	for entry in entries:
 		var key: StringName = entry[0]
 		var text: String = entry[1]
@@ -288,10 +298,6 @@ func make_prompt_bar(entries: Array) -> Control:
 		label.position = Vector2(x, 0)
 		bar.add_child(label)
 		x += label.size.x + PROMPT_ENTRY_GAP
-
-	# Centre the finished row horizontally.
-	for child in bar.get_children():
-		(child as Control).position.x += (960.0 - (x - PROMPT_ENTRY_GAP)) * 0.5
 
 	mode_changed.connect(func(m: int) -> void:
 		if is_instance_valid(bar):
