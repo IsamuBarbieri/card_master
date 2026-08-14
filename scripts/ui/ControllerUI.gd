@@ -55,11 +55,13 @@ const GLYPH_PATHS := {
 }
 
 const PROMPT_GLYPH_SIZE := Vector2(34, 34)
-## Small black backing behind every glyph icon, bled out past its edges -
+## Outline thickness (real screen pixels, not texture texels - see
+## _get_outline_shader) drawn around every glyph icon's own opaque pixels.
 ## Kenney's button art alone washes out against light or busy backgrounds
-## (several screens' backgrounds are exactly that), the backing is what
-## actually makes it read as a distinct button at a glance.
-const GLYPH_BORDER_PAD := Vector2(2.0, 2.0)
+## (several screens' backgrounds are exactly that); a flat backing box behind
+## it read as a giant black blob, so this outlines the glyph's actual shape
+## instead.
+const GLYPH_OUTLINE_WIDTH := 2.0
 const PROMPT_FONT_SIZE := 20
 const PROMPT_BAR_Y := 508.0
 const PROMPT_BAR_X := 20.0  # default: bottom-left, not centered
@@ -267,10 +269,52 @@ static func glyph(name: StringName) -> Texture2D:
 		return null
 	return load(path)
 
+var _outline_shader: Shader
+
+## A cheap edge-detect outline: for every transparent texel, check its 8
+## neighbours (node_size apart, in real rendered pixels rather than texture
+## texels - a Kenney source PNG can be a very different resolution from the
+## 34x34 box it's stretched into here, so texel-space offsets would draw a
+## wildly wrong-looking outline width) and paint it solid if any neighbour
+## isn't transparent. Built once and reused via a single ShaderMaterial per
+## icon instance (materials aren't shared, the Shader resource is).
+func _get_outline_shader() -> Shader:
+	if _outline_shader == null:
+		_outline_shader = Shader.new()
+		_outline_shader.code = """
+shader_type canvas_item;
+
+uniform vec2 node_size = vec2(34.0, 34.0);
+uniform float outline_width = 2.0;
+uniform vec4 outline_color : source_color = vec4(0.0, 0.0, 0.0, 1.0);
+
+void fragment() {
+	vec4 col = texture(TEXTURE, UV);
+	if (col.a < 0.5) {
+		vec2 texel = outline_width / node_size;
+		float hit = 0.0;
+		hit += texture(TEXTURE, UV + vec2(-texel.x, 0.0)).a;
+		hit += texture(TEXTURE, UV + vec2(texel.x, 0.0)).a;
+		hit += texture(TEXTURE, UV + vec2(0.0, -texel.y)).a;
+		hit += texture(TEXTURE, UV + vec2(0.0, texel.y)).a;
+		hit += texture(TEXTURE, UV + vec2(-texel.x, -texel.y)).a;
+		hit += texture(TEXTURE, UV + vec2(texel.x, -texel.y)).a;
+		hit += texture(TEXTURE, UV + vec2(-texel.x, texel.y)).a;
+		hit += texture(TEXTURE, UV + vec2(texel.x, texel.y)).a;
+		if (hit > 0.0) {
+			col = outline_color;
+		}
+	}
+	COLOR = col;
+}
+"""
+	return _outline_shader
+
 ## One glyph "chip", PROMPT_GLYPH_SIZE regardless of which path it takes: the
-## button art on a small black backing, or - if the art isn't present - the
-## same bracketed text tag make_prompt_bar always fell back to. Shared by
-## make_prompt_bar and make_button_hint so both draw identically.
+## button art with a 2px outline traced around its own shape, or - if the
+## art isn't present - the same bracketed text tag make_prompt_bar always
+## fell back to. Shared by make_prompt_bar and make_button_hint so both draw
+## identically.
 func _make_glyph_visual(key: StringName) -> Control:
 	var tex := glyph(key)
 	if tex == null:
@@ -280,22 +324,17 @@ func _make_glyph_visual(key: StringName) -> Control:
 	cell.size = PROMPT_GLYPH_SIZE
 	cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	var border_style := StyleBoxFlat.new()
-	border_style.bg_color = Color.BLACK
-	border_style.set_corner_radius_all(6)
-	var border := Panel.new()
-	border.add_theme_stylebox_override("panel", border_style)
-	border.position = -GLYPH_BORDER_PAD
-	border.size = PROMPT_GLYPH_SIZE + GLYPH_BORDER_PAD * 2.0
-	border.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	cell.add_child(border)
-
 	var icon := TextureRect.new()
 	icon.texture = tex
 	icon.stretch_mode = TextureRect.STRETCH_SCALE
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.size = PROMPT_GLYPH_SIZE
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mat := ShaderMaterial.new()
+	mat.shader = _get_outline_shader()
+	mat.set_shader_parameter("node_size", PROMPT_GLYPH_SIZE)
+	mat.set_shader_parameter("outline_width", GLYPH_OUTLINE_WIDTH)
+	icon.material = mat
 	cell.add_child(icon)
 	return cell
 
