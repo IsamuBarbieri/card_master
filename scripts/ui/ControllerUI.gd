@@ -105,6 +105,9 @@ func _register_actions() -> void:
 	# already move focus between the wheel/slot/offer items).
 	_add_action(&"nav_wheel_left", [], [], JOY_AXIS_RIGHT_X, -1.0)
 	_add_action(&"nav_wheel_right", [], [], JOY_AXIS_RIGHT_X, 1.0)
+	# Right stick click (R3) - DeckSelect's quick-jump between the deck wheel
+	# and the favourites wheel.
+	_add_action(&"nav_stick_click", [JOY_BUTTON_RIGHT_STICK], [KEY_TAB])
 
 func _add_action(name: StringName, buttons: Array, keys: Array, axis: int = -1, axis_value: float = 0.0) -> void:
 	if InputMap.has_action(name):

@@ -166,6 +166,9 @@ func _setup_nav() -> void:
 	ControllerUI.hide_in_gamepad(title_screen_button)
 	add_child(ControllerUI.make_button_hint(&"X", StringTable.get_string(StringTable.ID_TITLE_SCREEN), title_screen_button.position, title_screen_button.size))
 	add_child(ControllerUI.make_button_hint(&"Y", StringTable.get_string(StringTable.ID_CREDITS), credits_button.position, credits_button.size))
+	# Same row as X/Y above (back_button's own position is already y=463) -
+	# one consistent height instead of the generic bottom bar's own y=508.
+	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), back_button.position, back_button.size))
 
 	nav.activated.connect(func(item: FocusNav.NavItem) -> void:
 		if item.control is Button:
@@ -174,11 +177,6 @@ func _setup_nav() -> void:
 	nav.alt2_activated.connect(func(_item: FocusNav.NavItem) -> void: _on_credits_pressed())
 	nav.cancelled.connect(_on_back_pressed)
 	nav.focus_first()
-
-	add_child(ControllerUI.make_prompt_bar([
-		[&"A", StringTable.get_string(StringTable.ID_SELECT)],
-		[&"B", StringTable.get_string(StringTable.ID_BACK)],
-	]))
 
 func _make_label(pos: Vector2, size: Vector2, font: Font, font_size: int) -> Label:
 	var label := FixedSizeLabel.new()

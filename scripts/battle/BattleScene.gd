@@ -200,6 +200,7 @@ var pad_picking := false  # A on a hand card, waiting for a board cell (or B)
 var pause_overlay: Control
 var button_resume: Button
 var button_forfeit: Button
+var y_continue_hint: Control
 
 # ai_table.csv's Level for the current opponent, 0-7. Drives how sloppily
 # GsCPUTurn plays; 7 (= flawless) is the default so a skirmish with no
@@ -247,14 +248,43 @@ func _setup_nav() -> void:
 
 	_build_pause_overlay()
 
+	# The cursor moving previews a hand card's stats on its own now; while a
+	# card is picked up (pad_picking), it also drags the same card_sel_glow
+	# highlight the mouse drag path already uses, following focus onto
+	# whichever board cell is currently pointed at instead of the mouse.
+	var on_focus_changed := func(item: FocusNav.NavItem) -> void:
+		if item.id == &"hand":
+			var card: Card = player_hand[item.meta]
+			if card != null:
+				_show_card_info(card)
+		elif item.id == &"board" and pad_picking:
+			var rc: Vector2i = item.meta
+			_show_hover_glow_at(rc.x, rc.y)
+	nav.focus_changed.connect(on_focus_changed)
 	nav.activated.connect(_on_nav_activated)
 	nav.cancelled.connect(_on_nav_cancelled)
 	nav.menu_pressed.connect(_open_pause)
 
-	add_child(ControllerUI.make_prompt_bar([
-		[&"A", StringTable.get_string(StringTable.ID_SELECT)],
-		[&"START", StringTable.get_string(StringTable.ID_PAUSE)],
-	]))
+	# button_done ("Continue") only shows for the last stretch of the match
+	# (end-of-match flow), toggled by the existing fade_in/fade_out game
+	# logic rather than a fixed screen state - hide_in_gamepad's own
+	# mode_changed listener would fight that for the same .visible property,
+	# so instead the Y hint just sits drawn on top of it (last child added)
+	# and _process (below) mirrors button_done's own visibility onto it
+	# every frame, leaving button_done's real .visible untouched for mouse
+	# mode and for whatever game logic already reads it.
+	nav.alt2_activated.connect(func(_item: FocusNav.NavItem) -> void:
+		if button_done.visible and not button_done.disabled:
+			button_done.pressed.emit())
+	y_continue_hint = ControllerUI.make_button_hint(&"Y", StringTable.get_string(StringTable.ID_DONE), button_done.position, button_done.size)
+	add_child(y_continue_hint)
+	# No A entry - the cursor moving already previews, and pressing A on a
+	# hand/board item is self-explanatory once you're pointing at it. Menu
+	# needs to be visible for the whole match, not just the end screen where
+	# button_done lives - directly above it (390ish) is actually the middle
+	# of hand_slots' own right-hand column (826-922, y up to 476), so it
+	# lands top-right instead, above every hand slot, clear all match.
+	add_child(ControllerUI.make_button_hint(&"START", StringTable.get_string(StringTable.ID_PAUSE), Vector2(790, 10), Vector2(122, 42)))
 
 func _on_nav_activated(item: FocusNav.NavItem) -> void:
 	match item.id:
@@ -290,8 +320,13 @@ func _on_nav_cancelled() -> void:
 	if nav.get_layer() == 1:
 		_resume_battle()
 	elif pad_picking:
+		# gsCardPicking_Release already restores the card and stops the hover
+		# glow (both shared with the mouse drop-outside-board path) - only
+		# the refocus back onto the hand slot it came from is pad-specific.
+		var idx := drag_index
 		pad_picking = false
 		gsCardPicking_Release(Vector2(-9999, -9999))
+		nav.focus_by_meta(idx)
 
 ## Rebuilds the "pick a captured card" targets: called once when the pick
 ## phase opens and again after every pad-driven pick, since end_down_cards
@@ -1145,8 +1180,14 @@ func _slot_under_point(pos: Vector2) -> Vector2i:
 
 func _update_drag_hover(mouse_pos: Vector2) -> void:
 	var cell := _slot_under_point(mouse_pos)
-	if cell.x >= 0 and board.is_playable(cell.x, cell.y):
-		var cell_pos := _board_cell_pos(cell.x, cell.y)
+	_show_hover_glow_at(cell.x, cell.y)
+
+## Shared by the mouse drag path (_update_drag_hover, after its own point-to-
+## cell lookup) and the pad path (focus_changed, already holding a row/col
+## directly) - same card_sel_glow.png highlight either way.
+func _show_hover_glow_at(row: int, col: int) -> void:
+	if row >= 0 and board.is_playable(row, col):
+		var cell_pos := _board_cell_pos(row, col)
 		if not board_hover_glow.visible or board_hover_glow.position != cell_pos:
 			board_hover_glow.position = cell_pos
 			_start_hover_glow_flash()
@@ -1937,6 +1978,7 @@ func _update_owned_panel_pos(view: CardView) -> void:
 func _process(_delta: float) -> void:
 	if end_owned_view != null and panel_owned.visible:
 		_update_owned_panel_pos(end_owned_view)
+	y_continue_hint.visible = ControllerUI.is_gamepad() and button_done.visible
 
 func _return_to_main_menu() -> void:
 	Game.crossfade_to_menu_music(0.85)

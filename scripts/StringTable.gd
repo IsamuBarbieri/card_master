@@ -35,7 +35,7 @@ enum {
 	ID_HELP_MAIN4, ID_HELP_PRESENTATION, ID_HELP_CARDS, ID_OPPONENTS_NAME,
 	ID_TAP_TO_START, ID_CLICK_TO_START, ID_TITLE_SCREEN,
 	ID_WINS, ID_LAST_SAVED, ID_OWNED, ID_PAGE,
-	ID_PAUSE, ID_RESUME, ID_FORFEIT, ID_PAD_TO_START,
+	ID_PAUSE, ID_RESUME, ID_FORFEIT, ID_PAD_TO_START, ID_ADD_REMOVE, ID_SWITCH,
 }
 
 const TABLE := [
@@ -73,6 +73,8 @@ const TABLE := [
 		"Gegner", "Zum Starten tippen", "Zum Starten klicken", "Titel",
 		"Siege", "Zuletzt gespeichert", "Besitz", "Seite",
 		"Pause", "Fortsetzen", "Aufgeben", "Knopf drücken zum Starten",
+		"Hinzu/Weg",
+		"Wechseln",
 	],
 	# English
 	[
@@ -108,6 +110,8 @@ const TABLE := [
 		"Opponent", "Tap to Start", "Click to Start", "Title",
 		"Wins", "Last Saved", "Owned", "Page",
 		"Pause", "Resume", "Forfeit", "Press a Button to Start",
+		"Add/Remove",
+		"Switch",
 	],
 	# Español
 	[
@@ -143,6 +147,8 @@ const TABLE := [
 		"Rival", "Toca para empezar", "Haz clic para empezar", "Título",
 		"Victorias", "Último guardado", "Poseídas", "Página",
 		"Pausa", "Reanudar", "Rendirse", "Pulsa un botón para empezar",
+		"Añadir/Quitar",
+		"Cambiar",
 	],
 	# Français
 	[
@@ -179,6 +185,8 @@ const TABLE := [
 		"Adversaire", "Touchez pour commencer", "Cliquez pour commencer", "Titre",
 		"Victoires", "Dernière sauvegarde", "Possédées", "Page",
 		"Pause", "Reprendre", "Abandonner", "Appuyez sur un bouton pour commencer",
+		"Ajout/Retrait",
+		"Changer",
 	],
 	# Italiano
 	[
@@ -215,6 +223,8 @@ const TABLE := [
 		"Avversario", "Tocca per iniziare", "Clicca per iniziare", "Titolo",
 		"Vittorie", "Ultimo salvataggio", "Possedute", "Pagina",
 		"Pausa", "Riprendi", "Abbandona", "Premi un tasto per iniziare",
+		"Aggiungi/Togli",
+		"Cambia",
 	],
 	# Português (Brasil)
 	[
@@ -250,6 +260,8 @@ const TABLE := [
 		"Adversário", "Toque para começar", "Clique para começar", "Título",
 		"Vitórias", "Último salvamento", "Possuídas", "Página",
 		"Pausa", "Continuar", "Desistir", "Pressione um botão para começar",
+		"Adicionar/Remover",
+		"Trocar",
 	],
 	# Русский
 	[
@@ -285,6 +297,8 @@ const TABLE := [
 		"Соперник", "Коснитесь, чтобы начать", "Нажмите, чтобы начать", "Заставка",
 		"Победы", "Последнее сохранение", "В наличии", "Страница",
 		"Пауза", "Продолжить", "Сдаться", "Нажмите любую кнопку, чтобы начать",
+		"Добавить/Убрать",
+		"Сменить",
 	],
 	# 日本語 - full retranslation from English (the reference table was mostly
 	# blank placeholders).
@@ -320,6 +334,8 @@ const TABLE := [
 		"対戦相手", "タップしてスタート", "クリックしてスタート", "タイトル",
 		"勝利数", "最終セーブ", "所持数", "ページ",
 		"ポーズ", "再開", "棄権", "ボタンを押してスタート",
+		"追加/削除",
+		"切替",
 	],
 	# 简体中文
 	[
@@ -350,6 +366,8 @@ const TABLE := [
 		"对手", "轻触开始", "点击开始", "标题",
 		"胜场", "最后保存", "拥有", "页",
 		"暂停", "继续", "认输", "按任意键开始",
+		"添加/移除",
+		"切换",
 	],
 ]
 

@@ -215,11 +215,15 @@ func _setup_nav() -> void:
 	ControllerUI.hide_in_gamepad(back_button)
 	nav.focus_by_meta(1, &"wheel")
 
-	add_child(ControllerUI.make_prompt_bar([
-		[&"A", StringTable.get_string(StringTable.ID_SELECT)],
-		[&"X", StringTable.get_string(StringTable.ID_CANCEL)],
-		[&"B", StringTable.get_string(StringTable.ID_BACK)],
-	]))
+	# Same row height as Options'/Collection's back-button hints (463), well
+	# clear of the trade slot (x 432-528) which only starts further right.
+	# X sits stacked above A instead of alongside it - the two are related
+	# (both act on whatever's centered/staged) but distinct enough to read
+	# better spaced apart than crammed into one row with B too.
+	const HINT_SIZE := Vector2(140, 42)
+	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), Vector2(20, 463), Vector2(140, 56)))
+	add_child(ControllerUI.make_button_hint(&"A", StringTable.get_string(StringTable.ID_SELECT), Vector2(180, 463), HINT_SIZE))
+	add_child(ControllerUI.make_button_hint(&"X", StringTable.get_string(StringTable.ID_CANCEL), Vector2(180, 413), HINT_SIZE))
 
 func _on_nav_activated(item: FocusNav.NavItem) -> void:
 	if game_state != GameState.WAITING_INPUT:
@@ -355,7 +359,6 @@ func _build_ui() -> void:
 	add_child(label_buy)
 	UIButtonStyle.fit_button_text(label_buy)
 
-	UIShadow.behind(self, Vector2(867, 463), Vector2(60, 60))
 	var coins_icon := TextureRect.new()
 	coins_icon.texture = load(ASSETS + "coins_icon.png")
 	coins_icon.position = Vector2(867, 463)

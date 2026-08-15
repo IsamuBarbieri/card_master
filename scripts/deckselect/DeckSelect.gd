@@ -151,18 +151,72 @@ func _setup_nav() -> void:
 	nav.link(right_item, left_item, FocusNav.DIR_RIGHT, false)
 	nav.link(left_item, right_item, FocusNav.DIR_LEFT, false)
 
+	# The cursor moving previews a card's stats on its own now, same as the
+	# other browse screens - wheel items use their own meta (1/2) and slot
+	# items their own (10+i), both already exactly what _update_card_info's
+	# `sel` param (and so next_sel/the blue outline) expects.
+	var on_focus_changed := func(item: FocusNav.NavItem) -> void:
+		if item.id == &"wheel":
+			var selector: DeckSelectorWheel = deck_selector_left if item.meta == 1 else deck_selector_right
+			var c := selector.central_card_stats()
+			if c != null:
+				_update_card_info(c, item.meta)
+		elif item.id == &"slot":
+			var c := lower_deck.card_stats(item.meta - 10)
+			if c != null:
+				_update_card_info(c, item.meta)
+	nav.focus_changed.connect(on_focus_changed)
 	nav.activated.connect(_on_nav_activated)
-	nav.alt2_activated.connect(func(_item: FocusNav.NavItem) -> void:
-		if not button_play.disabled:
-			button_play.pressed.emit())
+	# X moves the focused wheel's centered card to the OTHER wheel and flips
+	# is_favourite to match - a direct shortcut for what dragging it across
+	# both wheels used to take two steps for. Whichever wheel it lands in is
+	# exactly the one _on_nav_activated's &"slot" branch already sends it
+	# back to on removal (that branch keys off is_favourite too).
+	nav.alt_activated.connect(func(_item: FocusNav.NavItem) -> void: _toggle_favourite())
 	nav.cancelled.connect(_on_back_pressed)
 	nav.focus_by_meta(next_sel if next_sel != 0 else 1)
 
+	# Y (Play) and B (Back) physically replace their own real buttons, same
+	# spot each already sat at (matches Options/Collection/Opponents' row).
+	ControllerUI.hide_in_gamepad(button_play)
+	add_child(ControllerUI.make_button_hint(&"Y", StringTable.get_string(StringTable.ID_PLAY_BATTLE), button_play.position, button_play.size))
+	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56)))
+	# A/X/R3 have no real button of their own to stand in for, and every gap
+	# wide enough for their (fairly long, translation-dependent) labels
+	# between the wheels/deck bar/side buttons turned out to be one already
+	# occupied by a deck slot - the plain bottom-left bar is the one spot on
+	# this screen guaranteed clear of everything else.
 	add_child(ControllerUI.make_prompt_bar([
-		[&"A", StringTable.get_string(StringTable.ID_SELECT)],
-		[&"Y", StringTable.get_string(StringTable.ID_PLAY_BATTLE)],
-		[&"B", StringTable.get_string(StringTable.ID_BACK)],
+		[&"A", StringTable.get_string(StringTable.ID_ADD_REMOVE)],
+		[&"X", StringTable.get_string(StringTable.ID_FAVORITE_CARDS)],
+		[&"R3", StringTable.get_string(StringTable.ID_SWITCH)],
 	]))
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not ControllerUI.is_gamepad():
+		return
+	if event.is_action_pressed(&"nav_stick_click"):
+		var target := 2 if (nav.current != null and nav.current.meta == 1) else 1
+		nav.focus_by_meta(target)
+		get_viewport().set_input_as_handled()
+
+## X's action: moves the focused wheel's centered card to the other wheel,
+## toggling is_favourite along the way. A no-op when a slot (not a wheel) is
+## focused - X has no meaning there.
+func _toggle_favourite() -> void:
+	if nav.current == null or nav.current.id != &"wheel":
+		return
+	var from_left: bool = nav.current.meta == 1
+	var from_selector: DeckSelectorWheel = deck_selector_left if from_left else deck_selector_right
+	var to_selector: DeckSelectorWheel = deck_selector_right if from_left else deck_selector_left
+	if from_selector.central_card_stats() == null:
+		return
+	_cancel_current_interaction()
+	var cstats: Card = from_selector.remove_current_card()
+	cstats.is_favourite = not cstats.is_favourite
+	to_selector.add_card(cstats)
+	next_sel = 2 if from_left else 1
+	nav.focus_by_meta(next_sel)
 
 ## A's semantics mirror _handle_double_click, keyed by the focused nav item
 ## instead of a click point: a wheel sends its centered card to the first

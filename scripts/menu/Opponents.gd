@@ -87,14 +87,12 @@ func _setup_nav() -> void:
 	# just be a second, redundant way to reach the same place, so it hides
 	# in gamepad mode instead of also being a focus stop.
 	ControllerUI.hide_in_gamepad(back_button)
-	# select_button is physically replaced by this A hint, at its own spot -
-	# there's no longer a nav item for it to land focus on anyway.
+	# select_button and back_button are each physically replaced by an A/B
+	# hint at their own spot - neither is a nav item to land focus on anymore.
 	ControllerUI.hide_in_gamepad(select_button)
 	add_child(ControllerUI.make_button_hint(&"A", StringTable.get_string(StringTable.ID_PLAY_BATTLE), select_button.position, select_button.size))
+	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), back_button.position, back_button.size))
 	nav.focus_by_meta(selected_index)
-	add_child(ControllerUI.make_prompt_bar([
-		[&"B", StringTable.get_string(StringTable.ID_BACK)],
-	]))
 
 func _build_ui() -> void:
 	var font_stylish: Font = Game.font_stylish
