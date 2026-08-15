@@ -118,6 +118,7 @@ var sfx_buy: AudioStreamPlayer
 var nav: FocusNav
 var back_button: Button
 var _wheel_stick_locked := false
+var _last_browse_item: FocusNav.NavItem = null  # wheel or offer, whichever slot's up/down returns to
 
 # --- WaitingInput state ---
 var wi_x: int = 0
@@ -175,14 +176,32 @@ func _setup_nav() -> void:
 	nav = FocusNav.new()
 	add_child(nav)
 
-	nav.add_virtual(&"wheel", func() -> Rect2:
+	var wheel_item := nav.add_virtual(&"wheel", func() -> Rect2:
 		return Rect2(deck_selector.central_card_x(), deck_selector.central_card_y(), deck_selector.card_width, deck_selector.card_height), 1)
-	nav.add_virtual(&"slot", func() -> Rect2:
+	var slot_item := nav.add_virtual(&"slot", func() -> Rect2:
 		return Rect2(panel_card_slot.global_position, panel_card_slot.size), 2)
+	var offer_items: Array = []
 	for i in shop_cards.size():
-		nav.add_virtual(&"offer", (func(idx: int) -> Rect2:
+		offer_items.append(nav.add_virtual(&"offer", (func(idx: int) -> Rect2:
 			return Rect2(shop_card_views[idx].global_position, SHOP_CARD_IMAGE_SIZE)).bind(i), i,
-			0, (func(idx: int) -> bool: return shop_cards_active[idx]).bind(i))
+			0, (func(idx: int) -> bool: return shop_cards_active[idx]).bind(i)))
+
+	# Up/down toggles between the trade slot and whichever browsing item
+	# (the wheel, or a shop offer) was focused most recently - not a fixed
+	# spatial target, since the wheel (left) and the offers (right column)
+	# sit on opposite sides of the slot. A plain link() to a browsing item
+	# would need to already be enabled to fire (see FocusNav.move()), which
+	# for an offer that's since sold out would silently fall through to the
+	# spatial scorer instead of just refusing to move - link_action's own
+	# enabled() check is what makes it a true no-op there.
+	nav.link(wheel_item, slot_item, FocusNav.DIR_DOWN, false)
+	for offer_item in offer_items:
+		nav.link(offer_item, slot_item, FocusNav.DIR_DOWN, false)
+	var to_last_browse_item := func() -> void:
+		if _last_browse_item != null and _last_browse_item.enabled():
+			nav.set_focus(_last_browse_item)
+	nav.link_action(slot_item, FocusNav.DIR_UP, to_last_browse_item)
+	nav.link_action(slot_item, FocusNav.DIR_DOWN, to_last_browse_item)
 
 	nav.add_control(button_sell)
 	nav.add_control(button_buy)
@@ -194,10 +213,12 @@ func _setup_nav() -> void:
 	var on_focus_changed := func(item: FocusNav.NavItem) -> void:
 		match item.id:
 			&"wheel":
+				_last_browse_item = item
 				var c := deck_selector.central_card_stats()
 				if c != null:
 					_update_card_info(c, true, 1)
 			&"offer":
+				_last_browse_item = item
 				var i: int = item.meta
 				_update_card_info(shop_cards[i], false, 4)
 				last_chosen_shop_card_index = i
@@ -215,15 +236,18 @@ func _setup_nav() -> void:
 	ControllerUI.hide_in_gamepad(back_button)
 	nav.focus_by_meta(1, &"wheel")
 
-	# Same row height as Options'/Collection's back-button hints (463), well
-	# clear of the trade slot (x 432-528) which only starts further right.
-	# X sits stacked above A instead of alongside it - the two are related
-	# (both act on whatever's centered/staged) but distinct enough to read
-	# better spaced apart than crammed into one row with B too.
-	const HINT_SIZE := Vector2(140, 42)
-	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), Vector2(20, 463), Vector2(140, 56)))
-	add_child(ControllerUI.make_button_hint(&"A", StringTable.get_string(StringTable.ID_SELECT), Vector2(180, 463), HINT_SIZE))
-	add_child(ControllerUI.make_button_hint(&"X", StringTable.get_string(StringTable.ID_CANCEL), Vector2(180, 413), HINT_SIZE))
+	# Same row every screen's hints share now (ControllerUI.PROMPT_BAR_Y,
+	# matching MainMenu's own A/Select row). A/X (the pair, X stacked above
+	# A) take the left-alignment reference spot (42, matching Options' B) -
+	# well clear of the trade slot (x 432-528) which only starts further
+	# right - and B moves to the second column (180) instead. X above A
+	# left-aligned (not centered) so X's icon lines up exactly under A's
+	# regardless of either label's length.
+	const HINT_SIZE := Vector2(140, ControllerUI.HINT_ROW_HEIGHT)
+	var base_y := ControllerUI.PROMPT_BAR_Y
+	add_child(ControllerUI.make_button_hint(&"A", StringTable.get_string(StringTable.ID_SELECT), Vector2(42, base_y), HINT_SIZE, false))
+	add_child(ControllerUI.make_button_hint(&"X", StringTable.get_string(StringTable.ID_CANCEL), Vector2(42, base_y - ControllerUI.HINT_ROW_HEIGHT - 4), HINT_SIZE, false))
+	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), Vector2(180, base_y), HINT_SIZE))
 
 func _on_nav_activated(item: FocusNav.NavItem) -> void:
 	if game_state != GameState.WAITING_INPUT:
@@ -820,17 +844,47 @@ func _process(delta: float) -> void:
 ## centre before it counts again" gating Help.gd's page stick uses - nav_left/
 ## nav_right already own the left stick/d-pad for moving focus between the
 ## wheel/slot/offer items, so the wheel itself needed its own axis entirely.
+## Both stick axes work, one at a time (horizontal wins on a diagonal push,
+## same tie-break FocusNav's own d-pad repeat uses) - browsing individual
+## cards left/right, card types up/down, exactly like dragging the wheel
+## with the mouse can do either. Wrap-around (last card -> first) falls out
+## of the wheel's own circular angle math for free, same as the mouse drag.
+##
+## The lock used to also reset whenever game_state left WAITING_INPUT (i.e.
+## every frame the snap animation itself was playing) - since _deck_scroll_
+## process can flip game_state back to WAITING_INPUT and this function runs
+## again later in that very same _process() call, that reset let a still-
+## held stick refire instantly, with no requirement to actually return to
+## centre in between; other times the same race read as the opposite fault
+## (a push landing exactly as the lock was mid-reset got swallowed). The
+## lock now tracks ONLY the stick's own deadzone crossing - busy game_state
+## just defers the snap instead of resetting anything.
+##
+## The snap target also can't be a fixed array_index (1=next/3=prev) - see
+## DeckSelectorWheel.adjacent_box's own doc comment for why that broke after
+## a couple of pushes once boxes started recycling.
 func _process_wheel_stick() -> void:
-	if not ControllerUI.is_gamepad() or game_state != GameState.WAITING_INPUT:
+	if not ControllerUI.is_gamepad():
 		_wheel_stick_locked = false
 		return
 	var left := Input.get_action_strength(&"nav_wheel_left") > 0.0
 	var right := Input.get_action_strength(&"nav_wheel_right") > 0.0
-	if not left and not right:
+	var up := Input.get_action_strength(&"nav_wheel_up") > 0.0
+	var down := Input.get_action_strength(&"nav_wheel_down") > 0.0
+	if not left and not right and not up and not down:
 		_wheel_stick_locked = false
-	elif not _wheel_stick_locked:
-		_wheel_stick_locked = true
-		_snap_to_box(1 if right else 3, true)
+		return
+	if _wheel_stick_locked or game_state != GameState.WAITING_INPUT:
+		return
+	_wheel_stick_locked = true
+	if left or right:
+		var target := deck_selector.adjacent_box(1 if right else -1, true)
+		if target != -1:
+			_snap_to_box(target, true)
+	elif up or down:
+		var target := deck_selector.adjacent_box(1 if down else -1, false)
+		if target != -1:
+			_snap_to_box(target, false)
 
 # --------------------------------------------------------- WaitingInput ---
 

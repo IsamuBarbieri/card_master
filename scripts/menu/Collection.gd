@@ -260,10 +260,10 @@ func _setup_nav() -> void:
 			nav.focus_by_meta(sel_card_index, &"card"))
 	# B already backs out via nav.cancelled below - hide the button itself in
 	# gamepad mode rather than also making it a redundant focus stop, and
-	# replace it in-place (back_button's own position is already y=463, same
-	# row as Options' X/Y hints).
+	# replace it in-place - same row every screen's hints share now
+	# (ControllerUI.PROMPT_BAR_Y, matching MainMenu's own A/Select row).
 	ControllerUI.hide_in_gamepad(back_button)
-	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), back_button.position, back_button.size))
+	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), Vector2(back_button.position.x, ControllerUI.PROMPT_BAR_Y), Vector2(back_button.size.x, ControllerUI.HINT_ROW_HEIGHT)))
 
 	# The cursor moving IS the selection now - no A press needed to preview a
 	# type or a card, so there's nothing left for activated to dispatch.

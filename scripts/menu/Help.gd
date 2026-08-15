@@ -68,14 +68,17 @@ func _ready() -> void:
 
 	# Pages aren't discrete items to point a hand at - they're a filmstrip -
 	# so there's no FocusNav here at all: paging and closing are handled
-	# directly below. One shared spot on the left, raised to the same y the
-	# X close button used to sit at (484): mouse/touch keeps the real X
-	# button there, gamepad mode swaps in a B+Indietro hint at the exact same
-	# rect instead of two separate close controls in two different corners.
-	close_button.position = Vector2(20, 484)
+	# directly below. One shared spot on the left, at the row every screen's
+	# hints share now (ControllerUI.PROMPT_BAR_Y): mouse/touch keeps the real
+	# X button there, gamepad mode swaps in a B+Indietro hint at the exact
+	# same rect instead of two separate close controls in two corners.
+	# x=42 matches Options' B (Back) - the general left-alignment reference
+	# every screen's left-side hint now shares.
+	close_button.position = Vector2(42, ControllerUI.PROMPT_BAR_Y)
+	close_button.size = Vector2(42, ControllerUI.HINT_ROW_HEIGHT)
 	ControllerUI.hide_hand()
 	ControllerUI.hide_in_gamepad(close_button)
-	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), close_button.position, Vector2(140, 42)))
+	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), close_button.position, Vector2(140, ControllerUI.HINT_ROW_HEIGHT)))
 
 func _process(_delta: float) -> void:
 	# Left stick moves at most one page per push, same as the d-pad/keyboard

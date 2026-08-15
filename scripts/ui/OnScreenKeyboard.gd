@@ -1,8 +1,13 @@
 class_name OnScreenKeyboard
 extends Control
-## Controller-only text entry (player name). Mouse/keyboard keep using the
-## real LineEdit - see StartMenu.gd's name dialog. ASCII-only, no locale
-## needed: the name isn't translated.
+## Controller-only text entry (player name). Mouse keeps using the real
+## LineEdit - see StartMenu.gd's name dialog. ASCII-only, no locale needed:
+## the name isn't translated.
+##
+## A physical keyboard also types directly into this (see _input below)
+## instead of forcing the player to grid-navigate every letter with the pad -
+## no mode swap involved, since ControllerUI.classify_event() already never
+## treats InputEventKey as a pointer-mode signal.
 ##
 ## Owns its own FocusNav entirely independent of whatever screen instances
 ## it - the caller just add_child()s this and listens for confirmed/
@@ -71,6 +76,7 @@ func _add_key_row(chars: String, y: float, font: Font) -> void:
 	for c in chars:
 		var btn := _make_key(c, Vector2(x, y), KEY_SIZE, font)
 		nav.add_control(btn, c)
+		btn.pressed.connect(_activate.bind(c))
 		_key_buttons[c] = btn
 		x += KEY_SIZE.x + KEY_GAP
 
@@ -78,18 +84,22 @@ func _add_action_row(y: float, font: Font) -> void:
 	var x := 20.0
 	var shift_btn := _make_key("Shift", Vector2(x, y), Vector2(70, KEY_SIZE.y), font, 16)
 	nav.add_control(shift_btn, "SHIFT")
+	shift_btn.pressed.connect(_activate.bind("SHIFT"))
 	x += 70 + KEY_GAP
 
 	var space_btn := _make_key("Space", Vector2(x, y), Vector2(150, KEY_SIZE.y), font, 16)
 	nav.add_control(space_btn, "SPACE")
+	space_btn.pressed.connect(_activate.bind("SPACE"))
 	x += 150 + KEY_GAP
 
 	var back_btn := _make_key("<-", Vector2(x, y), Vector2(70, KEY_SIZE.y), font, 20)
 	nav.add_control(back_btn, "BACK")
+	back_btn.pressed.connect(_activate.bind("BACK"))
 	x += 70 + KEY_GAP
 
 	var done_btn := _make_key(StringTable.get_string(StringTable.ID_OK), Vector2(x, y), Vector2(90, KEY_SIZE.y), font, 16)
 	nav.add_control(done_btn, "DONE")
+	done_btn.pressed.connect(_activate.bind("DONE"))
 
 func _make_key(label: String, pos: Vector2, key_size: Vector2, font: Font, font_size: int = 20) -> Button:
 	var btn := FixedSizeButton.new()
@@ -103,13 +113,50 @@ func _make_key(label: String, pos: Vector2, key_size: Vector2, font: Font, font_
 	add_child(btn)
 	return btn
 
+## Runs in the _input phase, ahead of FocusNav's own _unhandled_input - lets
+## a physical keyboard type letters straight into _text instead of only
+## grid-navigating the on-screen keys. Backspace and Enter are handled here
+## specifically because nav_cancel/nav_accept also bind them (see
+## ControllerUI._register_actions): left alone, Backspace would close the
+## whole keyboard instead of deleting a character, and Enter would type
+## whichever key the pad cursor happens to be sitting on instead of
+## submitting - both backwards from what typing on a real keyboard expects.
+## Escape is deliberately NOT intercepted, it keeps cancelling via
+## nav_cancel exactly as before.
+func _input(event: InputEvent) -> void:
+	if not (event is InputEventKey):
+		return
+	var key_event := event as InputEventKey
+	if not key_event.pressed or key_event.echo:
+		return
+	if key_event.keycode == KEY_BACKSPACE:
+		_backspace()
+		get_viewport().set_input_as_handled()
+		return
+	if key_event.keycode == KEY_ENTER or key_event.keycode == KEY_KP_ENTER:
+		confirmed.emit(_text)
+		get_viewport().set_input_as_handled()
+		return
+	var code := key_event.unicode
+	if code >= 32 and code < 127 and _text.length() < MAX_LENGTH:
+		_text += char(code)
+		_update_caret()
+		get_viewport().set_input_as_handled()
+
 func _on_key_activated(item: FocusNav.NavItem) -> void:
-	match item.meta:
+	_activate(item.meta)
+
+## Shared by both the pad/keyboard-grid path (_on_key_activated) and a
+## direct mouse click (each key's own `pressed`, see _add_key_row/
+## _add_action_row) - mouse used to be entirely inert here since these
+## buttons were never wired to anything but FocusNav.
+func _activate(meta: Variant) -> void:
+	match meta:
 		"SHIFT": _toggle_shift()
 		"SPACE": _append(" ")
 		"BACK": _backspace()
 		"DONE": confirmed.emit(_text)
-		_: _append(String(item.meta))
+		_: _append(String(meta))
 
 func _append(c: String) -> void:
 	if _text.length() >= MAX_LENGTH:
@@ -130,10 +177,7 @@ func _toggle_shift() -> void:
 			(_key_buttons[c] as Button).text = c if _shift else (c as String).to_lower()
 	_update_caret()
 
-var _blink := true
 func _update_caret() -> void:
-	_caret_label.text = _text + ("_" if _blink else " ")
-
-func _process(_delta: float) -> void:
-	_blink = int(Time.get_ticks_msec() / 400) % 2 == 0
-	_update_caret()
+	# Static, not blinking - matches LineEdit's own default caret in mouse
+	# mode (caret_blink off), which the flashing underscore didn't.
+	_caret_label.text = _text + "_"

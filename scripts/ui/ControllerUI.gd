@@ -63,8 +63,13 @@ const PROMPT_GLYPH_SIZE := Vector2(34, 34)
 ## instead.
 const GLYPH_OUTLINE_WIDTH := 1.0
 const PROMPT_FONT_SIZE := 20
-const PROMPT_BAR_Y := 508.0
-const PROMPT_BAR_X := 20.0  # default: bottom-left, not centered
+const PROMPT_BAR_Y := 506.0
+## Standard row height/y for an in-place button hint that isn't stacked with
+## another - every such hint across every screen anchors to this same y, so
+## they all read as one consistent height (matching MainMenu's own A/Select
+## prompt-bar row, which lives in this same PROMPT_BAR_Y band).
+const HINT_ROW_HEIGHT := 34.0
+const PROMPT_BAR_X := 42.0  # matches the left-alignment reference (Options' B) every in-place hint uses
 const PROMPT_ITEM_GAP := 6.0
 const PROMPT_ENTRY_GAP := 22.0
 
@@ -100,14 +105,13 @@ func _register_actions() -> void:
 	_add_action(&"nav_page_prev", [JOY_BUTTON_LEFT_SHOULDER], [KEY_Q])
 	_add_action(&"nav_page_next", [JOY_BUTTON_RIGHT_SHOULDER], [KEY_E])
 	_add_action(&"nav_menu", [JOY_BUTTON_START], [KEY_P])
-	# Right stick only, no button/key equivalent - Shop's card wheel (see
-	# Shop.gd), which needs its own axis separate from nav_left/right (those
-	# already move focus between the wheel/slot/offer items).
+	# Right stick only, no button/key equivalent - Shop's and DeckSelect's
+	# card wheels, which need their own axes separate from nav_left/right/up/
+	# down (those already move focus between the wheel/slot/offer items).
 	_add_action(&"nav_wheel_left", [], [], JOY_AXIS_RIGHT_X, -1.0)
 	_add_action(&"nav_wheel_right", [], [], JOY_AXIS_RIGHT_X, 1.0)
-	# Right stick click (R3) - DeckSelect's quick-jump between the deck wheel
-	# and the favourites wheel.
-	_add_action(&"nav_stick_click", [JOY_BUTTON_RIGHT_STICK], [KEY_TAB])
+	_add_action(&"nav_wheel_up", [], [], JOY_AXIS_RIGHT_Y, -1.0)
+	_add_action(&"nav_wheel_down", [], [], JOY_AXIS_RIGHT_Y, 1.0)
 
 func _add_action(name: StringName, buttons: Array, keys: Array, axis: int = -1, axis_value: float = 0.0) -> void:
 	if InputMap.has_action(name):
@@ -380,7 +384,20 @@ func make_prompt_bar(entries: Array) -> Control:
 ## fixed enough that hiding the button and pointing only at the generic
 ## bottom bar would leave a confusing blank spot where a control used to be.
 ## Pair with hide_in_gamepad() on the button being stood in for.
-func make_button_hint(key: StringName, text: String, pos: Vector2, size: Vector2) -> Control:
+##
+## `center`: false (the default) left-aligns the glyph to the box's own left
+## edge, so the icon sits at exactly `pos.x` regardless of how long the
+## label is - every hint sharing the same left/right reference x (42 or 803)
+## then has its icon at that exact x too, both within a vertically stacked
+## column (DeckSelect's B/A/X, Shop's A/X) AND across different screens that
+## don't otherwise know about each other (Options' Titolo, Opponents'/
+## DeckSelect's Gioca, BattleScene's Continua all sit at x=803 as separate
+## calls in separate files - centering each independently around its own,
+## differently-long label would drift their icons sideways against each
+## other by however much the label lengths differ, defeating the shared
+## reference point). true centers the glyph+label as a unit instead, for the
+## rare hint that isn't part of any shared-x group.
+func make_button_hint(key: StringName, text: String, pos: Vector2, size: Vector2, center: bool = false) -> Control:
 	var hint := Control.new()
 	hint.position = pos
 	hint.size = size
@@ -389,7 +406,7 @@ func make_button_hint(key: StringName, text: String, pos: Vector2, size: Vector2
 	var glyph_visual := _make_glyph_visual(key)
 	var label := _make_prompt_label(text)
 	var total_w := glyph_visual.size.x + PROMPT_ITEM_GAP + label.size.x
-	var start_x := (size.x - total_w) * 0.5
+	var start_x := (size.x - total_w) * 0.5 if center else 0.0
 	var mid_y := (size.y - PROMPT_GLYPH_SIZE.y) * 0.5
 
 	glyph_visual.position = Vector2(start_x, mid_y)

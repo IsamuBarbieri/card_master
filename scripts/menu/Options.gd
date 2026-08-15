@@ -164,11 +164,11 @@ func _setup_nav() -> void:
 	ControllerUI.hide_in_gamepad(back_button)
 	ControllerUI.hide_in_gamepad(credits_button)
 	ControllerUI.hide_in_gamepad(title_screen_button)
-	add_child(ControllerUI.make_button_hint(&"X", StringTable.get_string(StringTable.ID_TITLE_SCREEN), title_screen_button.position, title_screen_button.size))
-	add_child(ControllerUI.make_button_hint(&"Y", StringTable.get_string(StringTable.ID_CREDITS), credits_button.position, credits_button.size))
-	# Same row as X/Y above (back_button's own position is already y=463) -
-	# one consistent height instead of the generic bottom bar's own y=508.
-	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), back_button.position, back_button.size))
+	# Same row every screen's hints share now (ControllerUI.PROMPT_BAR_Y,
+	# matching MainMenu's own A/Select row) - x stays each button's own.
+	add_child(ControllerUI.make_button_hint(&"X", StringTable.get_string(StringTable.ID_TITLE_SCREEN), Vector2(title_screen_button.position.x, ControllerUI.PROMPT_BAR_Y), Vector2(title_screen_button.size.x, ControllerUI.HINT_ROW_HEIGHT)))
+	add_child(ControllerUI.make_button_hint(&"Y", StringTable.get_string(StringTable.ID_CREDITS), Vector2(credits_button.position.x, ControllerUI.PROMPT_BAR_Y), Vector2(credits_button.size.x, ControllerUI.HINT_ROW_HEIGHT)))
+	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), Vector2(back_button.position.x, ControllerUI.PROMPT_BAR_Y), Vector2(back_button.size.x, ControllerUI.HINT_ROW_HEIGHT)))
 
 	nav.activated.connect(func(item: FocusNav.NavItem) -> void:
 		if item.control is Button:

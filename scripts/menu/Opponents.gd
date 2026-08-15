@@ -75,8 +75,8 @@ func _setup_nav() -> void:
 	for i in opp_count:
 		var item := nav.add_control(item_buttons[i], i)
 		nav.set_scroll(item, scroll)
-	# The cursor moving IS the preview now - no A press needed to see an
-	# opponent's card, so A is freed up to always mean "Play" instead
+	# The cursor moving IS the preview now, so grid items don't route A into
+	# anything of their own - A always means "Confirm" instead
 	# (select_button.disabled still gates a locked opponent either way).
 	nav.focus_changed.connect(func(item: FocusNav.NavItem) -> void: _select(item.meta))
 	nav.activated.connect(func(_item: FocusNav.NavItem) -> void:
@@ -88,10 +88,14 @@ func _setup_nav() -> void:
 	# in gamepad mode instead of also being a focus stop.
 	ControllerUI.hide_in_gamepad(back_button)
 	# select_button and back_button are each physically replaced by an A/B
-	# hint at their own spot - neither is a nav item to land focus on anymore.
+	# hint at their own x - neither is a nav item to land focus on anymore -
+	# same row every screen's hints share now (ControllerUI.PROMPT_BAR_Y,
+	# matching MainMenu's own A/Select row).
 	ControllerUI.hide_in_gamepad(select_button)
-	add_child(ControllerUI.make_button_hint(&"A", StringTable.get_string(StringTable.ID_PLAY_BATTLE), select_button.position, select_button.size))
-	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), back_button.position, back_button.size))
+	# x=803 matches Options' X (Title Screen) - the general right-alignment
+	# reference every screen's right-side hint now shares.
+	add_child(ControllerUI.make_button_hint(&"A", StringTable.get_string(StringTable.ID_CONFIRM), Vector2(803, ControllerUI.PROMPT_BAR_Y), Vector2(select_button.size.x, ControllerUI.HINT_ROW_HEIGHT)))
+	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), Vector2(back_button.position.x, ControllerUI.PROMPT_BAR_Y), Vector2(back_button.size.x, ControllerUI.HINT_ROW_HEIGHT)))
 	nav.focus_by_meta(selected_index)
 
 func _build_ui() -> void:

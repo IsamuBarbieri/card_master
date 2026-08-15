@@ -36,6 +36,7 @@ enum {
 	ID_TAP_TO_START, ID_CLICK_TO_START, ID_TITLE_SCREEN,
 	ID_WINS, ID_LAST_SAVED, ID_OWNED, ID_PAGE,
 	ID_PAUSE, ID_RESUME, ID_FORFEIT, ID_PAD_TO_START, ID_ADD_REMOVE, ID_SWITCH,
+	ID_FAVORITE, ID_CHOOSE, ID_CONFIRM,
 }
 
 const TABLE := [
@@ -75,6 +76,9 @@ const TABLE := [
 		"Pause", "Fortsetzen", "Aufgeben", "Knopf drücken zum Starten",
 		"Hinzu/Weg",
 		"Wechseln",
+		"Favorit",
+		"Wählen",
+		"Bestätigen",
 	],
 	# English
 	[
@@ -112,6 +116,9 @@ const TABLE := [
 		"Pause", "Resume", "Forfeit", "Press a Button to Start",
 		"Add/Remove",
 		"Switch",
+		"Favorite",
+		"Choose",
+		"Confirm",
 	],
 	# Español
 	[
@@ -149,6 +156,9 @@ const TABLE := [
 		"Pausa", "Reanudar", "Rendirse", "Pulsa un botón para empezar",
 		"Añadir/Quitar",
 		"Cambiar",
+		"Favorita",
+		"Elegir",
+		"Confirmar",
 	],
 	# Français
 	[
@@ -187,6 +197,9 @@ const TABLE := [
 		"Pause", "Reprendre", "Abandonner", "Appuyez sur un bouton pour commencer",
 		"Ajout/Retrait",
 		"Changer",
+		"Favori",
+		"Choisir",
+		"Confirmer",
 	],
 	# Italiano
 	[
@@ -223,8 +236,11 @@ const TABLE := [
 		"Avversario", "Tocca per iniziare", "Clicca per iniziare", "Titolo",
 		"Vittorie", "Ultimo salvataggio", "Possedute", "Pagina",
 		"Pausa", "Riprendi", "Abbandona", "Premi un tasto per iniziare",
-		"Aggiungi/Togli",
+		"Aggiungi/Rimuovi",
 		"Cambia",
+		"Preferita",
+		"Scegli",
+		"Conferma",
 	],
 	# Português (Brasil)
 	[
@@ -262,6 +278,9 @@ const TABLE := [
 		"Pausa", "Continuar", "Desistir", "Pressione um botão para começar",
 		"Adicionar/Remover",
 		"Trocar",
+		"Favorita",
+		"Escolher",
+		"Confirmar",
 	],
 	# Русский
 	[
@@ -299,6 +318,9 @@ const TABLE := [
 		"Пауза", "Продолжить", "Сдаться", "Нажмите любую кнопку, чтобы начать",
 		"Добавить/Убрать",
 		"Сменить",
+		"Избранная",
+		"Выбрать",
+		"Подтвердить",
 	],
 	# 日本語 - full retranslation from English (the reference table was mostly
 	# blank placeholders).
@@ -336,6 +358,9 @@ const TABLE := [
 		"ポーズ", "再開", "棄権", "ボタンを押してスタート",
 		"追加/削除",
 		"切替",
+		"お気に入り",
+		"選ぶ",
+		"確定",
 	],
 	# 简体中文
 	[
@@ -368,6 +393,9 @@ const TABLE := [
 		"暂停", "继续", "认输", "按任意键开始",
 		"添加/移除",
 		"切换",
+		"收藏",
+		"选择",
+		"确认",
 	],
 ]
 

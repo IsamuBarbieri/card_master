@@ -18,6 +18,10 @@ const SCREEN_H := 544
 const CARD_W := 96
 const CARD_H := 128
 const ASSETS := "res://assets/"
+## Pad card-picking: the floating card sits shifted this much off a board
+## cell's exact position while still picked up, so it visibly reads as
+## "hovering over here" rather than "already placed here".
+const PAD_DRAG_OFFSET := Vector2(8, 8)
 
 const COLOR_P0 := Color(0.0, 130.0 / 255.0, 1.0, 0.8)
 const COLOR_P1 := Color(225.0 / 255.0, 0.0, 0.0, 0.8)
@@ -197,10 +201,8 @@ var sfx_ragequit: AudioStreamPlayer  # (RAGEQUIT)
 # --------------------------------------------------------------- controller
 var nav: FocusNav
 var pad_picking := false  # A on a hand card, waiting for a board cell (or B)
-var pause_overlay: Control
-var button_resume: Button
-var button_forfeit: Button
 var y_continue_hint: Control
+var _current_pick_view: CardView = null  # non-perfect win: the single card currently staged to take
 
 # ai_table.csv's Level for the current opponent, 0-7. Drives how sloppily
 # GsCPUTurn plays; 7 (= flawless) is the default so a skirmish with no
@@ -245,8 +247,17 @@ func _setup_nav() -> void:
 
 	nav.add_control(button_done)
 	nav.add_control(button_takeall)
-
-	_build_pause_overlay()
+	# The single already-chosen card (non-perfect win only - _current_pick_
+	# view stays null for a perfect one, where there's no single "the" pick
+	# to send back), navigable right alongside the down-row candidates via
+	# the ordinary spatial scorer - it sits above them, so up/down already
+	# reaches it with no explicit link needed. Registered once here rather
+	# than rebuilt in _refresh_end_pick_nav: its rect/enabled are read fresh
+	# off _current_pick_view every time already, so there's nothing to redo
+	# when that changes.
+	nav.add_virtual(&"chosen", func() -> Rect2:
+		return _current_pick_view.get_global_rect() if _current_pick_view != null else Rect2(), null,
+		0, func() -> bool: return _current_pick_view != null)
 
 	# The cursor moving previews a hand card's stats on its own now; while a
 	# card is picked up (pad_picking), it also drags the same card_sel_glow
@@ -260,31 +271,53 @@ func _setup_nav() -> void:
 		elif item.id == &"board" and pad_picking:
 			var rc: Vector2i = item.meta
 			_show_hover_glow_at(rc.x, rc.y)
+			# Offset, not flush with the cell: sitting exactly on the grid
+			# read as already placed rather than still picked up. Placing it
+			# for real (gsCardPicking_Release, on the next A) always lands a
+			# fresh CardView at the slot's own exact position regardless of
+			# this offset, so the actual placement stays pixel-precise.
+			drag_ghost.position = _board_cell_pos(rc.x, rc.y) + PAD_DRAG_OFFSET
+		elif item.id == &"pick":
+			var view: CardView = item.meta
+			_show_end_card_info(view.card)
+			_update_owned_panel_pos(view)
+		elif item.id == &"chosen" and _current_pick_view != null:
+			_show_end_card_info(_current_pick_view.card)
+			_update_owned_panel_pos(_current_pick_view)
 	nav.focus_changed.connect(on_focus_changed)
 	nav.activated.connect(_on_nav_activated)
 	nav.cancelled.connect(_on_nav_cancelled)
-	nav.menu_pressed.connect(_open_pause)
 
 	# button_done ("Continue") only shows for the last stretch of the match
 	# (end-of-match flow), toggled by the existing fade_in/fade_out game
 	# logic rather than a fixed screen state - hide_in_gamepad's own
-	# mode_changed listener would fight that for the same .visible property,
-	# so instead the Y hint just sits drawn on top of it (last child added)
-	# and _process (below) mirrors button_done's own visibility onto it
-	# every frame, leaving button_done's real .visible untouched for mouse
-	# mode and for whatever game logic already reads it.
+	# mode_changed listener would fight fade_in/_fade_out for the same
+	# .visible property (fade_in always sets it true, regardless of mode).
+	# Wrapping it lets the wrapper's OWN visibility hide it in gamepad mode
+	# without ever touching button_done's real .visible, which existing game
+	# logic still fully owns.
+	var button_done_wrap := Control.new()
+	var button_done_parent := button_done.get_parent()
+	button_done_parent.add_child(button_done_wrap)
+	button_done.reparent(button_done_wrap, true)
+	ControllerUI.hide_in_gamepad(button_done_wrap)
+
 	nav.alt2_activated.connect(func(_item: FocusNav.NavItem) -> void:
 		if button_done.visible and not button_done.disabled:
 			button_done.pressed.emit())
-	y_continue_hint = ControllerUI.make_button_hint(&"Y", StringTable.get_string(StringTable.ID_DONE), button_done.position, button_done.size)
+	# _process (below) mirrors button_done's own visibility onto the hint
+	# every frame - it should only show during the actual end-of-match window,
+	# not for the whole match the way Menu below does. x=803 matches Options'
+	# X (Title Screen) - the general right-alignment reference every screen's
+	# right-side hint now shares.
+	const CONTINUE_X := 803.0
+	y_continue_hint = ControllerUI.make_button_hint(&"Y", StringTable.get_string(StringTable.ID_DONE), Vector2(CONTINUE_X, ControllerUI.PROMPT_BAR_Y), Vector2(button_done.size.x, ControllerUI.HINT_ROW_HEIGHT))
 	add_child(y_continue_hint)
 	# No A entry - the cursor moving already previews, and pressing A on a
-	# hand/board item is self-explanatory once you're pointing at it. Menu
-	# needs to be visible for the whole match, not just the end screen where
-	# button_done lives - directly above it (390ish) is actually the middle
-	# of hand_slots' own right-hand column (826-922, y up to 476), so it
-	# lands top-right instead, above every hand slot, clear all match.
-	add_child(ControllerUI.make_button_hint(&"START", StringTable.get_string(StringTable.ID_PAUSE), Vector2(790, 10), Vector2(122, 42)))
+	# hand/board item (including the end-of-match pick) is self-explanatory
+	# once you're pointing at it. No Start/Pause entry either - there's no
+	# mouse-mode equivalent, so a pad-only pause was a dead end with nothing
+	# consistent to pause into.
 
 func _on_nav_activated(item: FocusNav.NavItem) -> void:
 	match item.id:
@@ -297,6 +330,26 @@ func _on_nav_activated(item: FocusNav.NavItem) -> void:
 				return
 			gsCardPicking_Set(idx, card)
 			pad_picking = true
+			# Jump straight to a free cell instead of waiting for the next
+			# d-pad move - the point is to immediately show "this card is
+			# picked up, here's a valid spot" rather than leave the ghost
+			# sitting on the hand slot with nothing on the board changed yet.
+			# Rightmost playable column first (the hand sits on the right
+			# side of the board), then whichever row in that column lands
+			# closest to the hand slot's own height.
+			var hand_y: float = hand_slots[idx].position.y
+			for col in range(Board.NUM_COLS - 1, -1, -1):
+				var best_row := -1
+				var best_dist := INF
+				for row in Board.NUM_ROWS:
+					if board.is_playable(row, col):
+						var dist := absf(_board_cell_pos(row, col).y - hand_y)
+						if dist < best_dist:
+							best_dist = dist
+							best_row = row
+				if best_row != -1:
+					nav.focus_by_meta(Vector2i(best_row, col))
+					return
 		&"board":
 			var rc: Vector2i = item.meta
 			if target_mode:
@@ -310,16 +363,47 @@ func _on_nav_activated(item: FocusNav.NavItem) -> void:
 				_show_end_card_info(view.card)
 				_update_owned_panel_pos(view)
 			else:
+				# Only one card is ever "the" pick for a non-perfect win -
+				# choosing a different one swaps it out instead of adding a
+				# second (which used to leave more than one card taken and
+				# end_remaining wrong, so Y/Done never agreed with what was
+				# actually about to be collected).
+				if _current_pick_view != null and _current_pick_view != view:
+					await _end_uncommit_pick(_current_pick_view)
 				await _end_commit_pick(view)
+				_current_pick_view = view
+				# _end_uncommit_pick's _fade_out and _end_commit_pick's
+				# _fade_in each start their own independent tween rather
+				# than awaiting one another, so back-to-back (a swap) can
+				# race: fade_out's tween_callback setting .visible = false
+				# can still be pending when fade_in already set it true, and
+				# land after, silently leaving Done/Y invisible - and so
+				# non-functional - despite a card genuinely being picked.
+				# Stated explicitly here beats trusting either tween's timing.
+				button_done.visible = true
 				_refresh_end_pick_nav()
-				nav.focus_first()
+				# The cursor follows the card up to &"chosen" instead of
+				# staying on the down row - simpler to reason about than
+				# jumping to "whatever's next down there": to pick something
+				# else, move down (the ordinary spatial scorer already
+				# reaches a &"pick" item from &"chosen" with no explicit
+				# link needed) and the swap logic above takes it from there.
+				_focus_chosen()
+		&"chosen":
+			# A on the already-chosen card sends it back down - the reverse
+			# of &"pick" above, reachable directly instead of only as a side
+			# effect of picking something else.
+			if _current_pick_view != null:
+				var old_view := _current_pick_view
+				_current_pick_view = null
+				await _end_uncommit_pick(old_view)
+				_refresh_end_pick_nav()
+				_focus_next_pick_or_done()
 		_:
 			(item.control as Button).pressed.emit()
 
 func _on_nav_cancelled() -> void:
-	if nav.get_layer() == 1:
-		_resume_battle()
-	elif pad_picking:
+	if pad_picking:
 		# gsCardPicking_Release already restores the card and stops the hover
 		# glow (both shared with the mouse drop-outside-board path) - only
 		# the refocus back onto the hand slot it came from is pad-specific.
@@ -338,47 +422,30 @@ func _refresh_end_pick_nav() -> void:
 		if end_movable.get(view, false):
 			nav.add_virtual(&"pick", (func(v: CardView) -> Rect2: return v.get_global_rect()).bind(view), view)
 
-# ------------------------------------------------------------------- pause
-func _build_pause_overlay() -> void:
-	pause_overlay = Control.new()
-	pause_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	pause_overlay.process_mode = Node.PROCESS_MODE_ALWAYS
-	pause_overlay.visible = false
-	pause_overlay.z_index = 200
-	add_child(pause_overlay)
+## nav.focus_first() picks the first ENABLED item in registration order -
+## button_done/button_takeall were both registered before any &"pick" item
+## ever existed, so once button_done fades in after the first successful
+## pick, focus_first() would land there instead of the next pickable card,
+## reading as "A stopped doing anything" (it's still landing on a pick item,
+## just not the one the player is now looking at - Y/Continue is what
+## actually presses from there, easy to trigger by mistake or just look
+## broken). Prefer a &"pick" item explicitly; only fall back once none are
+## left, which is exactly when landing on Done/Take All is the right call.
+func _focus_next_pick_or_done() -> void:
+	for item in nav.items:
+		if item.id == &"pick" and item.enabled():
+			nav.set_focus(item)
+			return
+	nav.focus_first()
 
-	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.6)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	pause_overlay.add_child(dim)
-
-	button_resume = _make_end_button(StringTable.get_string(StringTable.ID_RESUME), Vector2(370, 220), Vector2(220, 56))
-	button_resume.pressed.connect(_resume_battle)
-	pause_overlay.add_child(button_resume)
-
-	button_forfeit = _make_end_button(StringTable.get_string(StringTable.ID_FORFEIT), Vector2(370, 290), Vector2(220, 56))
-	button_forfeit.pressed.connect(_on_forfeit_pressed)
-	pause_overlay.add_child(button_forfeit)
-
-	nav.add_control(button_resume, null, 1)
-	nav.add_control(button_forfeit, null, 1)
-
-func _open_pause() -> void:
-	if nav.get_layer() == 1:
-		return
-	get_tree().paused = true
-	pause_overlay.visible = true
-	nav.push_layer(1)
-
-func _resume_battle() -> void:
-	get_tree().paused = false
-	pause_overlay.visible = false
-	nav.pop_layer()
-
-func _on_forfeit_pressed() -> void:
-	get_tree().paused = false
-	Game.crossfade_to_menu_music(0.85)
-	get_tree().change_scene_to_file("res://scenes/menu/MainMenu.tscn")
+## The single &"chosen" item is always registered (see _setup_nav) - this
+## just finds it, for the one caller that wants the cursor to follow a card
+## up onto it right after picking.
+func _focus_chosen() -> void:
+	for item in nav.items:
+		if item.id == &"chosen":
+			nav.set_focus(item)
+			return
 
 ## Port of BattleScene.cs's generateCards(): the 5 Game.player.cards flagged
 ## isOnDeck by DeckSelect, cloned (clone_stats()) same as the reference's
@@ -846,15 +913,16 @@ func _build_battle_end_ui() -> void:
 	# RichTextLabel with an inline [img] rather than a Label + TextureRect
 	# pair - same trick CardView uses for the shop price tags, and it needs
 	# no StringTable entry since the whole thing is a number and an icon.
-	# Top-right corner: the bottom of the screen is already claimed by
-	# panel_info's stats (bottom-left, y 311-535) and button_done/
-	# button_takeall (bottom-right) - this is the only clear real estate
-	# left once those and the central banner/message are accounted for.
+	# Left column, in the gap between panel_owned (y174-238 when pinned to a
+	# top-row card) and panel_info (y311-535) - x=8 matches panel_info's own
+	# left edge, text itself centered within that box.
 	label_coin_reward = RichTextLabel.new()
 	label_coin_reward.bbcode_enabled = true
 	label_coin_reward.scroll_active = false
-	label_coin_reward.position = Vector2(760, 20)
-	label_coin_reward.size = Vector2(180, 46)
+	# y centers this box on label_central_msg's own vertical center (233 +
+	# 74/2 = 270), so the two read as sitting on the same row.
+	label_coin_reward.position = Vector2(8, 247)
+	label_coin_reward.size = Vector2(228, 46)
 	label_coin_reward.add_theme_font_override("normal_font", font_stylish)
 	label_coin_reward.add_theme_font_size_override("normal_font_size", 36)
 	label_coin_reward.add_theme_color_override("default_color", Color(1, 0.85, 0.1))
@@ -1125,6 +1193,21 @@ func gsPlayerTurn_Set() -> void:
 	var tw := create_tween()
 	tw.tween_property(turn_cursor, "position:y", 23.0, 0.35) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_focus_first_hand_card()
+
+## Called at the start of every player turn so the pad cursor is always
+## sitting on something real the moment control hands back - without this,
+## nav.current stays null until the player's first stick nudge (FocusNav
+## only calls focus_first() lazily, on the first move()), so the hand was
+## invisible for however long it took the player to notice nothing was
+## highlighted yet.
+func _focus_first_hand_card() -> void:
+	if nav == null:
+		return
+	for i in player_hand.size():
+		if player_hand[i] != null:
+			nav.focus_by_meta(i)
+			return
 
 func _on_hand_button_down(index: int) -> void:
 	if busy or active_player != 0 or target_mode or dragging:
@@ -1149,7 +1232,16 @@ func gsCardPicking_Set(index: int, card: Card) -> void:
 	drag_ghost.setup(card)
 	drag_ghost.z_index = 10
 	add_child(drag_ghost)
-	_update_drag_ghost_pos(get_global_mouse_position())
+	# Gamepad has no mouse position to speak of - get_global_mouse_position()
+	# would leave the ghost wherever the OS cursor happens to be (hidden, off
+	# in a corner), reading as "the card just vanished". Start it at the hand
+	# slot instead; on_focus_changed (_setup_nav) then drags it along to
+	# whichever board cell the pad points at next, same as the mouse path's
+	# own continuous _update_drag_ghost_pos does for a real mouse.
+	if ControllerUI.is_gamepad():
+		drag_ghost.position = hand_slots[index].position
+	else:
+		_update_drag_ghost_pos(get_global_mouse_position())
 
 func _input(event: InputEvent) -> void:
 	if end_flow == EndFlow.PLAYER_PICK:
@@ -1369,6 +1461,14 @@ func _on_slot_pressed(row: int, col: int) -> void:
 	if target_mode:
 		var card: Card = board.slots[row][col]
 		if card != null and target_candidates.has(card):
+			# Cleared before emitting, not after gsBattleSelTarget_Set's own
+			# await resumes: a second press landing in the gap between this
+			# emit and that resume (every candidate cell is still nominally
+			# enabled until target_mode actually flips) re-entered this same
+			# branch and fired a second target_chosen, one card selected to
+			# capture but the coroutine already halfway into resolving a
+			# different one - only the first press should ever be able to.
+			target_mode = false
 			target_chosen.emit(card)
 
 # ------------------------------------------------------------------- battle
@@ -1970,7 +2070,13 @@ const OWNED_PANEL_GAP := 6.0
 
 func _update_owned_panel_pos(view: CardView) -> void:
 	end_owned_view = view
-	panel_owned.position = Vector2(view.position.x + CARD_W / 2.0 - panel_owned.size.x / 2.0, view.position.y + CARD_H + OWNED_PANEL_GAP)
+	var x := view.position.x + CARD_W / 2.0 - panel_owned.size.x / 2.0
+	var below := view.position.y + CARD_H + OWNED_PANEL_GAP
+	# Cards in the bottom row (or dragged near the bottom edge) would push the
+	# panel off-screen below them - flip it above the card instead so it's
+	# always fully visible regardless of which row the card is in.
+	var y: float = below if below + panel_owned.size.y <= SCREEN_H else view.position.y - OWNED_PANEL_GAP - panel_owned.size.y
+	panel_owned.position = Vector2(x, y)
 
 # Cards keep moving after the panel is last positioned (drag-release tweens,
 # _relayout_row) - pin the panel to its card every frame instead of patching
@@ -2008,12 +2114,13 @@ func gsEndPlayerPick_Set(result: BattleResult) -> void:
 	end_result = result
 	end_sel_view = null
 	end_pick_interactive = false
+	_current_pick_view = null
 
 	# Shown here rather than at payout time (_end_player_pick_close) so the
 	# player sees what they earned while picking their card, not after the
 	# screen is already gone. Both read _coin_reward(), which depends on
 	# ai.defeated still being false at this point.
-	label_coin_reward.text = "[right]+%d [img=28x28]res://assets/coins_icon.png[/img][/right]" % _coin_reward()
+	label_coin_reward.text = "[center]+%d [img=28x28]res://assets/coins_icon.png[/img][/center]" % _coin_reward()
 	label_coin_reward.visible = true
 
 	if result == BattleResult.PLAYER_PERFECT:
@@ -2132,6 +2239,22 @@ func _end_commit_pick(view: CardView) -> void:
 	await get_tree().create_timer(0.3).timeout
 	end_pick_interactive = true
 
+## The reverse of _end_commit_pick - sends a previously pad-picked card back
+## down. Used only to swap the single pick for a non-perfect win (see the
+## &"pick" branch above); the mouse's own un-pick (dragging a card back down)
+## has its own move_down branch in _end_player_pick_unclick, since a drag has
+## an exact drop position to tween back to that a pad swap never sets.
+func _end_uncommit_pick(view: CardView) -> void:
+	end_pick_interactive = false
+	end_down_cards.append(view)
+	end_up_cards.erase(view)
+	_relayout_row(end_up_cards, END_PL0_START, END_PL0_WIDTH, 0.3)
+	_relayout_row(end_down_cards, END_PL1_START, END_PL1_WIDTH, 0.3)
+	end_remaining += 1
+	_fade_out(button_done, 0.3)
+	await get_tree().create_timer(0.3).timeout
+	end_pick_interactive = true
+
 func _end_player_pick_unclick(_pos: Vector2) -> void:
 	if end_sel_view == null:
 		return
@@ -2163,6 +2286,11 @@ func _end_player_pick_unclick(_pos: Vector2) -> void:
 
 	if move_up:
 		await _end_commit_pick(view)
+		# Kept in sync with the pad's own tracking (_current_pick_view) so
+		# mixing mouse and pad in the same session doesn't leave the pad's
+		# swap logic uncommitting a card the mouse actually staged, or
+		# vice versa.
+		_current_pick_view = view
 	elif move_down:
 		end_down_cards.append(view)
 		end_up_cards.erase(view)
@@ -2172,6 +2300,8 @@ func _end_player_pick_unclick(_pos: Vector2) -> void:
 		_relayout_row(end_up_cards, END_PL0_START, END_PL0_WIDTH, 0.3)
 		end_remaining += 1
 		_fade_out(button_done, 0.3)
+		if view == _current_pick_view:
+			_current_pick_view = null
 		await get_tree().create_timer(0.2).timeout
 	else:
 		var tw := create_tween()

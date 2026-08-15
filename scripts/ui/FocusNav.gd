@@ -169,10 +169,24 @@ func set_focus(item: NavItem) -> void:
 ## first card cell both have meta == 0).
 func focus_by_meta(meta: Variant, id: Variant = null) -> void:
 	for item in items:
-		if item.layer == _layer and item.meta == meta and item.enabled() \
+		if item.layer == _layer and _meta_matches(item.meta, meta) and item.enabled() \
 				and (id == null or item.id == id):
 			set_focus(item)
 			return
+
+## GDScript's == throws a runtime error for some mismatched Variant type
+## pairs (confirmed: int vs Vector2i, exactly BattleScene's hand items (int
+## meta) next to its board items (Vector2i meta) - every other screen so far
+## happened to use one meta type consistently, which is why this never
+## tripped before). A raised error inside the search loop aborts the whole
+## function without matching anything, silently leaving focus wherever it
+## already was - which read as "the cursor doesn't move" bug reports rather
+## than a script error, since headless boot checks alone don't exercise this
+## call path.
+static func _meta_matches(a: Variant, b: Variant) -> bool:
+	if typeof(a) != typeof(b):
+		return false
+	return a == b
 
 func _scroll_into_view(item: NavItem) -> void:
 	if item.scroll == null or item.control == null:

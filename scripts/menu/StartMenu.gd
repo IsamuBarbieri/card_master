@@ -186,8 +186,11 @@ func _setup_nav() -> void:
 	# X on a focused occupied slot deletes it, instead of making the small
 	# corner X button separately focusable.
 	nav.alt_activated.connect(func(item: FocusNav.NavItem) -> void:
-		if item.control is FixedSizeButton and item.meta is int and delete_buttons[item.meta].visible:
-			(delete_buttons[item.meta] as Button).pressed.emit())
+		# Check occupancy directly instead of delete_buttons[i].visible - that
+		# button is hidden in gamepad mode (mouse-only corner X, see
+		# _refresh_slots), which used to make X do nothing on a pad entirely.
+		if item.control is FixedSizeButton and item.meta is int and not SaveSystem.slot_summary(item.meta).is_empty():
+			_on_delete_pressed(item.meta))
 	nav.cancelled.connect(func() -> void:
 		if nav.get_layer() == 1:
 			if name_dialog.visible:

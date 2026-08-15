@@ -14,7 +14,12 @@ func _ready() -> void:
 	assert(AIManager.count() == 21, "expected 21 opponents (18 + Lich/Odin/Dragon), got %d" % AIManager.count())
 	assert(AIManager.rage_quit_index() == 20, "RAGEQUIT should be the last index")
 
+	# Rage Quit is a deliberate exception to the sliding window: a capture-
+	# only "you gave up" punishment opponent whose own card is the only
+	# thing it should ever field, not a window reaching into Dragon/The Void.
 	for i in AIManager.count():
+		if i == AIManager.rage_quit_index():
+			continue
 		var ai: AIManager.AIData = AIManager.get_ai(i)
 		assert(ai.gen_first_max == ai.image_id, "opponent %d (%s) reaches past its own species: gen_first_max=%d image_id=%d" % [i, ai.ai_name, ai.gen_first_max, ai.image_id])
 		var expected_min: int = maxi(0, ai.image_id - 2)
@@ -39,6 +44,8 @@ func _ready() -> void:
 	assert(dragon.ai_name == "Dragon" and dragon.image_id == 18)
 	assert(the_void.ai_name == "The Void" and the_void.image_id == 19)
 	assert(rage_quit.ai_name == "Rage Quit" and rage_quit.image_id == 20)
+	assert(rage_quit.gen_first_min == 20 and rage_quit.gen_first_max == 20, "Rage Quit should only ever field its own card")
+	assert(rage_quit.gen_other_min == 20 and rage_quit.gen_other_max == 20, "Rage Quit should only ever field its own card")
 
 	# Starter deck: Slime-only, free.
 	var player := Player.new("Test", 0, AIManager.count())

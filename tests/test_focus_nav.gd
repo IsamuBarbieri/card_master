@@ -25,8 +25,30 @@ func _ready() -> void:
 	_test_axis_fn()
 	_test_classify()
 	_test_glyph_fallback()
+	_test_focus_by_meta_mixed_types()
 	print("OK - focus nav checks passed")
 	get_tree().quit()
+
+## Regression: BattleScene mixes int metas (hand slots) and Vector2i metas
+## (board cells) in the same nav. GDScript's == throws a runtime error for
+## some mismatched Variant type pairs (confirmed for int vs Vector2i) rather
+## than just returning false, which used to abort focus_by_meta's whole
+## search on the first non-matching item of a different type - silently
+## leaving focus wherever it already was. Every other screen so far happened
+## to use one meta type consistently, which is why this never tripped until
+## a screen mixed two.
+func _test_focus_by_meta_mixed_types() -> void:
+	var nav := FocusNav.new()
+	add_child(nav)
+	nav.add_virtual(&"hand", func() -> Rect2: return Rect2(0, 0, 10, 10), 0)
+	var board_item := nav.add_virtual(&"board", func() -> Rect2: return Rect2(20, 0, 10, 10), Vector2i(1, 2))
+	nav.focus_first()
+	assert(nav.current != null and nav.current.meta == 0, "sanity: hand item focused first")
+
+	nav.focus_by_meta(Vector2i(1, 2))
+	assert(nav.current == board_item, "focus_by_meta must find a Vector2i meta past an int-meta item without erroring")
+
+	nav.queue_free()
 
 ## A slider's left/right must nudge its value instead of moving focus away.
 func _test_axis_fn() -> void:

@@ -53,6 +53,10 @@ var busy_indicator: BusySpinner
 var drag_ghost: CardView
 var selection_outline: SelectionOutline
 var nav: FocusNav
+var _wheel_stick_locked := false
+var _last_wheel_meta := 1  # 1 or 2 - which wheel a slot's up/down returns to
+var _last_filled_slot := -1  # most recently inserted deck slot index, or -1
+var y_play_hint: Control
 
 # --- WaitingInput state (SWaitingInput) ---
 var wi_x: int = 0
@@ -120,20 +124,30 @@ func _ready() -> void:
 	_enter_waiting_input()
 	_setup_nav()
 
-## Mirrors next_sel's own 7-state model (1=left wheel, 2=right wheel,
-## 10+i=deck slot i) rather than the spatial scorer: a spatial jump from the
-## left wheel (y~246) straight to the right wheel (y~246, x~786) scores
-## lower than reaching the deck slots below (y~455, penalized by
-## CROSS_AXIS_PENALTY) and would skip them entirely. Explicit link()s make
-## left/right walk the same 7 states next_sel already models; wrap links are
-## added asymmetrically at the two ends so the chain cycles.
+## Left/right jumps straight between the two wheels; up/down moves between a
+## wheel and the deck slot row (whichever slot is spatially under it: slot 0
+## for the left wheel, slot 4 for the right one; slots 1-2 lean left, slot 3
+## leans right for their own up). Slots then move along their own row via
+## left/right. None of this is the spatial scorer - explicit link()s (and,
+## for the wheel jump specifically, link_action()s that check for an empty
+## wheel first) say exactly what every edge does instead of guessing from
+## on-screen distance.
 func _setup_nav() -> void:
 	nav = FocusNav.new()
 	add_child(nav)
 
+	# No axis_fn_v here (there used to be a no-op one, meant to keep the old
+	# vertical wheel-cycling repeat from also firing through FocusNav's own
+	# d-pad handling): FocusNav.move() checks axis_fn_v BEFORE links, so a
+	# no-op there doesn't just block the old behavior, it swallows up/down
+	# entirely and never reaches the wheel<->slot link below at all - the
+	# actual bug behind "su/giù non si sposta tra ruote e deck". The
+	# vertical-wheel-CYCLING logic (browsing card types) lives in
+	# _process_wheel_stick below instead, entirely outside FocusNav's own
+	# repeat timer, so there's nothing left for axis_fn_v to guard against.
 	var left_item := nav.add_virtual(&"wheel", func() -> Rect2:
-		return Rect2(deck_selector_left.central_card_x(), deck_selector_left.central_card_y(), deck_selector_left.card_width, deck_selector_left.card_height), 1)
-	left_item.axis_fn_v = func(d: int) -> void: _snap_to_box(deck_selector_left, 1 if d > 0 else 3, false)
+		return Rect2(deck_selector_left.central_card_x(), deck_selector_left.central_card_y(), deck_selector_left.card_width, deck_selector_left.card_height), 1,
+		0, func() -> bool: return deck_selector_left.central_card_stats() != null)
 
 	var slot_items: Array = []
 	for i in 5:
@@ -141,15 +155,43 @@ func _setup_nav() -> void:
 			return Rect2(lower_deck.card_x(idx), lower_deck.card_y(idx), lower_deck.card_width(idx), lower_deck.card_height(idx))).bind(i), 10 + i))
 
 	var right_item := nav.add_virtual(&"wheel", func() -> Rect2:
-		return Rect2(deck_selector_right.central_card_x(), deck_selector_right.central_card_y(), deck_selector_right.card_width, deck_selector_right.card_height), 2)
-	right_item.axis_fn_v = func(d: int) -> void: _snap_to_box(deck_selector_right, 1 if d > 0 else 3, false)
+		return Rect2(deck_selector_right.central_card_x(), deck_selector_right.central_card_y(), deck_selector_right.card_width, deck_selector_right.card_height), 2,
+		0, func() -> bool: return deck_selector_right.central_card_stats() != null)
 
-	nav.link(left_item, slot_items[0], FocusNav.DIR_RIGHT)
+	# A plain link() falls through to the spatial scorer when its target is
+	# disabled (see FocusNav.move()) rather than just doing nothing - for an
+	# empty wheel that scorer would likely land on a deck slot instead, which
+	# is exactly the silent wrong-move this needs to NOT do.
+	nav.link_action(left_item, FocusNav.DIR_RIGHT, func() -> void:
+		if deck_selector_right.central_card_stats() != null:
+			nav.focus_by_meta(2))
+	nav.link_action(right_item, FocusNav.DIR_LEFT, func() -> void:
+		if deck_selector_left.central_card_stats() != null:
+			nav.focus_by_meta(1))
+
+	nav.link(left_item, slot_items[0], FocusNav.DIR_DOWN, false)
+	nav.link(right_item, slot_items[4], FocusNav.DIR_DOWN, false)
+	# A slot's own UP leads back to whichever wheel was focused most recently
+	# (_last_wheel_meta, kept current by on_focus_changed below) - not a
+	# fixed spatial split - blocked (no move) if that wheel is empty, same
+	# reasoning as the wheel<->wheel jump above. DOWN stays unbound: the
+	# deck row is the bottom of the layout, there's nothing further down to
+	# reach, and leaving it only reachable via UP is the deliberate asymmetry
+	# asked for (the row's own left/right already walks slot to slot).
+	for slot_item in slot_items:
+		nav.link_action(slot_item, FocusNav.DIR_UP, func() -> void:
+			var selector: DeckSelectorWheel = deck_selector_left if _last_wheel_meta == 1 else deck_selector_right
+			if selector.central_card_stats() != null:
+				nav.focus_by_meta(_last_wheel_meta))
 	for i in 4:
 		nav.link(slot_items[i], slot_items[i + 1], FocusNav.DIR_RIGHT)
-	nav.link(slot_items[4], right_item, FocusNav.DIR_RIGHT)
-	nav.link(right_item, left_item, FocusNav.DIR_RIGHT, false)
-	nav.link(left_item, right_item, FocusNav.DIR_LEFT, false)
+	# Left/right never reaches a wheel from the deck row, in either
+	# direction - only up does (see above) - so the row's own two open ends
+	# need an explicit no-op instead of an unset link, which would otherwise
+	# fall through to the spatial scorer (see FocusNav.move()) and could
+	# land on a wheel anyway, since both sit diagonally nearby on screen.
+	nav.link_action(slot_items[0], FocusNav.DIR_LEFT, func() -> void: pass)
+	nav.link_action(slot_items[4], FocusNav.DIR_RIGHT, func() -> void: pass)
 
 	# The cursor moving previews a card's stats on its own now, same as the
 	# other browse screens - wheel items use their own meta (1/2) and slot
@@ -157,6 +199,7 @@ func _setup_nav() -> void:
 	# `sel` param (and so next_sel/the blue outline) expects.
 	var on_focus_changed := func(item: FocusNav.NavItem) -> void:
 		if item.id == &"wheel":
+			_last_wheel_meta = item.meta
 			var selector: DeckSelectorWheel = deck_selector_left if item.meta == 1 else deck_selector_right
 			var c := selector.central_card_stats()
 			if c != null:
@@ -173,32 +216,109 @@ func _setup_nav() -> void:
 	# exactly the one _on_nav_activated's &"slot" branch already sends it
 	# back to on removal (that branch keys off is_favourite too).
 	nav.alt_activated.connect(func(_item: FocusNav.NavItem) -> void: _toggle_favourite())
+	# Y always means Play, regardless of focus - same as button_play.disabled
+	# already gating the real button's own click.
+	nav.alt2_activated.connect(func(_item: FocusNav.NavItem) -> void:
+		if not button_play.disabled:
+			button_play.pressed.emit())
 	nav.cancelled.connect(_on_back_pressed)
-	nav.focus_by_meta(next_sel if next_sel != 0 else 1)
+	_ensure_valid_focus(next_sel if next_sel != 0 else 1)
 
-	# Y (Play) and B (Back) physically replace their own real buttons, same
-	# spot each already sat at (matches Options/Collection/Opponents' row).
-	ControllerUI.hide_in_gamepad(button_play)
-	add_child(ControllerUI.make_button_hint(&"Y", StringTable.get_string(StringTable.ID_PLAY_BATTLE), button_play.position, button_play.size))
-	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56)))
-	# A/X/R3 have no real button of their own to stand in for, and every gap
-	# wide enough for their (fairly long, translation-dependent) labels
-	# between the wheels/deck bar/side buttons turned out to be one already
-	# occupied by a deck slot - the plain bottom-left bar is the one spot on
-	# this screen guaranteed clear of everything else.
-	add_child(ControllerUI.make_prompt_bar([
-		[&"A", StringTable.get_string(StringTable.ID_ADD_REMOVE)],
-		[&"X", StringTable.get_string(StringTable.ID_FAVORITE_CARDS)],
-		[&"R3", StringTable.get_string(StringTable.ID_SWITCH)],
-	]))
+	# Y (Play) physically replaces button_play at its own x, same row every
+	# screen's hints share now (ControllerUI.PROMPT_BAR_Y). B/A/X stack
+	# left-aligned instead, lowest (B) anchored to that same row - A/X have
+	# no real button of their own to stand in for, and every gap wide enough
+	# for their (fairly long, translation-dependent) labels elsewhere on this
+	# screen turned out to already be a deck slot's own rect once measured.
+	# x=803 matches Options' X (Title Screen) - the general right-alignment
+	# reference every screen's right-side hint now shares. Neither this nor
+	# button_play itself uses hide_in_gamepad - both also need to hide
+	# whenever the deck isn't full, a second condition hide_in_gamepad's own
+	# mode-only listener can't express, so _update_play_button owns both
+	# controls' visibility directly instead (see there).
+	y_play_hint = ControllerUI.make_button_hint(&"Y", StringTable.get_string(StringTable.ID_PLAY_BATTLE), Vector2(803, ControllerUI.PROMPT_BAR_Y), Vector2(button_play.size.x, ControllerUI.HINT_ROW_HEIGHT))
+	add_child(y_play_hint)
+	ControllerUI.mode_changed.connect(func(_m: int) -> void: _update_play_button())
+	_update_play_button()  # y_play_hint didn't exist yet for _enter_waiting_input's own earlier call
 
-func _unhandled_input(event: InputEvent) -> void:
-	if not ControllerUI.is_gamepad():
+	const STACK_X := 42.0
+	const STACK_W := 160.0  # wide enough for "Carte Preferite"/"Aggiungi/Togli"-length labels
+	const STACK_GAP := 4.0
+	var row_h: float = ControllerUI.HINT_ROW_HEIGHT
+	var b_y: float = ControllerUI.PROMPT_BAR_Y
+	var a_y: float = b_y - row_h - STACK_GAP
+	var x_y: float = a_y - row_h - STACK_GAP
+	# center=false on all three: left-aligned so every icon sits at the exact
+	# same x regardless of how long each one's own label is.
+	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), Vector2(STACK_X, b_y), Vector2(STACK_W, row_h), false))
+	add_child(ControllerUI.make_button_hint(&"A", StringTable.get_string(StringTable.ID_ADD_REMOVE), Vector2(STACK_X, a_y), Vector2(STACK_W, row_h), false))
+	add_child(ControllerUI.make_button_hint(&"X", StringTable.get_string(StringTable.ID_FAVORITE), Vector2(STACK_X, x_y), Vector2(STACK_W, row_h), false))
+
+## Called at setup and again after anything that can empty a wheel (staging
+## a card into the deck, toggling favourite) - if the CURRENTLY focused item
+## just became invalid (its own wheel now empty), picks somewhere real
+## instead of leaving the cursor pointing at nothing: prefer the deck wheel,
+## then favourites, then the deck row itself if both wheels are empty.
+## `preferred_meta` is only consulted when the current focus is still fine
+## (or there is none yet, e.g. the very first call) - it does NOT override a
+## focus that's already valid, so this is safe to call after every action
+## without fighting the player's own navigation.
+func _ensure_valid_focus(preferred_meta: int = -1) -> void:
+	if nav.current != null and nav.current.enabled():
 		return
-	if event.is_action_pressed(&"nav_stick_click"):
-		var target := 2 if (nav.current != null and nav.current.meta == 1) else 1
-		nav.focus_by_meta(target)
-		get_viewport().set_input_as_handled()
+	if preferred_meta != -1:
+		var wanted_id := &"wheel" if preferred_meta <= 2 else &"slot"
+		nav.focus_by_meta(preferred_meta, wanted_id)
+		if nav.current != null and nav.current.enabled():
+			return
+	if deck_selector_left.central_card_stats() != null:
+		nav.focus_by_meta(1, &"wheel")
+	elif deck_selector_right.central_card_stats() != null:
+		nav.focus_by_meta(2, &"wheel")
+	elif _last_filled_slot != -1 and lower_deck.card_stats(_last_filled_slot) != null:
+		# Both wheels empty - land on whichever slot was filled most
+		# recently rather than always the leftmost, since that's the card
+		# the player was just looking at a moment ago.
+		nav.focus_by_meta(10 + _last_filled_slot, &"slot")
+	else:
+		nav.focus_by_meta(10, &"slot")
+
+## Right stick spins whichever wheel is currently focused - same mechanism
+## as Shop's own wheel stick (see Shop._process_wheel_stick for the full
+## reasoning): one card per push, must return to centre before it repeats,
+## both axes work (left/right browses individual cards, up/down browses
+## card types), wrap-around is free from the wheel's own circular angle
+## math, and the snap target is looked up fresh via adjacent_box() every
+## time rather than a fixed array_index (which breaks after a couple of
+## snaps once boxes start recycling - see that function's own doc comment).
+## d-pad/left stick is FocusNav's own territory here (jumping between wheels
+## and the deck row - see _setup_nav's link()s), so the wheel itself needed
+## its own axis entirely, exactly like Shop's did.
+func _process_wheel_stick() -> void:
+	if not ControllerUI.is_gamepad():
+		_wheel_stick_locked = false
+		return
+	var left := Input.get_action_strength(&"nav_wheel_left") > 0.0
+	var right := Input.get_action_strength(&"nav_wheel_right") > 0.0
+	var up := Input.get_action_strength(&"nav_wheel_up") > 0.0
+	var down := Input.get_action_strength(&"nav_wheel_down") > 0.0
+	if not left and not right and not up and not down:
+		_wheel_stick_locked = false
+		return
+	if _wheel_stick_locked or game_state != GameState.WAITING_INPUT:
+		return
+	if nav.current == null or nav.current.id != &"wheel":
+		return
+	_wheel_stick_locked = true
+	var selector: DeckSelectorWheel = deck_selector_left if nav.current.meta == 1 else deck_selector_right
+	if left or right:
+		var target := selector.adjacent_box(1 if right else -1, true)
+		if target != -1:
+			_snap_to_box(selector, target, true)
+	elif up or down:
+		var target := selector.adjacent_box(1 if down else -1, false)
+		if target != -1:
+			_snap_to_box(selector, target, false)
 
 ## X's action: moves the focused wheel's centered card to the other wheel,
 ## toggling is_favourite along the way. A no-op when a slot (not a wheel) is
@@ -214,7 +334,12 @@ func _toggle_favourite() -> void:
 	_cancel_current_interaction()
 	var cstats: Card = from_selector.remove_current_card()
 	cstats.is_favourite = not cstats.is_favourite
-	to_selector.add_card(cstats)
+	# ...and_center, not add_card: the whole point of X is "look, here it is
+	# in its new wheel" - add_card deliberately does the opposite (keeps
+	# whatever was already centered) for its other callers (returning a card
+	# from a deck slot shouldn't yank the wheel away from what you had
+	# centered there).
+	to_selector.add_card_and_center(cstats)
 	next_sel = 2 if from_left else 1
 	nav.focus_by_meta(next_sel)
 
@@ -232,7 +357,21 @@ func _on_nav_activated(item: FocusNav.NavItem) -> void:
 		_cancel_current_interaction()
 		var cstats: Card = selector.remove_current_card()
 		lower_deck.add_card(free_index, cstats)
-		next_sel = 10 + free_index
+		_last_filled_slot = free_index
+		# Cursor stays on the wheel instead of following the card into its
+		# new slot - next_sel/the blue outline are left exactly as
+		# on_focus_changed already set them (item.meta, still true: focus
+		# never moved), just refreshed to whatever's now centered.
+		var new_card := selector.central_card_stats()
+		if new_card != null:
+			_update_card_info(new_card, item.meta)
+		_enter_waiting_input()
+		# That may have just emptied this wheel (its last card just staged) -
+		# the cursor was deliberately left here above, so it needs its own
+		# check rather than relying on whatever focus_by_meta the &"slot"
+		# branch below does (this branch returns before reaching it).
+		_ensure_valid_focus()
+		return
 	elif item.id == &"slot":
 		var index: int = item.meta - 10
 		var cstats: Card = lower_deck.card_stats(index)
@@ -242,14 +381,39 @@ func _on_nav_activated(item: FocusNav.NavItem) -> void:
 		lower_deck.remove_card(index)
 		if cstats.is_favourite:
 			deck_selector_right.add_card(cstats)
-			next_sel = 2
 		else:
 			deck_selector_left.add_card(cstats)
-			next_sel = 1
+		_enter_waiting_input()
+		# Stay on the deck row, on whichever remaining card sits closest to
+		# the one just removed, instead of jumping away to the wheel - the
+		# player is very likely removing several cards in a row.
+		var nearest := _nearest_filled_slot(index)
+		if nearest != -1:
+			next_sel = 10 + nearest
+			nav.focus_by_meta(next_sel, &"slot")
+		else:
+			next_sel = 2 if cstats.is_favourite else 1
+			_ensure_valid_focus(next_sel)
+		return
 	else:
 		return
 	_enter_waiting_input()
 	nav.focus_by_meta(next_sel)
+
+## Finds the deck slot with a card closest to `from_index` (ties broken
+## toward the lower index), skipping `from_index` itself. -1 if the deck is
+## now empty.
+func _nearest_filled_slot(from_index: int) -> int:
+	var best := -1
+	var best_dist := INF
+	for i in 5:
+		if i == from_index or lower_deck.card_stats(i) == null:
+			continue
+		var dist: float = absf(i - from_index)
+		if dist < best_dist:
+			best_dist = dist
+			best = i
+	return best
 
 func _build_ui() -> void:
 	var font_stylish: Font = Game.font_stylish
@@ -508,6 +672,7 @@ func _handle_double_click(x: int, y: int) -> bool:
 		_cancel_current_interaction()
 		var cstats: Card = selector.remove_current_card()
 		lower_deck.add_card(free_index, cstats)
+		_last_filled_slot = free_index
 		next_sel = 10 + free_index
 		_enter_waiting_input()
 		return true
@@ -587,6 +752,7 @@ func _process(delta: float) -> void:
 		_deck_scroll_process(delta)
 	elif game_state == GameState.DRAG_CARD:
 		_drag_card_process(delta)
+	_process_wheel_stick()
 
 	if launch_battle_delay > 0.0:
 		launch_battle_delay -= delta
@@ -755,6 +921,7 @@ func _drag_card_on_unclick(x: int, y: int) -> void:
 				else:
 					deck_selector_left.add_card(deck_card)
 				lower_deck.add_card(index, selector_card)
+			_last_filled_slot = index
 
 		next_sel = 10 + index
 		_drag_card_on_quit_restore()
@@ -831,7 +998,15 @@ func _update_play_button() -> void:
 	for card in Game.player.cards:
 		if card.is_on_deck:
 			count += 1
-	button_play.disabled = count != 5
+	var complete := count == 5
+	button_play.disabled = not complete
+	button_play.visible = complete and not ControllerUI.is_gamepad()
+	# _ready() calls _enter_waiting_input() (which calls this) before
+	# _setup_nav() has built y_play_hint yet - the first call just skips it,
+	# _setup_nav's own gamepad-mode-and-completeness check right after
+	# creating it covers that initial state instead.
+	if y_play_hint != null:
+		y_play_hint.visible = complete and ControllerUI.is_gamepad()
 
 func _update_card_info(cstats: Card, sel: int) -> void:
 	next_sel = sel

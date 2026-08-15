@@ -58,6 +58,10 @@ func setup(num_objects: int, front_object_index: int, p_radius: float, p_scale_m
 		min_angle = 0.0
 		max_angle = 0.0
 	elif count == 2:
+		# Deliberately NOT wrapped, unlike count >= 3: with only 2 items,
+		# looping past the far one straight back to the near one reads as an
+		# ugly snap rather than a spin (confirmed by feel, not a bug) - the
+		# clamp caps rotation to a quarter turn so it just stops there.
 		min_angle = -90.0
 		max_angle = 0.0
 	else:

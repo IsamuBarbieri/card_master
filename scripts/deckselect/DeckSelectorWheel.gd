@@ -29,8 +29,21 @@ var bbh := BlackBox.new()
 var bbv := BlackBox.new()
 var card_matrix := CardMatrix.new()
 var cur_index_v: int = 0
-var cur_angle_h: float = 0.0
-var cur_angle_v: float = 0.0
+
+# Clamped to bbh/bbv's own min/max on every write (not just inside
+# BlackBox.update(), which clamps its OWN copy but was leaving this one free
+# to drift arbitrarily past the boundary - every push against the clamp
+# while already there kept accumulating here with no visible effect, so the
+# next push in the OTHER direction first had to burn through all of that
+# drift before the wheel visibly moved again). bbh/bbv must exist before
+# these can be assigned, which every real writer (pad snap, mouse drag)
+# already guarantees since they only run after setup().
+var cur_angle_h: float = 0.0:
+	set(value):
+		cur_angle_h = clampf(value, bbh.min_angle, bbh.max_angle)
+var cur_angle_v: float = 0.0:
+	set(value):
+		cur_angle_v = clampf(value, bbv.min_angle, bbv.max_angle)
 var moving_vert: bool = false
 var force_redraw: bool = false
 var shop_mode: bool = false
@@ -179,6 +192,31 @@ func snap_delta_for_box(array_index: int, horz: bool) -> float:
 		return 90.0
 	return 0.0
 
+## Which box array_index currently sits exactly one quarter-turn ahead
+## (dir=+1) or behind (dir=-1) of front, given the wheel's own CURRENT angle -
+## returns -1 if none does (shouldn't happen in practice, but a caller with a
+## stale angle reading is safer erroring out than silently snapping the
+## wrong box).
+##
+## A caller can NOT just hardcode array_index 1 (next) / 3 (prev): that's
+## only true right after setup()/on_input_close() reset the angle, because
+## _update_boxes() recycles which literal array slot holds "the next card"
+## as the wheel keeps turning (BlackBox.update()'s whole point). Two pad
+## snaps in a row using a fixed index target whatever slot NOW happens to sit
+## at that offset - not necessarily still the next/prev card - which reads
+## as the wheel spinning correctly once or twice, then jumping to the wrong
+## card or refusing to move at all.
+func adjacent_box(dir: int, horz: bool) -> int:
+	var cur_angle: float = cur_angle_h if horz else cur_angle_v
+	var target := 90.0 * float(dir)
+	for i in 4:
+		var raw := fposmod(cur_angle + 90.0 * float(i), 360.0)
+		if raw > 180.0:
+			raw -= 360.0
+		if absf(raw - target) < 1.0:
+			return i
+	return -1
+
 ## Returns the removed Card (reference also hands back a cloned texture -
 ## see the class-level deviation note).
 func remove_current_card() -> Card:
@@ -246,6 +284,22 @@ func add_card(card: Card) -> void:
 		bbv.setup(card_matrix.card_types.size(), cur_index_v, RADIUS, SCALE_MUL)
 		bbh.setup(sc.cards.size(), top_h_index, RADIUS, SCALE_MUL)
 		_update_boxes()
+
+## Opposite of add_card()'s own "never jump the wheel" rule - for the one
+## caller (DeckSelect._toggle_favourite) that specifically wants the moved
+## card to become the new centered one, confirming where it landed.
+func add_card_and_center(card: Card) -> void:
+	card_matrix.add_card(card, -1, 0)
+	var type_idx := card_matrix.card_type_index(card)
+	cur_index_v = type_idx
+	cur_angle_v = 0.0
+	cur_angle_h = 0.0
+	force_redraw = true
+	var sc = card_matrix.card_types[type_idx]
+	var val: int = maxi(sc.cards.find(card), 0)
+	bbv.setup(card_matrix.card_types.size(), type_idx, RADIUS, SCALE_MUL)
+	bbh.setup(sc.cards.size(), val, RADIUS, SCALE_MUL)
+	_update_boxes()
 
 func _update_boxes() -> void:
 	var start_x: float = 0.5 * ui_panel.size.x
