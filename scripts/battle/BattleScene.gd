@@ -748,6 +748,8 @@ func _build_battle_overlay() -> void:
 	coin_red_tex = load(ASSETS + "battle/battle_coin_red.png")
 	coin_sprite = TextureRect.new()
 	coin_sprite.texture = coin_blue_tex
+	coin_sprite.stretch_mode = TextureRect.STRETCH_SCALE
+	coin_sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	coin_sprite.size = Vector2(96, 96)
 	coin_sprite.pivot_offset = Vector2(48, 48)
 	coin_sprite.position = Vector2((SCREEN_W - 96) / 2.0, (SCREEN_H - 96) / 2.0)
@@ -815,6 +817,8 @@ func _build_end_panel() -> void:
 	end_panel.add_child(end_bkg)
 
 	end_banner = TextureRect.new()
+	end_banner.stretch_mode = TextureRect.STRETCH_SCALE
+	end_banner.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	end_banner.visible = false
 	end_panel.add_child(end_banner)
 
