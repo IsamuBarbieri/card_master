@@ -77,10 +77,24 @@ func _ready() -> void:
 	_font_info_default = load("res://assets/fonts/font_info.ttf")
 	_fallback_font = load("res://assets/fonts/NotoSans-Regular.ttf")
 
+	_setup_mouse_cursor()
+
 	var settings := SaveSystem.load_settings()
 	language = settings.get("language", _detect_default_language())
 	sfx_volume = settings.get("sfx_volume", 1.0)
 	music_volume = settings.get("music_volume", 1.0)
+
+## assets/cursor.png as the OS mouse pointer. Input.set_custom_mouse_cursor
+## draws at the texture's real screen-pixel size - unlike everything else
+## in the game, it isn't scaled by the canvas_items window stretch - so the
+## source art (authored at 4x for crisp in-game use elsewhere) is resized
+## down to an actual on-screen pointer size here.
+const CURSOR_SIZE := 48
+
+func _setup_mouse_cursor() -> void:
+	var img: Image = load("res://assets/cursor.png").get_image()
+	img.resize(CURSOR_SIZE, CURSOR_SIZE, Image.INTERPOLATE_LANCZOS)
+	Input.set_custom_mouse_cursor(ImageTexture.create_from_image(img))
 
 ## Picks which actual font backs the public font_stylish/font_info for the
 ## current language - see _fallback_font's docstring above for why this
