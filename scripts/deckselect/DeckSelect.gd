@@ -152,7 +152,8 @@ func _setup_nav() -> void:
 	var slot_items: Array = []
 	for i in 5:
 		slot_items.append(nav.add_virtual(&"slot", (func(idx: int) -> Rect2:
-			return Rect2(lower_deck.card_x(idx), lower_deck.card_y(idx), lower_deck.card_width(idx), lower_deck.card_height(idx))).bind(i), 10 + i))
+			return Rect2(lower_deck.card_x(idx), lower_deck.card_y(idx), lower_deck.card_width(idx), lower_deck.card_height(idx))).bind(i), 10 + i,
+			0, (func(idx: int) -> bool: return lower_deck.card_stats(idx) != null).bind(i)))
 
 	var right_item := nav.add_virtual(&"wheel", func() -> Rect2:
 		return Rect2(deck_selector_right.central_card_x(), deck_selector_right.central_card_y(), deck_selector_right.card_width, deck_selector_right.card_height), 2,
@@ -320,11 +321,19 @@ func _process_wheel_stick() -> void:
 		if target != -1:
 			_snap_to_box(selector, target, false)
 
-## X's action: moves the focused wheel's centered card to the other wheel,
-## toggling is_favourite along the way. A no-op when a slot (not a wheel) is
-## focused - X has no meaning there.
+## X's action depends on what's focused. On a wheel: moves the centered card
+## to the OTHER wheel, toggling is_favourite along the way. On a deck slot:
+## same removal A does, except the card is always forced into Favourites
+## instead of returning to whichever wheel it originally came from - one
+## press for "I don't want this in my deck, but I want to remember it",
+## instead of A then X.
 func _toggle_favourite() -> void:
-	if nav.current == null or nav.current.id != &"wheel":
+	if nav.current == null:
+		return
+	if nav.current.id == &"slot":
+		_force_favourite_from_slot(nav.current.meta - 10)
+		return
+	if nav.current.id != &"wheel":
 		return
 	var from_left: bool = nav.current.meta == 1
 	var from_selector: DeckSelectorWheel = deck_selector_left if from_left else deck_selector_right
@@ -342,6 +351,29 @@ func _toggle_favourite() -> void:
 	to_selector.add_card_and_center(cstats)
 	next_sel = 2 if from_left else 1
 	nav.focus_by_meta(next_sel)
+
+## Mirrors _on_nav_activated's &"slot" branch (A on a deck card) - same
+## removal, same "stay on the nearest remaining deck card" cursor behavior -
+## except the destination is always deck_selector_right (Favourites),
+## regardless of cstats.is_favourite. add_card (not add_card_and_center) sets
+## is_favourite to match its wheel on its own (see CardMatrix.add_card), and
+## keeps whatever the Favourites wheel already had centered, same reasoning
+## as A's own return-to-wheel path.
+func _force_favourite_from_slot(index: int) -> void:
+	var cstats: Card = lower_deck.card_stats(index)
+	if cstats == null:
+		return
+	_cancel_current_interaction()
+	lower_deck.remove_card(index)
+	deck_selector_right.add_card(cstats)
+	_enter_waiting_input()
+	var nearest := _nearest_filled_slot(index)
+	if nearest != -1:
+		next_sel = 10 + nearest
+		nav.focus_by_meta(next_sel, &"slot")
+	else:
+		next_sel = 2
+		_ensure_valid_focus(next_sel)
 
 ## A's semantics mirror _handle_double_click, keyed by the focused nav item
 ## instead of a click point: a wheel sends its centered card to the first

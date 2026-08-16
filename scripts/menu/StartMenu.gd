@@ -205,7 +205,7 @@ func _setup_nav() -> void:
 	]))
 
 func _open_keyboard() -> void:
-	keyboard = OnScreenKeyboard.new("PlayerName")
+	keyboard = OnScreenKeyboard.new("")
 	keyboard.position = (Vector2(SCREEN_W, SCREEN_H) - OnScreenKeyboard.PANEL_SIZE) / 2.0
 	add_child(keyboard)
 	nav.active = false
@@ -368,7 +368,6 @@ func _build_name_dialog() -> void:
 	name_edit = LineEdit.new()
 	name_edit.position = Vector2(70, 134)
 	name_edit.size = Vector2(360, 56)
-	name_edit.text = "PlayerName"
 	name_edit.max_length = 20
 	name_edit.add_theme_font_override("font", font_stylish)
 	name_edit.add_theme_font_size_override("font_size", 25)
@@ -419,7 +418,7 @@ func _on_slot_pressed(slot_index: int) -> void:
 		if ControllerUI.is_gamepad():
 			_open_keyboard()
 		else:
-			name_edit.text = "PlayerName"
+			name_edit.text = ""
 			name_dialog.visible = true
 	else:
 		Game.player = SaveSystem.load_player(slot_index)

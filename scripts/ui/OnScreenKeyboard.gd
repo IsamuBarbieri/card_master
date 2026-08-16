@@ -178,6 +178,6 @@ func _toggle_shift() -> void:
 	_update_caret()
 
 func _update_caret() -> void:
-	# Static, not blinking - matches LineEdit's own default caret in mouse
-	# mode (caret_blink off), which the flashing underscore didn't.
-	_caret_label.text = _text + "_"
+	# Static, not blinking, and "|" not "_" - matches LineEdit's own default
+	# caret in mouse mode (a thin vertical bar, caret_blink off) exactly.
+	_caret_label.text = _text + "|"
