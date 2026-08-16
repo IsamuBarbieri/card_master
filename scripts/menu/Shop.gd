@@ -387,7 +387,8 @@ func _build_ui() -> void:
 	coins_icon.texture = load(ASSETS + "coins_icon.png")
 	coins_icon.position = Vector2(867, 463)
 	coins_icon.size = Vector2(60, 60)
-	coins_icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	coins_icon.stretch_mode = TextureRect.STRETCH_SCALE
+	coins_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	add_child(coins_icon)
 
 	label_coins = _make_label(Vector2(711, 477), Vector2(156, 46), font_stylish, 36)

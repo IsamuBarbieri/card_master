@@ -18,7 +18,7 @@ func _ready() -> void:
 
 	var bg := TextureButton.new()
 	bg.texture_normal = load(ASSETS + "credits_screen.png")
-	bg.stretch_mode = TextureButton.STRETCH_KEEP_CENTERED
+	bg.stretch_mode = TextureButton.STRETCH_SCALE
 	bg.size = Vector2(SCREEN_W, SCREEN_H)
 	bg.pressed.connect(_on_back_pressed)
 	add_child(bg)

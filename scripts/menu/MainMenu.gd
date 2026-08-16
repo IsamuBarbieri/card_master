@@ -92,8 +92,9 @@ func _remember_focus(meta: int) -> void:
 func _build_cat() -> void:
 	var sheet: Texture2D = load(ASSETS + "help_cat.png")
 	var cols := 6
-	var frame_w := int(CAT_FRAME_SIZE.x)
-	var frame_h := int(CAT_FRAME_SIZE.y)
+	var rows := ceili(float(CAT_FRAME_COUNT) / cols)
+	var frame_w := sheet.get_width() / cols
+	var frame_h := sheet.get_height() / rows
 
 	var frames := SpriteFrames.new()
 	frames.remove_animation("default")
@@ -110,6 +111,7 @@ func _build_cat() -> void:
 	cat_sprite.sprite_frames = frames
 	cat_sprite.animation = "idle"
 	cat_sprite.centered = false
+	cat_sprite.scale = CAT_FRAME_SIZE / Vector2(frame_w, frame_h)
 	cat_sprite.position = CAT_POS
 	add_child(cat_sprite)
 

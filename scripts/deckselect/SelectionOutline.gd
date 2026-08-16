@@ -16,10 +16,11 @@ extends Control
 const GLOW_TEXTURE := preload("res://assets/cards/card_sel_glow_ring.png")
 const GLOW_COLOR := Color(0.45, 0.78, 1.0)
 const GLOW_PAD := 10.0
-## Texture is 64x64 with a 10px glow border; 22 keeps the whole falloff
-## (pad + inner edge line) inside the fixed corners, leaving only fully
-## transparent pixels in the stretched middle.
-const PATCH_MARGIN := 22
+## Texture is 256x256 (4x-upscaled from an authored 64x64 with a 10px glow
+## border) with an 88px glow border; 88 keeps the whole falloff (pad + inner
+## edge line) inside the fixed corners, leaving only fully transparent
+## pixels in the stretched middle.
+const PATCH_MARGIN := 88
 
 var rect: Rect2 = Rect2()
 var _patch: NinePatchRect

@@ -759,7 +759,7 @@ func _build_battle_overlay() -> void:
 	rage_quit_banner.texture = load(ASSETS + "battle/battle_ragequit.png")
 	rage_quit_banner.stretch_mode = TextureRect.STRETCH_SCALE
 	rage_quit_banner.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	rage_quit_banner.size = Vector2(rage_quit_banner.texture.get_width(), rage_quit_banner.texture.get_height())
+	rage_quit_banner.size = Vector2(rage_quit_banner.texture.get_width(), rage_quit_banner.texture.get_height()) / 2.0
 	rage_quit_banner.visible = false
 	rage_quit_banner.z_index = 50
 	add_child(rage_quit_banner)
@@ -787,7 +787,7 @@ func _make_vfx(path: String) -> AnimatedSprite2D:
 	sprite.sprite_frames = frames
 	sprite.animation = "play"
 	sprite.centered = true
-	sprite.scale = Vector2(2, 2)
+	sprite.scale = Vector2(1, 1)
 	sprite.visible = false
 
 	# flagSetSrcColorBlend() in the original: these sprite sheets have no
@@ -1762,7 +1762,7 @@ func gsEndStart_Set() -> void:
 	# banner slides in, holds, slides out
 	var banner_tex: Texture2D = load(ASSETS + banner_path)
 	end_banner.texture = banner_tex
-	end_banner.size = Vector2(banner_tex.get_width(), banner_tex.get_height())
+	end_banner.size = Vector2(banner_tex.get_width(), banner_tex.get_height()) / 2.0
 	var banner_y := (SCREEN_H - end_banner.size.y) / 2.0
 	end_banner.position = Vector2(-end_banner.size.x, banner_y)
 	end_banner.visible = true
