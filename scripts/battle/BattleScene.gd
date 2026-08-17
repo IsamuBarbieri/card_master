@@ -706,17 +706,26 @@ static func cursor_size() -> float:
 ## rule then holds for every language.
 const NAME_FONT_SIZE := 30
 const NAME_MIN_FONT_SIZE := 16
-const SCORE_FONT_SIZE := 26
+## Same size as the name. The score line has no turn marker beside it, so it
+## gets the field's full width and can afford it - it was set at 26 and
+## squeezed into the name's leftover column for no reason, which made the
+## caption noticeably the smallest text on the screen.
+const SCORE_FONT_SIZE := NAME_FONT_SIZE
 ## Widest the score's own number needs; the caption takes the rest.
 const SCORE_VALUE_WIDTH := 46.0
 
-## Left edge of the text, past the turn marker.
+## Left edge of the name, past the turn marker.
 static func scoreboard_text_x() -> float:
 	return pergamena_inner().position.x + cursor_size() + CURSOR_GAP
 
 static func scoreboard_text_width() -> float:
 	var inner := pergamena_inner()
 	return inner.size.x - cursor_size() - CURSOR_GAP
+
+## The score line runs the full width of the field, unindented: only the name
+## has to leave room for the marker.
+static func scoreboard_score_caption_width() -> float:
+	return pergamena_inner().size.x - SCORE_VALUE_WIDTH
 
 ## Where the turn marker sits for a player, centred on their name's line.
 static func cursor_row_y(player: int) -> float:
@@ -744,9 +753,10 @@ func _build_player_panel(idx: int, row: int, color: Color) -> void:
 
 	# Score sits on the line under the name: caption on the left, number
 	# right-aligned against the field's edge so 0 and 10 end in the same place.
+	var inner := pergamena_inner()
 	var score_caption := Label.new()
-	score_caption.position = Vector2(text_x, scoreboard_row_y(row + 1))
-	score_caption.size = Vector2(text_w - SCORE_VALUE_WIDTH, row_h)
+	score_caption.position = Vector2(inner.position.x, scoreboard_row_y(row + 1))
+	score_caption.size = Vector2(scoreboard_score_caption_width(), row_h)
 	score_caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	score_caption.clip_text = true
 	score_caption.add_theme_font_override("font", font_stylish)
@@ -761,7 +771,7 @@ func _build_player_panel(idx: int, row: int, color: Color) -> void:
 	UIButtonStyle.fit_button_text(score_caption)
 
 	var score_value := Label.new()
-	score_value.position = Vector2(text_x + text_w - SCORE_VALUE_WIDTH, scoreboard_row_y(row + 1))
+	score_value.position = Vector2(inner.end.x - SCORE_VALUE_WIDTH, scoreboard_row_y(row + 1))
 	score_value.size = Vector2(SCORE_VALUE_WIDTH, row_h)
 	score_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	score_value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER

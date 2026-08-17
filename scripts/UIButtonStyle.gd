@@ -18,6 +18,24 @@ const MARGIN := 21
 const CONTENT_MARGIN := 6
 const ASSETS := "res://assets/"
 
+## Touch has no hover, but Godot's emulated-mouse-from-touch leaves a pointer
+## parked wherever the finger last was. Change scene and whatever sits under
+## that spot in the NEW screen lights up and stays lit, because no exit event
+## is ever coming - tap Options and its Credits button, which happens to cover
+## the same pixels, is highlighted until you touch somewhere else.
+##
+## So on a touch platform the highlight simply isn't offered: `highlight` is
+## returned only where a pointer can really hover and leave again. Checked by
+## platform rather than by DisplayServer.has_feature(FEATURE_MOUSE), which is
+## also false in a headless desktop run and would take the highlight away on
+## PC too; a mouse plugged into a phone is a corner this deliberately ignores.
+static func hover_color(highlight: Color) -> Color:
+	return RESTING_TEXT_COLOR if OS.has_feature("mobile") else highlight
+
+## What every button in this game paints its label: the 9-patch skin is light,
+## and the pressed/no-hover states fall back to it.
+const RESTING_TEXT_COLOR := Color.BLACK
+
 static func apply(btn: Button) -> void:
 	var normal := _make_stylebox("button_9patch_normal.png")
 	btn.add_theme_stylebox_override("normal", normal)
@@ -36,14 +54,14 @@ static func apply(btn: Button) -> void:
 	# each _make_text_button helper so every button in the game answers the
 	# mouse the same way; a caller wanting something else (MainMenu's Online
 	# circle wants gold) just overrides it after calling apply().
-	btn.add_theme_color_override("font_hover_color", Color.WHITE)
-	btn.add_theme_color_override("font_hover_pressed_color", Color.WHITE)
-	# Pressed goes back to the resting colour. Every button in this game draws
-	# black text over the 9-patch, and without this a plain Button falls
-	# through to Godot's own default pressed colour (a pale grey) while a
+	var hover := hover_color(Color.WHITE)
+	btn.add_theme_color_override("font_hover_color", hover)
+	btn.add_theme_color_override("font_hover_pressed_color", hover)
+	# Pressed goes back to the resting colour. Without this a plain Button
+	# falls through to Godot's own default pressed colour (a pale grey) while a
 	# FixedSizeButton falls back to its font_color - so the two behaved
 	# differently on the way down.
-	btn.add_theme_color_override("font_pressed_color", Color.BLACK)
+	btn.add_theme_color_override("font_pressed_color", RESTING_TEXT_COLOR)
 
 static func _make_stylebox(texture_name: String) -> StyleBoxTexture:
 	var sb := StyleBoxTexture.new()

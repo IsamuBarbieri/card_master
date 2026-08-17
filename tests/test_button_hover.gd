@@ -46,6 +46,14 @@ func _ready() -> void:
 		"the shared hover colour is no longer white")
 	btn.free()
 
+	# Touch has no hover to leave, and Godot's emulated mouse stays parked
+	# where the finger was - so on a phone the highlight is not offered at all,
+	# or the button under that spot in the NEXT screen lights up and stays lit.
+	assert(UIButtonStyle.hover_color(Color.WHITE) == Color.WHITE,
+		"the highlight is switched off on this desktop run - it should only go on a touch platform")
+	assert(UIButtonStyle.RESTING_TEXT_COLOR == Color.BLACK,
+		"the no-hover fallback no longer matches what buttons actually paint")
+
 	# ...and the rule has to survive FixedSizeButton, which is what nearly
 	# every text button in the game actually is. It draws its label in a child
 	# Label rather than as native Button text, and a Label has no hover state -

@@ -54,6 +54,19 @@ func _ready() -> void:
 	assert(Battle.scoreboard_text_x() + Battle.scoreboard_text_width() <= inner.end.x + 0.01,
 		"the scoreboard text runs past the field's right edge")
 
+	# 4b. the score caption reads at the same size as the name, in every
+	#     language - it has the field's full width because nothing shares its
+	#     line, so it has no excuse to be the smallest text on the screen.
+	var font: Font = Game.font_stylish
+	var caption_w: float = Battle.scoreboard_score_caption_width()
+	assert(absf(caption_w + _c("SCORE_VALUE_WIDTH") - inner.size.x) < 0.01,
+		"the score line doesn't span the field - it has no turn marker to leave room for, so it should")
+	for lang in StringTable.TABLE.size():
+		var word: String = StringTable.TABLE[lang][StringTable.ID_SCORE]
+		var fitted := UIButtonStyle.fit_text_to_width(word, font, caption_w, _c("SCORE_FONT_SIZE"), 1)
+		assert(fitted >= _c("NAME_FONT_SIZE"),
+			"\"%s\" only fits at %dpx, smaller than the %dpx name beside it" % [word, fitted, _c("NAME_FONT_SIZE")])
+
 	# 5. the opponent's cards fit the gap between the pergamena and the panel,
 	#    which is the whole reason the art was made shorter
 	var stack: Vector2 = Battle.opponent_stack_pos()

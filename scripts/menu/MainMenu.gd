@@ -205,7 +205,8 @@ func _make_online_button() -> Button:
 	btn.add_theme_font_override("font", Game.font_stylish)
 	btn.add_theme_font_size_override("font_size", 36)
 	btn.add_theme_color_override("font_color", ONLINE_TEXT_COLOR)
-	btn.add_theme_color_override("font_hover_color", ONLINE_TEXT_HOVER)
+	# Same touch caveat as every other button - see UIButtonStyle.hover_color.
+	btn.add_theme_color_override("font_hover_color", UIButtonStyle.hover_color(ONLINE_TEXT_HOVER))
 	btn.add_theme_color_override("font_focus_color", ONLINE_TEXT_HOVER)
 	btn.add_theme_color_override("font_pressed_color", ONLINE_TEXT_HOVER)
 	# Gold rim rather than the usual black one: black-on-black would vanish
