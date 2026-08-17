@@ -59,6 +59,8 @@ enum {
 	ID_SLOT_IN_USE,
 	## Countdown shown once an opponent has been found, before the board opens.
 	ID_MATCH_STARTS_IN,
+	## "%d cards were taken from you" - carries a count, so it keeps its %d.
+	ID_CARDS_LOST,
 }
 
 const TABLE := [
@@ -112,6 +114,7 @@ const TABLE := [
 		"Auch dein Online-Konto und deine Ranglistenpunkte werden gelöscht.",
 		"Bereits geöffnet",
 		"Das Duell beginnt in",
+		"%d Karte(n) an Gegner verloren",
 	],
 	# English
 	[
@@ -163,6 +166,7 @@ const TABLE := [
 		"Your online account and leaderboard score are deleted as well.",
 		"Already open",
 		"The challenge begins in",
+		"%d card(s) taken by opponents",
 	],
 	# Español
 	[
@@ -214,6 +218,7 @@ const TABLE := [
 		"También se borran tu cuenta en línea y tu puntuación.",
 		"Ya está abierto",
 		"El desafío empieza en",
+		"%d carta(s) ganada(s) por rivales",
 	],
 	# Français
 	[
@@ -266,6 +271,7 @@ const TABLE := [
 		"Ton compte en ligne et ton classement seront également supprimés.",
 		"Déjà ouvert",
 		"Le défi commence dans",
+		"%d carte(s) prise(s) par des adversaires",
 	],
 	# Italiano
 	[
@@ -318,6 +324,7 @@ const TABLE := [
 		"Verranno cancellati anche il tuo account online e il tuo punteggio.",
 		"Già aperto",
 		"La sfida inizierà tra",
+		"%d carta/e vinta/e dagli avversari",
 	],
 	# Português (Brasil)
 	[
@@ -369,6 +376,7 @@ const TABLE := [
 		"Sua conta online e sua pontuação também serão apagadas.",
 		"Já está aberto",
 		"O desafio começa em",
+		"%d carta(s) levada(s) por adversários",
 	],
 	# Русский
 	[
@@ -420,6 +428,7 @@ const TABLE := [
 		"Ваш онлайн-аккаунт и место в таблице лидеров также будут удалены.",
 		"Уже открыт",
 		"Матч начнётся через",
+		"Соперники забрали карт: %d",
 	],
 	# 日本語 - full retranslation from English (the reference table was mostly
 	# blank placeholders).
@@ -471,6 +480,7 @@ const TABLE := [
 		"オンラインアカウントとランキングの記録も削除されます。",
 		"使用中",
 		"対戦開始まで",
+		"相手に奪われたカード: %d枚",
 	],
 	# 简体中文
 	[
@@ -517,6 +527,7 @@ const TABLE := [
 		"你的在线账号和排行榜成绩也会一并删除。",
 		"已在使用",
 		"对战开始还有",
+		"被对手夺走的卡牌: %d 张",
 	],
 ]
 

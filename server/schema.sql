@@ -761,6 +761,18 @@ begin
 	end if;
 end $$;
 
+-- Every card this account has lost, so a client can reconcile its own save
+-- against the ledger. A player who was disconnected when the prize was taken
+-- - a timeout win is claimed by the winner, possibly long after the loser
+-- closed the game - otherwise keeps the card locally forever while the server
+-- knows it is gone, and every deck containing it is refused.
+create or replace function mp_lost_cards()
+returns jsonb
+language plpgsql security definer set search_path = public as $$
+begin
+	return coalesce((select jsonb_agg(unique_id) from lost_cards where user_id = auth.uid()), '[]'::jsonb);
+end $$;
+
 -- --------------------------------------------------------------- leaderboard
 
 create or replace function mp_leaderboard(p_limit int default 50)
@@ -803,7 +815,7 @@ grant execute on function
 	mp_enqueue(jsonb), mp_dequeue(), mp_current_match(),
 	mp_submit_move(uuid, int, jsonb, text, int, int), mp_fetch_moves(uuid, int),
 	mp_finalize(uuid, jsonb), mp_claim_timeout(uuid), mp_claim_steal(uuid, jsonb),
-	mp_abandon(uuid), mp_leaderboard(int)
+	mp_abandon(uuid), mp_leaderboard(int), mp_lost_cards()
 to authenticated;
 
 -- The only one a player without an account may call - they need it before

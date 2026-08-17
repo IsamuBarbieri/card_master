@@ -2600,16 +2600,29 @@ func _on_lost_by_timeout() -> void:
 ## Minimal end-of-match message for the outcomes that skip the normal end
 ## screens (void, opponent quit) - those screens are built around a finished
 ## board that doesn't exist in either case.
+## Read at arm's length on a phone, so sized like the game's headings rather
+## than like the end panel's usual 25px running text - this is the only thing
+## on screen when it shows, and it is the whole explanation of what just
+## happened to the player's cards.
+const ONLINE_NOTICE_FONT_SIZE := 46
+const ONLINE_NOTICE_MIN_FONT_SIZE := 24
+const ONLINE_NOTICE_SECONDS := 3.0
+
 func _show_online_notice(text: String) -> void:
 	busy = true
 	end_panel.visible = true
 	end_bkg.position.y = 0.0
 	label_central_msg.text = text
 	label_central_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label_central_msg.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	# One line across the 742px box, shrinking only if a translation needs it.
+	label_central_msg.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_width(
+		text, font_stylish, label_central_msg.size.x,
+		ONLINE_NOTICE_FONT_SIZE, ONLINE_NOTICE_MIN_FONT_SIZE))
 	label_central_msg.visible = true
 	label_central_msg.modulate.a = 1.0
 	panel_info.visible = false
-	await get_tree().create_timer(2.5).timeout
+	await get_tree().create_timer(ONLINE_NOTICE_SECONDS).timeout
 
 # Single Button_Done handler shared by all three end flows (matches which
 # one is live via end_flow), same as the reference wiring one ButtonAction

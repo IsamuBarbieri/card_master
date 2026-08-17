@@ -129,6 +129,40 @@ func is_name_available(candidate: String) -> Dictionary:
 		return res
 	return {"ok": true, "available": bool(res["data"])}
 
+## Brings the local collection in line with the server's record of what this
+## account has lost. Returns how many cards were removed.
+##
+## Needed because a card can leave an account while its owner isn't looking: a
+## timeout win is claimed by the winner, which may be long after the loser
+## closed the game. The loser's save kept the card, the server did not, and
+## every deck containing it was refused with "card N no longer belongs to
+## you" - permanently, since there was no path that would ever remove it.
+func reconcile_lost_cards(player: Player) -> int:
+	if not is_signed_in() or player == null:
+		return 0
+	var res := await call_rpc("mp_lost_cards")
+	if not res["ok"] or not (res["data"] is Array):
+		return 0
+
+	var lost := {}
+	for uid in res["data"]:
+		lost[int(uid)] = true
+	if lost.is_empty():
+		return 0
+
+	var removed := 0
+	for i in range(player.cards.size() - 1, -1, -1):
+		if lost.has(player.cards[i].unique_id):
+			player.cards.remove_at(i)
+			removed += 1
+	if removed > 0:
+		# The deck may have been holding one of them.
+		for slot in player.last_deck.size():
+			if lost.has(player.last_deck[slot]):
+				player.last_deck[slot] = -1
+		SaveSystem.save_player(player)
+	return removed
+
 ## Gives the slot's online account back, freeing its name. Called before the
 ## local save is erased - the session file lives inside the slot folder that
 ## erase is about to remove.

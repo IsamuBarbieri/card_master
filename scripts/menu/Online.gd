@@ -143,6 +143,16 @@ func _connect() -> void:
 
 	if not is_inside_tree():
 		return
+
+	# Hand back anything the server says has been won off this account since
+	# we were last here. Done before the player can queue, because a deck
+	# still holding one of those cards is refused outright.
+	var handed_over := await Net.reconcile_lost_cards(Game.player)
+	if not is_inside_tree():
+		return
+	if handed_over > 0 and status_label.text == "":
+		status_label.text = StringTable.get_string(StringTable.ID_CARDS_LOST) % handed_over
+
 	play_button.disabled = false
 	leaderboard_button.disabled = false
 	_refresh_standing()
