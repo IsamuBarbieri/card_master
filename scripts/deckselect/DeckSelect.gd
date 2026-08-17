@@ -249,11 +249,15 @@ func _setup_nav() -> void:
 	var b_y: float = ControllerUI.PROMPT_BAR_Y
 	var a_y: float = b_y - row_h - STACK_GAP
 	var x_y: float = a_y - row_h - STACK_GAP
-	# center=false on all three: left-aligned so every icon sits at the exact
+	var stick_y: float = x_y - row_h - STACK_GAP
+	# center=false on all four: left-aligned so every icon sits at the exact
 	# same x regardless of how long each one's own label is.
 	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), Vector2(STACK_X, b_y), Vector2(STACK_W, row_h), false))
 	add_child(ControllerUI.make_button_hint(&"A", StringTable.get_string(StringTable.ID_ADD_REMOVE), Vector2(STACK_X, a_y), Vector2(STACK_W, row_h), false))
 	add_child(ControllerUI.make_button_hint(&"X", StringTable.get_string(StringTable.ID_FAVORITE), Vector2(STACK_X, x_y), Vector2(STACK_W, row_h), false))
+	# Right stick spins the focused wheel (_process_wheel_stick below) - has
+	# no button/key equivalent, so this is its only on-screen indication.
+	add_child(ControllerUI.make_button_hint(&"RSTICK", StringTable.get_string(StringTable.ID_BROWSE), Vector2(STACK_X, stick_y), Vector2(STACK_W, row_h), false))
 
 ## Called at setup and again after anything that can empty a wheel (staging
 ## a card into the deck, toggling favourite) - if the CURRENTLY focused item
@@ -790,9 +794,15 @@ func _process(delta: float) -> void:
 		launch_battle_delay -= delta
 		if launch_battle_delay <= 0.0:
 			launch_battle_delay = 0.0
-			Game.player.match_started = true
-			SaveSystem.save_player(Game.player)
-			get_tree().change_scene_to_file("res://scenes/battle/BattleScene.tscn")
+			if Game.online_mode:
+				# Online there is no battle to start yet - the deck goes to the
+				# server for validation and matchmaking first, and match_started
+				# is set once an opponent has actually been found.
+				get_tree().change_scene_to_file("res://scenes/menu/Matchmaking.tscn")
+			else:
+				Game.player.match_started = true
+				SaveSystem.save_player(Game.player)
+				get_tree().change_scene_to_file("res://scenes/battle/BattleScene.tscn")
 
 # --------------------------------------------------------- WaitingInput ---
 
@@ -1103,7 +1113,10 @@ func _on_back_pressed() -> void:
 	# the in-progress deck selection was silently lost on every "Back".
 	_sync_last_deck()
 	SaveSystem.save_player(Game.player)
-	get_tree().change_scene_to_file("res://scenes/menu/Opponents.tscn")
+	if Game.online_mode:
+		get_tree().change_scene_to_file("res://scenes/menu/Online.tscn")
+	else:
+		get_tree().change_scene_to_file("res://scenes/menu/Opponents.tscn")
 
 func _sync_last_deck() -> void:
 	for i in 5:

@@ -52,6 +52,7 @@ const GLYPH_PATHS := {
 	&"RB": "res://assets/prompts/xbox_rb.png",
 	&"START": "res://assets/prompts/xbox_button_menu.png",
 	&"DPAD": "res://assets/prompts/xbox_dpad.png",
+	&"RSTICK": "res://assets/prompts/xbox_stick_r.png",
 }
 
 const PROMPT_GLYPH_SIZE := Vector2(34, 34)

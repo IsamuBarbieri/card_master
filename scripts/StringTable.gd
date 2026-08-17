@@ -37,6 +37,11 @@ enum {
 	ID_WINS, ID_LAST_SAVED, ID_OWNED, ID_PAGE,
 	ID_PAUSE, ID_RESUME, ID_FORFEIT, ID_PAD_TO_START, ID_ADD_REMOVE, ID_SWITCH,
 	ID_FAVORITE, ID_CHOOSE, ID_CONFIRM,
+	# Online multiplayer.
+	ID_ONLINE, ID_LEADERBOARD, ID_SEARCHING_OPPONENT, ID_DECK_POWER,
+	ID_OPPONENT_TURN, ID_MATCH_VOIDED, ID_OPPONENT_QUIT, ID_ONLINE_ERROR,
+	ID_ONLINE_NO_REWARD, ID_RANK, ID_LOST_BY_QUIT,
+	ID_BROWSE,
 }
 
 const TABLE := [
@@ -79,6 +84,11 @@ const TABLE := [
 		"Favorit",
 		"Wählen",
 		"Bestätigen",
+		"Online", "Rangliste", "Suche Gegner...", "Deckstärke",
+		"Gegner ist am Zug...", "Partie annulliert", "Gegner hat aufgegeben",
+		"Keine Verbindung", "Online-Kämpfe bringen kein Geld", "Platz",
+		"Durch Aufgeben verloren",
+		"Blättern",
 	],
 	# English
 	[
@@ -119,6 +129,11 @@ const TABLE := [
 		"Favorite",
 		"Choose",
 		"Confirm",
+		"Online", "Leaderboard", "Looking for an opponent...", "Deck Power",
+		"Opponent's turn...", "Match voided", "The opponent quit",
+		"No connection", "Online battles earn no coins", "Rank",
+		"Lost by quitting",
+		"Browse",
 	],
 	# Español
 	[
@@ -159,6 +174,11 @@ const TABLE := [
 		"Favorita",
 		"Elegir",
 		"Confirmar",
+		"En línea", "Clasificación", "Buscando rival...", "Poder del mazo",
+		"Turno del rival...", "Partida anulada", "El rival ha abandonado",
+		"Sin conexión", "Los combates en línea no dan monedas", "Puesto",
+		"Perdida por abandono",
+		"Explorar",
 	],
 	# Français
 	[
@@ -200,6 +220,11 @@ const TABLE := [
 		"Favori",
 		"Choisir",
 		"Confirmer",
+		"En ligne", "Classement", "Recherche d'un adversaire...", "Puissance du deck",
+		"Tour de l'adversaire...", "Partie annulée", "L'adversaire a abandonné",
+		"Pas de connexion", "Les combats en ligne ne rapportent pas d'argent", "Rang",
+		"Perdue par abandon",
+		"Parcourir",
 	],
 	# Italiano
 	[
@@ -241,6 +266,11 @@ const TABLE := [
 		"Preferita",
 		"Scegli",
 		"Conferma",
+		"Online", "Classifica", "Ricerca avversario...", "Potere del mazzo",
+		"Turno dell'avversario...", "Partita annullata", "L'avversario ha abbandonato",
+		"Nessuna connessione", "Le sfide online non danno monete", "Posizione",
+		"Persa per abbandono",
+		"Sfoglia",
 	],
 	# Português (Brasil)
 	[
@@ -281,6 +311,11 @@ const TABLE := [
 		"Favorita",
 		"Escolher",
 		"Confirmar",
+		"Online", "Classificação", "Procurando adversário...", "Poder do baralho",
+		"Vez do adversário...", "Partida anulada", "O adversário desistiu",
+		"Sem conexão", "Batalhas online não dão moedas", "Posição",
+		"Perdida por desistência",
+		"Navegar",
 	],
 	# Русский
 	[
@@ -321,6 +356,11 @@ const TABLE := [
 		"Избранная",
 		"Выбрать",
 		"Подтвердить",
+		"Онлайн", "Таблица лидеров", "Поиск соперника...", "Сила колоды",
+		"Ход соперника...", "Матч аннулирован", "Соперник вышел из игры",
+		"Нет соединения", "Онлайн-бои не приносят монет", "Место",
+		"Поражение из-за выхода",
+		"Просмотр",
 	],
 	# 日本語 - full retranslation from English (the reference table was mostly
 	# blank placeholders).
@@ -361,6 +401,11 @@ const TABLE := [
 		"お気に入り",
 		"選ぶ",
 		"確定",
+		"オンライン", "ランキング", "対戦相手を探しています...", "デッキパワー",
+		"相手のターン...", "対戦は無効になりました", "相手が退出しました",
+		"接続できません", "オンライン対戦ではお金を獲得できません", "順位",
+		"途中退出により敗北",
+		"閲覧",
 	],
 	# 简体中文
 	[
@@ -396,6 +441,11 @@ const TABLE := [
 		"收藏",
 		"选择",
 		"确认",
+		"在线", "排行榜", "正在寻找对手...", "卡组强度",
+		"对手的回合...", "本局已作废", "对手已退出",
+		"无法连接", "在线对战不会获得金币", "排名",
+		"因退出而判负",
+		"浏览",
 	],
 ]
 

@@ -248,6 +248,10 @@ func _setup_nav() -> void:
 	add_child(ControllerUI.make_button_hint(&"A", StringTable.get_string(StringTable.ID_SELECT), Vector2(42, base_y), HINT_SIZE, false))
 	add_child(ControllerUI.make_button_hint(&"X", StringTable.get_string(StringTable.ID_CANCEL), Vector2(42, base_y - ControllerUI.HINT_ROW_HEIGHT - 4), HINT_SIZE, false))
 	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), Vector2(180, base_y), HINT_SIZE))
+	# Right stick spins the focused wheel (_process_wheel_stick below) - has
+	# no button/key equivalent, so this is its only on-screen indication.
+	# Stacked above B, second column, mirroring X above A in the first.
+	add_child(ControllerUI.make_button_hint(&"RSTICK", StringTable.get_string(StringTable.ID_BROWSE), Vector2(180, base_y - ControllerUI.HINT_ROW_HEIGHT - 4), HINT_SIZE, false))
 
 func _on_nav_activated(item: FocusNav.NavItem) -> void:
 	if game_state != GameState.WAITING_INPUT:
