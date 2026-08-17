@@ -36,12 +36,58 @@ const HAND_POSITIONS := [
 	Vector2(718, 283), Vector2(826, 348),
 ]
 
-# BattleScene.cs's small opponent-hand stack (quadPlayer1Cards). Centered
-# in the empty gap between the pergamena panel's bottom edge (y=4+282=286)
-# and the card-stats panel's top (info_name.position.y=340) -> y=313.
-const OPPONENT_STACK_POS := Vector2(70, 305)
+# --------------------------------------------------- left column geometry
+#
+# The left column is three stacked things: the pergamena scoreboard, the
+# opponent's remaining cards, and the card-stats panel. All three are derived
+# below rather than written down as pixel positions, because they have moved
+# under each other twice already - once when the stats panel grew, and again
+# when the pergamena art was reproportioned - and hand-placed numbers give no
+# warning when they start overlapping.
+
+const PERGAMENA_POS := Vector2(0, 4)
+const PERGAMENA_WIDTH := 280.0
+## The flat writable field inside the scroll's rolled edges, as a fraction of
+## the texture, measured off battle_pergamena.png. Fractions rather than
+## pixels so re-exporting the art at another size needs no changes here.
+const PERGAMENA_INNER := Rect2(0.146, 0.166, 0.664, 0.663)
+## Top edge of the card-stats panel below (its TextureRect is drawn at
+## y=282); the opponent's cards live in the gap above it.
+const INFO_PANEL_TOP := 282.0
+
+# BattleScene.cs's small opponent-hand stack (quadPlayer1Cards). X/Y is each
+# card's CENTRE, not its corner.
 const OPPONENT_STACK_STEP := 35.0
 const OPPONENT_CARD_SCALE := 0.45
+const OPPONENT_STACK_X := 70.0
+
+## Height that keeps the pergamena art at its own aspect. Drawing it into a
+## fixed box squashed it the moment the source stopped being roughly square.
+static func pergamena_size() -> Vector2:
+	var tex: Texture2D = load(ASSETS + "battle/battle_pergamena.png")
+	return Vector2(PERGAMENA_WIDTH, PERGAMENA_WIDTH * tex.get_height() / tex.get_width())
+
+## The scoreboard's usable field, in screen pixels.
+static func pergamena_inner() -> Rect2:
+	var s := pergamena_size()
+	return Rect2(
+		PERGAMENA_POS + Vector2(PERGAMENA_INNER.position.x * s.x, PERGAMENA_INNER.position.y * s.y),
+		Vector2(PERGAMENA_INNER.size.x * s.x, PERGAMENA_INNER.size.y * s.y))
+
+## Centre of the first opponent card: vertically centred in the gap the
+## shorter pergamena opens up above the stats panel.
+static func opponent_stack_pos() -> Vector2:
+	var gap_top := PERGAMENA_POS.y + pergamena_size().y
+	return Vector2(OPPONENT_STACK_X, (gap_top + INFO_PANEL_TOP) / 2.0)
+
+## The scoreboard's four lines - name and score for each player - evenly
+## filling the pergamena's field.
+static func scoreboard_row_y(row: int) -> float:
+	var inner := pergamena_inner()
+	return inner.position.y + row * (inner.size.y / 4.0)
+
+static func scoreboard_row_height() -> float:
+	return pergamena_inner().size.y / 4.0
 
 # gsBattle.cs timings.
 const BATTLE_RUMBLE_TIME := 0.6
@@ -608,8 +654,8 @@ func _build_ui() -> void:
 	pergamena.texture = load(ASSETS + "battle/battle_pergamena.png")
 	pergamena.stretch_mode = TextureRect.STRETCH_SCALE
 	pergamena.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	pergamena.position = Vector2(0, 4)
-	pergamena.size = Vector2(280, 282)
+	pergamena.position = PERGAMENA_POS
+	pergamena.size = pergamena_size()
 	add_child(pergamena)
 
 	# Was battle_marmo.png, a marble slab unique to this screen. Swapped for
@@ -629,13 +675,14 @@ func _build_ui() -> void:
 	turn_cursor.texture = load(ASSETS + "battle/battle_cursor.png")
 	turn_cursor.stretch_mode = TextureRect.STRETCH_SCALE
 	turn_cursor.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	turn_cursor.position = Vector2(12, 23)
-	turn_cursor.size = Vector2(48, 48)
+	turn_cursor.position = Vector2(pergamena_inner().position.x, cursor_row_y(0))
+	turn_cursor.size = Vector2(cursor_size(), cursor_size())
 	turn_cursor.visible = false
 	add_child(turn_cursor)
 
-	_build_player_panel(0, 23, COLOR_P0)
-	_build_player_panel(1, 125, COLOR_P1)
+	# Rows 0/1 are the player's name and score, rows 2/3 the opponent's.
+	_build_player_panel(0, 0, COLOR_P0)
+	_build_player_panel(1, 2, COLOR_P1)
 	_build_card_info_panel()
 	_build_board()
 	_build_hand()
@@ -644,21 +691,46 @@ func _build_ui() -> void:
 	_build_end_panel()
 	_build_audio()
 
-## Widest a name may render inside the pergamena. The panel is 280px wide and
-## the label starts at x=60, leaving 220 minus a margin so a long name stops
-## short of the parchment's painted edge instead of spilling onto the board.
-const NAME_LABEL_WIDTH := 208.0
-const NAME_FONT_SIZE := 36
+## Gap between the turn marker and the text it points at.
+const CURSOR_GAP := 6.0
+## Share of a scoreboard line the turn marker fills. Derived rather than fixed
+## at the 48px it used to be: the field is shorter and narrower now, and a
+## marker taller than its own line hangs into the one above it.
+const CURSOR_ROW_SHARE := 0.9
+
+static func cursor_size() -> float:
+	return scoreboard_row_height() * CURSOR_ROW_SHARE
 ## Names are player-entered (StartMenu caps the field at 20 characters), so
 ## fitting is done by shrinking the font rather than counting characters -
 ## twenty W's and twenty i's are nothing like the same width, and the same
 ## rule then holds for every language.
-const NAME_MIN_FONT_SIZE := 18
+const NAME_FONT_SIZE := 30
+const NAME_MIN_FONT_SIZE := 16
+const SCORE_FONT_SIZE := 26
+## Widest the score's own number needs; the caption takes the rest.
+const SCORE_VALUE_WIDTH := 46.0
 
-func _build_player_panel(idx: int, y: int, color: Color) -> void:
+## Left edge of the text, past the turn marker.
+static func scoreboard_text_x() -> float:
+	return pergamena_inner().position.x + cursor_size() + CURSOR_GAP
+
+static func scoreboard_text_width() -> float:
+	var inner := pergamena_inner()
+	return inner.size.x - cursor_size() - CURSOR_GAP
+
+## Where the turn marker sits for a player, centred on their name's line.
+static func cursor_row_y(player: int) -> float:
+	return scoreboard_row_y(player * 2) + (scoreboard_row_height() - cursor_size()) / 2.0
+
+func _build_player_panel(idx: int, row: int, color: Color) -> void:
+	var text_x := scoreboard_text_x()
+	var text_w := scoreboard_text_width()
+	var row_h := scoreboard_row_height()
+
 	var name_label := Label.new()
-	name_label.position = Vector2(60, y)
-	name_label.size = Vector2(NAME_LABEL_WIDTH, NAME_FONT_SIZE + 8)
+	name_label.position = Vector2(text_x, scoreboard_row_y(row))
+	name_label.size = Vector2(text_w, row_h)
+	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	name_label.clip_text = true
 	name_label.add_theme_font_override("font", font_stylish)
 	name_label.add_theme_font_size_override("font_size", NAME_FONT_SIZE)
@@ -670,20 +742,31 @@ func _build_player_panel(idx: int, y: int, color: Color) -> void:
 	add_child(name_label)
 	name_labels.append(name_label)
 
+	# Score sits on the line under the name: caption on the left, number
+	# right-aligned against the field's edge so 0 and 10 end in the same place.
 	var score_caption := Label.new()
-	score_caption.position = Vector2(82, y + 51)
+	score_caption.position = Vector2(text_x, scoreboard_row_y(row + 1))
+	score_caption.size = Vector2(text_w - SCORE_VALUE_WIDTH, row_h)
+	score_caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	score_caption.clip_text = true
 	score_caption.add_theme_font_override("font", font_stylish)
-	score_caption.add_theme_font_size_override("font_size", 36)
+	score_caption.add_theme_font_size_override("font_size", SCORE_FONT_SIZE)
 	score_caption.add_theme_color_override("font_color", color)
 	score_caption.add_theme_color_override("font_outline_color", Color.BLACK)
 	score_caption.add_theme_constant_override("outline_size", 3)
-	score_caption.text = "Score"
+	# Was the hardcoded English "Score" - the last untranslated text left on
+	# this screen after the stat captions were fixed.
+	score_caption.text = StringTable.get_string(StringTable.ID_SCORE)
 	add_child(score_caption)
+	UIButtonStyle.fit_button_text(score_caption)
 
 	var score_value := Label.new()
-	score_value.position = Vector2(184, y + 51)
+	score_value.position = Vector2(text_x + text_w - SCORE_VALUE_WIDTH, scoreboard_row_y(row + 1))
+	score_value.size = Vector2(SCORE_VALUE_WIDTH, row_h)
+	score_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	score_value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	score_value.add_theme_font_override("font", font_stylish)
-	score_value.add_theme_font_size_override("font_size", 36)
+	score_value.add_theme_font_size_override("font_size", SCORE_FONT_SIZE)
 	score_value.add_theme_color_override("font_color", color)
 	score_value.add_theme_color_override("font_outline_color", Color.BLACK)
 	score_value.add_theme_constant_override("outline_size", 3)
@@ -708,7 +791,7 @@ func _panel_name(idx: int) -> String:
 func _set_panel_name(label: Label, text: String) -> void:
 	label.text = text
 	label.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_width(
-		text, font_stylish, NAME_LABEL_WIDTH, NAME_FONT_SIZE, NAME_MIN_FONT_SIZE))
+		text, font_stylish, scoreboard_text_width(), NAME_FONT_SIZE, NAME_MIN_FONT_SIZE))
 
 # Clear interior of the common_transp_box_a.png panel drawn at (14,282)
 # 248x256 - the box has a thin border, so ten pixels of inset on each side is
@@ -1237,7 +1320,7 @@ func _refresh_hands() -> void:
 		back.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		# quadPlayer1Cards uses flagSetTransformPivotAtCenter() in the
 		# original, i.e. X/Y is the card's CENTER, not its top-left corner.
-		back.position = OPPONENT_STACK_POS + Vector2(i * OPPONENT_STACK_STEP, 0) - back_size / 2.0
+		back.position = opponent_stack_pos() + Vector2(i * OPPONENT_STACK_STEP, 0) - back_size / 2.0
 		back.size = back_size
 		opponent_stack.add_child(back)
 
@@ -1343,7 +1426,7 @@ func gsCoinToss_Set() -> void:
 	coin_sprite.texture = coin_blue_tex if player0_wins else coin_red_tex
 	coin_sprite.scale = Vector2(1, 1)
 
-	var target: Vector2 = HAND_POSITIONS[1] if player0_wins else OPPONENT_STACK_POS
+	var target: Vector2 = HAND_POSITIONS[1] if player0_wins else opponent_stack_pos()
 	var tw2 := create_tween()
 	tw2.set_parallel(true)
 	tw2.tween_property(coin_sprite, "position", target, COIN_TOSS_MOVE_LIFE) \
@@ -1397,7 +1480,7 @@ func gsPlayerTurn_Set() -> void:
 	busy = false
 	turn_cursor.visible = true
 	var tw := create_tween()
-	tw.tween_property(turn_cursor, "position:y", 23.0, 0.35) \
+	tw.tween_property(turn_cursor, "position:y", cursor_row_y(0), 0.35) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_focus_first_hand_card()
 
@@ -1548,7 +1631,7 @@ func gsCPUTurn_Set() -> void:
 	active_player = 1
 	busy = true
 	var tw := create_tween()
-	tw.tween_property(turn_cursor, "position:y", 125.0, 0.35) \
+	tw.tween_property(turn_cursor, "position:y", cursor_row_y(1), 0.35) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 	await get_tree().create_timer(0.5).timeout
@@ -1587,7 +1670,7 @@ func gsCPUTurn_Set() -> void:
 	ghost.stretch_mode = TextureRect.STRETCH_SCALE
 	ghost.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	var ghost_size := Vector2(CARD_W, CARD_H) * OPPONENT_CARD_SCALE
-	ghost.position = OPPONENT_STACK_POS + Vector2((idle_count - 1) * OPPONENT_STACK_STEP, 0) - ghost_size / 2.0
+	ghost.position = opponent_stack_pos() + Vector2((idle_count - 1) * OPPONENT_STACK_STEP, 0) - ghost_size / 2.0
 	ghost.size = ghost_size
 	ghost.pivot_offset = ghost.size / 2.0
 	add_child(ghost)
