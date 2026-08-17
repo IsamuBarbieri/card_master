@@ -1403,7 +1403,8 @@ func gsPreBattle_Set(last_placed: Card) -> void:
 ##      what gives the chain real risk instead of being deterministic
 ##      once arrows happen to line up.
 ## `depth` counts consecutive battle wins in this lineage (0 = the initial
-## placement, not yet a chain - a Chain popup only starts once it reaches 2).
+## placement, not yet a chain - gsBattle_Set's Chain popup starts once a
+## fight happens at depth >= 1, win or lose, marking it as chain-driven).
 func gsResolveCardTurn_Set(card: Card, depth: int) -> void:
 	var simple := board.get_capturable_cards(card)
 	if not simple.is_empty():
@@ -1415,9 +1416,24 @@ func gsResolveCardTurn_Set(card: Card, depth: int) -> void:
 		# just placing a card next to undefended neighbors - depth 0 (the
 		# initial placement) still captures them, just silently, same as
 		# any other ordinary capture.
-		if card.owner == 0 and depth >= 1:
-			await _show_chain_text(card, "Combo", simple.size())
-		await _capture_batch(card, simple)
+		if depth >= 1:
+			# Popup started (not awaited yet) so it plays alongside the
+			# capture flip instead of blocking it; both are still waited on
+			# below so nothing after this can touch the shared chain_label
+			# before the popup is done. This always finishes well before
+			# gsBattle_Set's own Chain popup (started next, in
+			# gsBattleChainBattle_Set below) could possibly need the same
+			# label - Combo for this card is chosen first, in card order,
+			# and a real battle takes far longer than the ~1.2s popup cycle.
+			var combo_tw := _start_chain_text(card, "Combo", simple.size())
+			await _capture_batch(card, simple)
+			# See gsBattle_Set's matching guard: only await a tween that's
+			# still actually running - an already-finished one's `finished`
+			# signal already fired and would never wake this up.
+			if combo_tw.is_valid():
+				await combo_tw.finished
+		else:
+			await _capture_batch(card, simple)
 
 	await gsBattleChainBattle_Set(card, depth, [])
 
@@ -1480,9 +1496,30 @@ func _on_slot_pressed(row: int, col: int) -> void:
 func gsBattle_Set(card0: Card, card1: Card, depth: int, tied: Array) -> void:
 	var result := GsBattle.resolve_battle(card0, card1)
 
+	# Chain marks WHY this fight is happening - card0 didn't get placed here
+	# by the player, it's fighting on because it won its way here - so it
+	# shows for any depth >= 1 battle regardless of outcome, win or lose,
+	# not just the ones that extend the chain further. Started now (not
+	# awaited yet) so the popup runs alongside the whole battle
+	# (rumble/countdown/capture) instead of only appearing once it's all
+	# over. `depth` (not depth+1) is the popup's count: this is the
+	# (depth+1)th consecutive fight, and the FIRST time that's worth
+	# marking is depth==1 -> plain "Chain", depth==2 -> "Chain x2".
+	var chain_tw: Tween = null
+	if depth >= 1:
+		chain_tw = _start_chain_text(card0, "Chain", depth)
+
 	await gsBattle_StartRumble(card0, card1, result)
 	await gsBattle_Countdown(card0, card1, result)
 	await gsBattle_End(card0, card1, result, depth, tied)
+
+	# The battle above (2s+) outlasts the ~1.2s popup, so by now chain_tw has
+	# normally already finished and gone invalid - awaiting its `finished`
+	# signal at that point would hang forever (it already fired once, and a
+	# Signal await only catches a FUTURE emission). is_valid() is false once
+	# a Tween completes, so only await one that's still genuinely running.
+	if chain_tw != null and chain_tw.is_valid():
+		await chain_tw.finished
 
 func gsBattle_StartRumble(card0: Card, card1: Card, result: Dictionary) -> void:
 	var view0: CardView = board_card_views[card0.row][card0.col]
@@ -1612,12 +1649,6 @@ func gsBattle_End(card0: Card, card1: Card, result: Dictionary, depth: int, tied
 	# other candidates it might have had; the moment it wins, focus shifts
 	# entirely to what it just captured.
 	var new_depth := depth + 1
-	if new_depth >= 2 and winner.owner == 0:
-		# Always awaited so Chain fully finishes before anything else -
-		# the new epicenter's own Combo/Chain popups on the same label
-		# node, or the next battle in this lineage - can start.
-		await _show_chain_text(winner, "Chain", new_depth)
-
 	await gsResolveCardTurn_Set(loser, new_depth)
 
 # --------------------------------------------------------------- captures
@@ -1695,7 +1726,13 @@ func _capture_batch(attacker: Card, cards: Array) -> void:
 const COMBO_COLOR := Color(1, 0.85, 0.1)  # gold - single-level, the smaller event
 const CHAIN_COLOR := Color(1, 0.35, 0.05)  # hot orange-red - reaches a 2nd level, the bigger event
 
-func _show_chain_text(winner: Card, label_word: String, count: int) -> void:
+## Ordinary (non-coroutine) function, not "_show_chain_text" - GDScript can't
+## call a coroutine without awaiting it, but callers here need to start the
+## popup and run something else (an animation) alongside it, so this hands
+## back the still-running Tween instead of awaiting internally. Callers
+## `await result.finished` once they're ready to make sure the popup is done
+## before touching chain_label again (see gsResolveCardTurn_Set).
+func _start_chain_text(winner: Card, label_word: String, count: int) -> Tween:
 	var pos := _board_cell_pos(winner.row, winner.col) + Vector2(CARD_W, CARD_H) / 2.0
 	chain_label.text = label_word if count == 1 else "%s x%d" % [label_word, count]
 	chain_label.add_theme_color_override("font_color", CHAIN_COLOR if label_word == "Chain" else COMBO_COLOR)
@@ -1714,8 +1751,8 @@ func _show_chain_text(winner: Card, label_word: String, count: int) -> void:
 	tw.parallel().tween_property(chain_label, "position:x", pos.x, 0.3)
 	tw.tween_interval(0.6)
 	tw.tween_property(chain_label, "modulate:a", 0.0, 0.3)
-	await tw.finished
-	chain_label.visible = false
+	tw.tween_callback(func(): chain_label.visible = false)
+	return tw
 
 # ------------------------------------------------------------------- turns
 
