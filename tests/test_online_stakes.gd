@@ -221,9 +221,17 @@ func _close_stale_match() -> void:
 	_use(SLOT_B)
 	await Net.call_rpc("mp_claim_timeout", {"p_match": stale})
 
+## The standings only list accounts that have finished a match, so a fresh one
+## has no row - it is on the starting rating, not on some sentinel. Returning
+## -1 there made the "the winner's Elo went up" check pass against anything at
+## all the first time an account played.
+const STARTING_ELO := 1200
+
 func _elo(slot: int) -> int:
 	_use(slot)
 	var lb = await Net.call_rpc("mp_leaderboard", {"p_limit": 1})
-	if not lb["ok"] or not (lb["data"].get("self") is Dictionary):
+	if not lb["ok"]:
 		return -1
+	if not (lb["data"].get("self") is Dictionary):
+		return STARTING_ELO
 	return int(lb["data"]["self"]["elo"])
