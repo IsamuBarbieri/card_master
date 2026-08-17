@@ -1013,7 +1013,7 @@ func _build_battle_overlay() -> void:
 	# a real outline (not a 1px shadow) holds contrast against any
 	# background, and font size roughly doubles the level-up text's.
 	chain_label = Label.new()
-	chain_label.add_theme_font_override("font", font_stylish)
+	chain_label.add_theme_font_override("font", font_title)
 	chain_label.add_theme_font_size_override("font_size", 48)
 	chain_label.add_theme_color_override("font_color", Color(1, 0.85, 0.1))
 	chain_label.add_theme_color_override("font_outline_color", Color.BLACK)

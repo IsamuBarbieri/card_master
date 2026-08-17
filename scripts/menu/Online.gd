@@ -62,7 +62,7 @@ func _ready() -> void:
 
 	# Black at MainMenu's own button size (46), not this screen's smaller body
 	# size, so the heading matches "Shop"/"Options" wherever they appear.
-	var title := _make_label(Vector2(348, 20), Vector2(264, 47), font_stylish)
+	var title := _make_label(Vector2(348, 20), Vector2(264, 47), Game.font_title)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", TITLE_FONT_SIZE)

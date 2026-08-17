@@ -138,7 +138,7 @@ func _process(delta: float) -> void:
 			cat_sprite.play("idle")
 
 func _make_menu_button(label: String, texture_name: String, pos: Vector2, size: Vector2, on_pressed: Callable) -> Button:
-	var font_stylish: Font = Game.font_stylish
+	var font_stylish: Font = Game.font_title
 	var btn := Button.new()
 	UIButtonStyle.apply(btn)
 	btn.text = label
@@ -202,7 +202,7 @@ func _make_online_button() -> Button:
 	btn.text = StringTable.get_string(StringTable.ID_ONLINE)
 	btn.position = ONLINE_BUTTON_POS
 	btn.size = Vector2(ONLINE_BUTTON_SIZE, ONLINE_BUTTON_SIZE)
-	btn.add_theme_font_override("font", Game.font_stylish)
+	btn.add_theme_font_override("font", Game.font_title)
 	btn.add_theme_font_size_override("font_size", 36)
 	btn.add_theme_color_override("font_color", ONLINE_TEXT_COLOR)
 	# Same touch caveat as every other button - see UIButtonStyle.hover_color.

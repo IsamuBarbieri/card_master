@@ -31,8 +31,8 @@ const STAT_OUTLINE := 2
 # STAT_AREA_LEFT..RIGHT. tests/test_card_stat_fit.gd measures that against the
 # real font and fails if a font or asset change ever makes it overflow, so
 # this is a checked number rather than an eyeballed one.
-const STAT_FONT_SIZE := 25
-const STAT_FONT_SIZE_HEIGHT := 29
+const STAT_FONT_SIZE := 28
+const STAT_FONT_SIZE_HEIGHT := 32
 
 # Normalized (0..1) rects, in arrow order N,NE,E,SE,S,SW,W,NW - matches
 # CardManager.cs's dirsVertices/dirsTexcoords (same rect used for position

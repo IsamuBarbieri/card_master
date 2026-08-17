@@ -69,7 +69,7 @@ func _ready() -> void:
 	title.size = Vector2(359, 47)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	title.add_theme_font_override("font", Game.font_stylish)
+	title.add_theme_font_override("font", Game.font_title)
 	title.add_theme_font_size_override("font_size", 46)
 	title.add_theme_color_override("font_color", Color.BLACK)
 	title.text = StringTable.get_string(StringTable.ID_LEADERBOARD)
