@@ -114,6 +114,11 @@ func _search() -> void:
 			_start_match(poll["data"]["match"])
 			return
 
+## Seconds between "opponent found" and the board opening. The screen would
+## otherwise cut straight from a spinner to a live match with a clock already
+## running, giving the player no moment to register that a game had started.
+const START_COUNTDOWN := 3
+
 func _start_match(m: Dictionary) -> void:
 	searching = false
 	# JSON numbers arrive as floats; every downstream consumer (BattleRng's
@@ -135,6 +140,17 @@ func _start_match(m: Dictionary) -> void:
 
 	Game.player.match_started = true
 	SaveSystem.save_player(Game.player)
+
+	# The two clients are matched a moment apart (one of them found out by
+	# polling), so their countdowns aren't in step - which doesn't matter:
+	# whoever arrives first simply waits for a move, as it would anyway.
+	elapsed_label.text = ""
+	power_label.text = Game.online_match.get("opponent_name", "")
+	for remaining in range(START_COUNTDOWN, 0, -1):
+		status_label.text = "%s %d" % [StringTable.get_string(StringTable.ID_MATCH_STARTS_IN), remaining]
+		await get_tree().create_timer(1.0).timeout
+		if not is_inside_tree():
+			return
 	get_tree().change_scene_to_file("res://scenes/battle/BattleScene.tscn")
 
 func _bail(message: String) -> void:

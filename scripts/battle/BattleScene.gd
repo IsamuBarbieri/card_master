@@ -292,31 +292,28 @@ func _ready() -> void:
 ## to the server's move clock, and a board that just sits there reads as a
 ## freeze. Built here rather than in _build_ui because it only ever exists in
 ## an online match.
-func _build_online_wait_label() -> void:
-	online_wait_label = Label.new()
-	# Along the bottom edge: the top of the board is where the opponent's card
-	# flies in from, and a banner sitting there was covering the one thing the
-	# player is waiting to watch.
-	online_wait_label.position = Vector2(0, SCREEN_H - 34)
-	online_wait_label.size = Vector2(SCREEN_W, 30)
-	online_wait_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	online_wait_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	online_wait_label.add_theme_font_override("font", font_info)
-	online_wait_label.add_theme_font_size_override("font_size", 22)
-	online_wait_label.add_theme_color_override("font_color", Color(1, 0.9, 0.6))
-	online_wait_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	online_wait_label.add_theme_constant_override("outline_size", 4)
-	online_wait_label.text = StringTable.get_string(StringTable.ID_OPPONENT_TURN)
-	online_wait_label.visible = false
-	add_child(online_wait_label)
+## Both online captions live in the strip under the hand: the five hand slots
+## zig-zag between x=718 and x=826 (HAND_POSITIONS) and the lowest card ends
+## at y=348+128=476, leaving this band free. The clock sits on top with the
+## turn message directly beneath it, both centred on the same column.
+const ONLINE_STRIP_TOP := 478.0
+const ONLINE_TIMER_HEIGHT := 32.0
+const ONLINE_WAIT_HEIGHT := 30.0
+const ONLINE_WAIT_FONT_SIZE := 18
+const ONLINE_WAIT_MIN_FONT_SIZE := 12
 
-	# Turn clock, in the gap under the hand: the five hand slots zig-zag
-	# between x=718 and x=826 (HAND_POSITIONS), so this spans that whole band
-	# and centres in it, sitting below the lowest card (y=348+128=476).
-	# Black, like the rest of the text painted on the board surface.
+static func online_strip_x() -> float:
+	return HAND_POSITIONS[1].x
+
+static func online_strip_width() -> float:
+	return HAND_POSITIONS[0].x + CARD_W - HAND_POSITIONS[1].x
+
+func _build_online_wait_label() -> void:
+	# Turn clock. Black, like the rest of the text painted on the board
+	# surface. Bare seconds - the trailing " read as an inch mark.
 	online_timer_label = Label.new()
-	online_timer_label.position = Vector2(HAND_POSITIONS[1].x, 482)
-	online_timer_label.size = Vector2(HAND_POSITIONS[0].x + CARD_W - HAND_POSITIONS[1].x, 44)
+	online_timer_label.position = Vector2(online_strip_x(), ONLINE_STRIP_TOP)
+	online_timer_label.size = Vector2(online_strip_width(), ONLINE_TIMER_HEIGHT)
 	online_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	online_timer_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	online_timer_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -325,6 +322,27 @@ func _build_online_wait_label() -> void:
 	online_timer_label.add_theme_color_override("font_color", Color.BLACK)
 	online_timer_label.visible = false
 	add_child(online_timer_label)
+
+	# Directly under the clock, same column, same centre line.
+	online_wait_label = Label.new()
+	online_wait_label.position = Vector2(online_strip_x(), ONLINE_STRIP_TOP + ONLINE_TIMER_HEIGHT)
+	online_wait_label.size = Vector2(online_strip_width(), ONLINE_WAIT_HEIGHT)
+	online_wait_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	online_wait_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	online_wait_label.clip_text = true
+	online_wait_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	online_wait_label.add_theme_font_override("font", font_info)
+	online_wait_label.add_theme_color_override("font_color", Color(1, 0.9, 0.6))
+	online_wait_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	online_wait_label.add_theme_constant_override("outline_size", 4)
+	var wait_text := StringTable.get_string(StringTable.ID_OPPONENT_TURN)
+	online_wait_label.text = wait_text
+	# The column is only ~204px wide, and this phrase is long in every
+	# language, so it shrinks to fit rather than being clipped mid-word.
+	online_wait_label.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_width(
+		wait_text, font_info, online_strip_width(), ONLINE_WAIT_FONT_SIZE, ONLINE_WAIT_MIN_FONT_SIZE))
+	online_wait_label.visible = false
+	add_child(online_wait_label)
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST and online != null and not online.finished:
@@ -627,7 +645,7 @@ func start_new_game() -> void:
 		c.original_owner = 1
 
 	busy = false
-	_show_card_info(null)
+	_clear_card_info()
 	_refresh_hands()
 	_refresh_scores()
 
@@ -706,13 +724,11 @@ static func cursor_size() -> float:
 ## rule then holds for every language.
 const NAME_FONT_SIZE := 30
 const NAME_MIN_FONT_SIZE := 16
-## Same size as the name. The score line has no turn marker beside it, so it
-## gets the field's full width and can afford it - it was set at 26 and
-## squeezed into the name's leftover column for no reason, which made the
-## caption noticeably the smallest text on the screen.
+## The score is just the number, at the name's size, right-aligned across the
+## whole field. The "Score" caption beside it was competing for room with the
+## thing it labelled - and with one number under each name it was telling the
+## player something they could already see.
 const SCORE_FONT_SIZE := NAME_FONT_SIZE
-## Widest the score's own number needs; the caption takes the rest.
-const SCORE_VALUE_WIDTH := 46.0
 
 ## Left edge of the name, past the turn marker.
 static func scoreboard_text_x() -> float:
@@ -724,8 +740,8 @@ static func scoreboard_text_width() -> float:
 
 ## The score line runs the full width of the field, unindented: only the name
 ## has to leave room for the marker.
-static func scoreboard_score_caption_width() -> float:
-	return pergamena_inner().size.x - SCORE_VALUE_WIDTH
+static func scoreboard_score_width() -> float:
+	return pergamena_inner().size.x
 
 ## Where the turn marker sits for a player, centred on their name's line.
 static func cursor_row_y(player: int) -> float:
@@ -751,28 +767,12 @@ func _build_player_panel(idx: int, row: int, color: Color) -> void:
 	add_child(name_label)
 	name_labels.append(name_label)
 
-	# Score sits on the line under the name: caption on the left, number
-	# right-aligned against the field's edge so 0 and 10 end in the same place.
+	# The number alone on the line under the name, right-aligned against the
+	# field's edge so 0 and 10 end in the same place.
 	var inner := pergamena_inner()
-	var score_caption := Label.new()
-	score_caption.position = Vector2(inner.position.x, scoreboard_row_y(row + 1))
-	score_caption.size = Vector2(scoreboard_score_caption_width(), row_h)
-	score_caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	score_caption.clip_text = true
-	score_caption.add_theme_font_override("font", font_stylish)
-	score_caption.add_theme_font_size_override("font_size", SCORE_FONT_SIZE)
-	score_caption.add_theme_color_override("font_color", color)
-	score_caption.add_theme_color_override("font_outline_color", Color.BLACK)
-	score_caption.add_theme_constant_override("outline_size", 3)
-	# Was the hardcoded English "Score" - the last untranslated text left on
-	# this screen after the stat captions were fixed.
-	score_caption.text = StringTable.get_string(StringTable.ID_SCORE)
-	add_child(score_caption)
-	UIButtonStyle.fit_button_text(score_caption)
-
 	var score_value := Label.new()
-	score_value.position = Vector2(inner.end.x - SCORE_VALUE_WIDTH, scoreboard_row_y(row + 1))
-	score_value.size = Vector2(SCORE_VALUE_WIDTH, row_h)
+	score_value.position = Vector2(inner.position.x, scoreboard_row_y(row + 1))
+	score_value.size = Vector2(scoreboard_score_width(), row_h)
 	score_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	score_value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	score_value.add_theme_font_override("font", font_stylish)
@@ -1383,7 +1383,19 @@ func _highlight_targets(cards: Array, on: bool) -> void:
 				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 			board_target_tweens[c.row][c.col] = tw
 
+## Keeps showing whichever card was last picked up. Dropping a card used to
+## blank the panel, so the stats vanished the instant you let go - exactly
+## when you want to compare them against what is already on the board. Only
+## the start of a match clears it, through _clear_card_info below.
 func _show_card_info(card: Card) -> void:
+	if card == null:
+		return
+	_set_card_info(card)
+
+func _clear_card_info() -> void:
+	_set_card_info(null)
+
+func _set_card_info(card: Card) -> void:
 	if card == null:
 		_fit_info_label(info_name, StringTable.get_string(StringTable.ID_CARD_STATS), INFO_RIGHT - INFO_LEFT)
 		info_attack_val.text = ""
@@ -1619,7 +1631,6 @@ func gsCardPicking_Release(mouse_pos: Vector2) -> void:
 		_refresh_hands()
 		_update_slot_visual(cell.x, cell.y)
 		_refresh_scores()
-		_show_card_info(null)
 
 		# Sent before the battles resolve, not after: the opponent replays this
 		# placement and then runs the same deterministic resolution itself, so
@@ -1633,7 +1644,6 @@ func gsCardPicking_Release(mouse_pos: Vector2) -> void:
 		gsNextTurn_Set()
 	else:
 		hand_slots[drag_index].modulate.a = 1.0
-		_show_card_info(null)
 
 # ------------------------------------------------------------------- cpu turn
 
@@ -2518,7 +2528,7 @@ func _update_online_timer() -> void:
 		online_timer_label.visible = false
 		return
 	online_timer_label.visible = true
-	online_timer_label.text = "%d\"" % left
+	online_timer_label.text = str(left)
 	online_timer_label.add_theme_color_override("font_color",
 		Color(0.62, 0.06, 0.06) if left <= TIMER_WARNING_SECONDS else Color.BLACK)
 

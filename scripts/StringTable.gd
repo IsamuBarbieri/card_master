@@ -57,6 +57,8 @@ enum {
 	ID_DELETE_SLOT_ONLINE,
 	## Shown on a save another copy of the game currently has open.
 	ID_SLOT_IN_USE,
+	## Countdown shown once an opponent has been found, before the board opens.
+	ID_MATCH_STARTS_IN,
 }
 
 const TABLE := [
@@ -109,6 +111,7 @@ const TABLE := [
 		"Herausfordern",
 		"Auch dein Online-Konto und deine Ranglistenpunkte werden gelöscht.",
 		"Bereits geöffnet",
+		"Das Duell beginnt in",
 	],
 	# English
 	[
@@ -159,6 +162,7 @@ const TABLE := [
 		"Challenge",
 		"Your online account and leaderboard score are deleted as well.",
 		"Already open",
+		"The challenge begins in",
 	],
 	# Español
 	[
@@ -209,6 +213,7 @@ const TABLE := [
 		"Desafiar",
 		"También se borran tu cuenta en línea y tu puntuación.",
 		"Ya está abierto",
+		"El desafío empieza en",
 	],
 	# Français
 	[
@@ -260,6 +265,7 @@ const TABLE := [
 		"Défier",
 		"Ton compte en ligne et ton classement seront également supprimés.",
 		"Déjà ouvert",
+		"Le défi commence dans",
 	],
 	# Italiano
 	[
@@ -311,6 +317,7 @@ const TABLE := [
 		"Sfida",
 		"Verranno cancellati anche il tuo account online e il tuo punteggio.",
 		"Già aperto",
+		"La sfida inizierà tra",
 	],
 	# Português (Brasil)
 	[
@@ -361,6 +368,7 @@ const TABLE := [
 		"Desafiar",
 		"Sua conta online e sua pontuação também serão apagadas.",
 		"Já está aberto",
+		"O desafio começa em",
 	],
 	# Русский
 	[
@@ -411,6 +419,7 @@ const TABLE := [
 		"Вызов",
 		"Ваш онлайн-аккаунт и место в таблице лидеров также будут удалены.",
 		"Уже открыт",
+		"Матч начнётся через",
 	],
 	# 日本語 - full retranslation from English (the reference table was mostly
 	# blank placeholders).
@@ -461,6 +470,7 @@ const TABLE := [
 		"対戦",
 		"オンラインアカウントとランキングの記録も削除されます。",
 		"使用中",
+		"対戦開始まで",
 	],
 	# 简体中文
 	[
@@ -506,6 +516,7 @@ const TABLE := [
 		"挑战",
 		"你的在线账号和排行榜成绩也会一并删除。",
 		"已在使用",
+		"对战开始还有",
 	],
 ]
 
