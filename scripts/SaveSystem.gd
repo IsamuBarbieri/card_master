@@ -39,6 +39,63 @@ static func _player_path(slot: int) -> String:
 static func slot_exists(slot: int) -> bool:
 	return FileAccess.file_exists(_player_path(slot))
 
+# ------------------------------------------------------------- slot locking
+#
+# Two copies of the game can be open at once - that is deliberate, it is how
+# an online match is tested - but they must not load the SAME slot: both would
+# hold their own Player in memory and each save would overwrite the other's,
+# losing cards and coins with no warning and no way back.
+#
+# A lock is a file inside the slot folder carrying a timestamp, rewritten
+# every few seconds by whoever holds it (see Game's heartbeat). A crash
+# therefore can't lock a player out of their own save: the timestamp simply
+# stops moving and the lock is ignored once it goes stale. That is why this is
+# a heartbeat and not a plain "file exists" flag.
+
+const LOCK_FILE := "slot.lock"
+## How old a heartbeat may get before the holder is presumed gone. Comfortably
+## more than LOCK_HEARTBEAT_SECONDS so an ordinary hitch never expires a lock
+## that is still live.
+const LOCK_STALE_SECONDS := 30.0
+
+static func _lock_path(slot: int) -> String:
+	return _slot_dir(slot) + "/" + LOCK_FILE
+
+## True when another running copy of the game currently holds this slot.
+static func is_locked(slot: int) -> bool:
+	if not FileAccess.file_exists(_lock_path(slot)):
+		return false
+	var f := FileAccess.open(_lock_path(slot), FileAccess.READ)
+	if f == null:
+		return false
+	var data = f.get_var()
+	if not (data is Dictionary):
+		return false
+	# Our own lock never counts as somebody else's.
+	if int(data.get("pid", -1)) == OS.get_process_id():
+		return false
+	return Time.get_unix_time_from_system() - float(data.get("at", 0.0)) < LOCK_STALE_SECONDS
+
+## Takes the slot if it is free. Returns false if another copy holds it, in
+## which case the caller must not load the save.
+static func acquire_lock(slot: int) -> bool:
+	if is_locked(slot):
+		return false
+	refresh_lock(slot)
+	return true
+
+static func refresh_lock(slot: int) -> void:
+	DirAccess.make_dir_recursive_absolute(_slot_dir(slot))
+	var f := FileAccess.open(_lock_path(slot), FileAccess.WRITE)
+	if f == null:
+		return
+	f.store_var({"pid": OS.get_process_id(), "at": Time.get_unix_time_from_system()})
+
+static func release_lock(slot: int) -> void:
+	if slot < 0:
+		return
+	DirAccess.remove_absolute(_lock_path(slot))
+
 ## Slot-select summary (name/card count/wins/saved_at) without the cost of a
 ## full load_player - StartMenu's slot list needs display-only data.
 static func slot_summary(slot: int) -> Dictionary:

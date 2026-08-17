@@ -71,8 +71,8 @@ func _ready() -> void:
 	assert(collection["INFO_CAPTION_WIDTH"] + collection["INFO_VALUE_WIDTH"] <= 299.0 - 10.0,
 		"collection caption+value are wider than the panel")
 
-	# --- Battle: captions are short fixed English, but the card NAME is the
-	# variable-length one, and the widest stat value is three digits.
+	# --- Battle: the same readout as the end-of-match one below, down to the
+	# spelled-out attack type, so it faces the same strings in the same widths.
 	var name_width: float = battle["INFO_RIGHT"] - battle["INFO_LEFT"]
 	for def in CardManager.defs:
 		_check(font, def.name, name_width, battle["INFO_FONT_SIZE"], "battle card name")
@@ -83,7 +83,16 @@ func _ready() -> void:
 		for id in short_caption_ids:
 			_check(font, _string(lang, id), battle["INFO_CAPTION_WIDTH"],
 				battle["INFO_FONT_SIZE"], "battle caption (lang %d)" % lang)
+		for id in type_ids:
+			_check(font, _string(lang, id), battle["INFO_VALUE_WIDTH"],
+				battle["INFO_FONT_SIZE"], "battle type value (lang %d)" % lang)
 	_check(font, "255", battle["INFO_VALUE_WIDTH"], battle["INFO_FONT_SIZE"], "battle stat value")
+
+	# The two panels must stay identical where it counts, or the same card
+	# reads two different ways depending on which screen you are on.
+	assert(battle["INFO_FONT_SIZE"] == battle["END_INFO_FONT_SIZE"], "the two battle readouts use different type sizes")
+	assert(battle["INFO_CAPTION_WIDTH"] == battle["END_INFO_CAPTION_WIDTH"], "the two battle readouts give captions different room")
+	assert(battle["INFO_VALUE_WIDTH"] == battle["END_INFO_VALUE_WIDTH"], "the two battle readouts give values different room")
 
 	# --- End-of-match readout: same captions, but the attack type is spelled
 	# out in full here, so the value column carries the long strings.

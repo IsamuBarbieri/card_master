@@ -177,6 +177,10 @@ func _ready() -> void:
 		add_child(del)
 		delete_buttons.append(del)
 
+	# Back at the slot list, this copy is holding no save - drop the lock so
+	# the other copy can pick it up, and so the list below reads honestly.
+	Game.player = null
+
 	_build_name_dialog()
 	_build_confirm_dialog()
 	_refresh_slots()
@@ -302,12 +306,22 @@ func _refresh_slots() -> void:
 		slot_empty_labels[i].visible = not occupied
 		delete_buttons[i].visible = occupied and not ControllerUI.is_gamepad()
 
+		# A save another running copy of the game has open can't be loaded here
+		# too - both would keep their own copy in memory and each save would
+		# wipe out the other's. Greyed out and labelled rather than silently
+		# doing nothing when tapped.
+		var in_use := occupied and SaveSystem.is_locked(i)
+		slot_buttons[i].disabled = in_use
+		delete_buttons[i].disabled = in_use
+
 		if occupied:
 			slot_name_labels[i].text = summary["name"]
 			slot_stat_labels[i].text = "%s: %d\n%s: %d" % [
 				StringTable.get_string(StringTable.ID_CARDS), summary["card_count"],
 				StringTable.get_string(StringTable.ID_WINS), summary["wins"],
 			]
+			if in_use:
+				slot_stat_labels[i].text = StringTable.get_string(StringTable.ID_SLOT_IN_USE)
 			slot_coins_labels[i].text = "[right]%d [img=34x34]res://assets/coins_icon.png[/img][/right]" % summary["coins"]
 			_rebuild_collection_icons(slot_collection_boxes[i], summary["card_defs"])
 		else:
@@ -486,6 +500,12 @@ func _on_slot_pressed(slot_index: int) -> void:
 			name_edit.text = ""
 			name_dialog.visible = true
 	else:
+		# Checked again here, not just when the list was drawn: the other copy
+		# may have opened this save in the meantime, and this is the last
+		# moment before two of them are editing the same file.
+		if not SaveSystem.acquire_lock(slot_index):
+			_refresh_slots()
+			return
 		Game.player = SaveSystem.load_player(slot_index)
 		get_tree().change_scene_to_file("res://scenes/menu/MainMenu.tscn")
 

@@ -7,7 +7,19 @@ extends Node
 ## later. Both route through dedicated audio buses so Options's sliders
 ## affect everything live.
 
-var player: Player = null
+## Setting this claims the slot's lock and drops the previous one, so no
+## caller has to remember to do it: whoever loads a save holds it, and going
+## back to the slot list (which clears this) releases it. See SaveSystem's
+## locking section for why a second copy of the game must not open the same
+## save.
+var player: Player = null:
+	set(value):
+		if player != null and (value == null or value.save_slot != player.save_slot):
+			SaveSystem.release_lock(player.save_slot)
+		player = value
+		if player != null:
+			SaveSystem.refresh_lock(player.save_slot)
+
 var opponent_index: int = -1
 var rage_quit_mode: bool = false
 
@@ -89,6 +101,27 @@ func _ready() -> void:
 	language = settings.get("language", _detect_default_language())
 	sfx_volume = settings.get("sfx_volume", 1.0)
 	music_volume = settings.get("music_volume", 1.0)
+
+	# Keeps this copy's claim on the loaded slot alive. Without the heartbeat
+	# the lock would look abandoned after LOCK_STALE_SECONDS and a second copy
+	# would happily open the same save on top of it.
+	var lock_timer := Timer.new()
+	lock_timer.wait_time = LOCK_HEARTBEAT_SECONDS
+	lock_timer.timeout.connect(_heartbeat_slot_lock)
+	add_child(lock_timer)
+	lock_timer.start()
+
+const LOCK_HEARTBEAT_SECONDS := 5.0
+
+func _heartbeat_slot_lock() -> void:
+	if player != null:
+		SaveSystem.refresh_lock(player.save_slot)
+
+## Releases the lock on a clean exit. A kill or a crash leaves it behind, but
+## it goes stale on its own - that's the point of the timestamp.
+func _exit_tree() -> void:
+	if player != null:
+		SaveSystem.release_lock(player.save_slot)
 
 ## assets/cursor.png as the OS mouse pointer. Input.set_custom_mouse_cursor
 ## draws at the texture's real screen-pixel size - unlike everything else

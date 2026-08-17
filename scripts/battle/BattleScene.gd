@@ -726,8 +726,14 @@ const INFO_FONT_SIZE := 36
 const INFO_MIN_FONT_SIZE := 16
 const INFO_ROW_STEP := 46.0
 const INFO_ROW_HEIGHT := 42.0
-const INFO_CAPTION_WIDTH := 124.0
-const INFO_VALUE_WIDTH := 100.0
+## Column widths shared with the end-of-match readout, so the same card reads
+## identically in both: same caption, same spelled-out attack type, and the
+## same amount of room to fit them in - a value that has to shrink shrinks by
+## the same amount on both screens.
+const STAT_CAPTION_WIDTH := 96.0
+const STAT_VALUE_WIDTH := 114.0
+const INFO_CAPTION_WIDTH := STAT_CAPTION_WIDTH
+const INFO_VALUE_WIDTH := STAT_VALUE_WIDTH
 
 ## Both battle panels use the abbreviated captions. Shop and Collection have
 ## room for the full words and keep them; here the full German or Russian form
@@ -747,8 +753,12 @@ const END_INFO_ROWS_TOP := 52.0
 const END_INFO_ROW_STEP := 41.0
 const END_INFO_ROW_HEIGHT := 40.0
 const END_INFO_FONT_SIZE := INFO_FONT_SIZE
-const END_INFO_CAPTION_WIDTH := 96.0
-const END_INFO_VALUE_WIDTH := 114.0
+const END_INFO_CAPTION_WIDTH := STAT_CAPTION_WIDTH
+const END_INFO_VALUE_WIDTH := STAT_VALUE_WIDTH
+
+## Coins won, top right of the end screen.
+const COIN_LABEL_SIZE := Vector2(228, 50)
+const COIN_LABEL_MARGIN := 18.0
 
 func _build_card_info_panel() -> void:
 	var black := Color(0, 0, 0)
@@ -782,8 +792,7 @@ func _build_card_info_panel() -> void:
 		caption.clip_text = true
 		caption.add_theme_font_override("font", font_stylish)
 		caption.add_theme_color_override("font_color", black)
-		caption.text = captions[i]
-		_fit_info_label(caption, INFO_CAPTION_WIDTH)
+		_fit_info_label(caption, captions[i], INFO_CAPTION_WIDTH)
 		add_child(caption)
 
 		# Right-aligned against the slab's inner edge, so single- and
@@ -805,12 +814,14 @@ func _build_card_info_panel() -> void:
 	info_pdef_val = value_labels[2]
 	info_mdef_val = value_labels[3]
 
-## Largest size at which this label's current text fits `width`, never below
-## INFO_MIN_FONT_SIZE. Used for the two things here whose length isn't known
-## in advance: the card name and the localized captions.
-func _fit_info_label(label: Label, width: float) -> void:
+## Sets a stat-panel label and picks the largest size at which it fits
+## `width`, never below INFO_MIN_FONT_SIZE. Everything in these panels needs
+## it: card names run from "Slime" to "Goblin Sciaman", captions and attack
+## types swing wildly by language, and even a stat is one to three digits.
+func _fit_info_label(label: Label, text: String, width: float) -> void:
+	label.text = text
 	label.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_width(
-		label.text, font_stylish, width, INFO_FONT_SIZE, INFO_MIN_FONT_SIZE))
+		text, font_stylish, width, INFO_FONT_SIZE, INFO_MIN_FONT_SIZE))
 
 func _board_cell_pos(row: int, col: int) -> Vector2:
 	return BOARD_POS + Vector2(col * (CARD_W + BOARD_GAP), row * (CARD_H + BOARD_GAP))
@@ -1102,10 +1113,11 @@ func _build_battle_end_ui() -> void:
 	label_coin_reward = RichTextLabel.new()
 	label_coin_reward.bbcode_enabled = true
 	label_coin_reward.scroll_active = false
-	# y centers this box on label_central_msg's own vertical center (233 +
-	# 74/2 = 270), so the two read as sitting on the same row.
-	label_coin_reward.position = Vector2(8, 247)
-	label_coin_reward.size = Vector2(228, 46)
+	# Top right of the end screen, inset from both edges. It used to sit on
+	# label_central_msg's row down the left, where the prize competed with the
+	# instruction telling the player what to do next.
+	label_coin_reward.position = Vector2(SCREEN_W - COIN_LABEL_SIZE.x - COIN_LABEL_MARGIN, COIN_LABEL_MARGIN)
+	label_coin_reward.size = COIN_LABEL_SIZE
 	label_coin_reward.add_theme_font_override("normal_font", font_stylish)
 	label_coin_reward.add_theme_font_size_override("normal_font_size", 36)
 	label_coin_reward.add_theme_color_override("default_color", Color(1, 0.85, 0.1))
@@ -1280,8 +1292,7 @@ func _highlight_targets(cards: Array, on: bool) -> void:
 
 func _show_card_info(card: Card) -> void:
 	if card == null:
-		info_name.text = StringTable.get_string(StringTable.ID_CARD_STATS)
-		_fit_info_label(info_name, INFO_RIGHT - INFO_LEFT)
+		_fit_info_label(info_name, StringTable.get_string(StringTable.ID_CARD_STATS), INFO_RIGHT - INFO_LEFT)
 		info_attack_val.text = ""
 		info_type_val.text = ""
 		info_pdef_val.text = ""
@@ -1290,12 +1301,14 @@ func _show_card_info(card: Card) -> void:
 	var def: CardManager.CardDef = CardManager.defs[card.def_id]
 	# Card names vary from "Slime" to "Goblin Sciaman", so the heading is
 	# re-fitted every time rather than sized once for the shortest one.
-	info_name.text = def.name
-	_fit_info_label(info_name, INFO_RIGHT - INFO_LEFT)
-	info_attack_val.text = str(card.attack_power)
-	info_type_val.text = CardManager.attack_type_to_letter(card.attack_type)
-	info_pdef_val.text = str(card.physical_defense)
-	info_mdef_val.text = str(card.magical_defense)
+	_fit_info_label(info_name, def.name, INFO_RIGHT - INFO_LEFT)
+	_fit_info_label(info_attack_val, str(card.attack_power), INFO_VALUE_WIDTH)
+	# The attack type spelled out, as the end-of-match readout has always had
+	# it. A bare "P" said nothing to a player who hadn't memorised the letters,
+	# and the two screens describing the same card differently was worse still.
+	_fit_info_label(info_type_val, CardManager.attack_type_to_string(card.attack_type), INFO_VALUE_WIDTH)
+	_fit_info_label(info_pdef_val, str(card.physical_defense), INFO_VALUE_WIDTH)
+	_fit_info_label(info_mdef_val, str(card.magical_defense), INFO_VALUE_WIDTH)
 
 # --------------------------------------------------------------- coin toss
 
@@ -2370,12 +2383,15 @@ func _show_end_card_info(card: Card) -> void:
 	var fitted := UIButtonStyle.fit_text_to_width(owned_word, owned_label.get_theme_font("font"), panel_owned.size.x - 8, 22)
 	owned_label.add_theme_font_size_override("font_size", fitted)
 
+	# Same fitting as the in-match panel. These were plain assignments at a
+	# fixed 36, which a spelled-out attack type ("Flessibile") overruns in a
+	# 114px column - the label clips and the player reads half a word.
 	var def: CardManager.CardDef = CardManager.defs[card.def_id]
-	end_info_name.text = def.name
-	end_info_pdef_val.text = str(card.physical_defense)
-	end_info_mdef_val.text = str(card.magical_defense)
-	end_info_offense_val.text = str(card.attack_power)
-	end_info_type_val.text = CardManager.attack_type_to_string(card.attack_type)
+	_fit_info_label(end_info_name, def.name, END_INFO_WIDTH)
+	_fit_info_label(end_info_offense_val, str(card.attack_power), END_INFO_VALUE_WIDTH)
+	_fit_info_label(end_info_type_val, CardManager.attack_type_to_string(card.attack_type), END_INFO_VALUE_WIDTH)
+	_fit_info_label(end_info_pdef_val, str(card.physical_defense), END_INFO_VALUE_WIDTH)
+	_fit_info_label(end_info_mdef_val, str(card.magical_defense), END_INFO_VALUE_WIDTH)
 
 const OWNED_PANEL_GAP := 6.0
 
@@ -2521,7 +2537,7 @@ func gsEndPlayerPick_Set(result: BattleResult) -> void:
 	# player sees what they earned while picking their card, not after the
 	# screen is already gone. Both read _coin_reward(), which depends on
 	# ai.defeated still being false at this point.
-	label_coin_reward.text = "[center]+%d [img=28x28]res://assets/coins_icon.png[/img][/center]" % _coin_reward()
+	label_coin_reward.text = "[right]+%d [img=28x28]res://assets/coins_icon.png[/img][/right]" % _coin_reward()
 	label_coin_reward.visible = not Game.online_mode
 
 	if result == BattleResult.PLAYER_PERFECT:

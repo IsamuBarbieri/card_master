@@ -55,6 +55,8 @@ enum {
 	ID_CHALLENGE,
 	## Second line of the delete-save confirmation: the online account goes too.
 	ID_DELETE_SLOT_ONLINE,
+	## Shown on a save another copy of the game currently has open.
+	ID_SLOT_IN_USE,
 }
 
 const TABLE := [
@@ -106,6 +108,7 @@ const TABLE := [
 		"Ang.", "Typ", "P.Ver.", "M.Ver.",
 		"Herausfordern",
 		"Auch dein Online-Konto und deine Ranglistenpunkte werden gelöscht.",
+		"Bereits geöffnet",
 	],
 	# English
 	[
@@ -155,6 +158,7 @@ const TABLE := [
 		"Atk", "Type", "P.Def", "M.Def",
 		"Challenge",
 		"Your online account and leaderboard score are deleted as well.",
+		"Already open",
 	],
 	# Español
 	[
@@ -204,6 +208,7 @@ const TABLE := [
 		"Ata.", "Tipo", "D.Fis.", "D.Mag.",
 		"Desafiar",
 		"También se borran tu cuenta en línea y tu puntuación.",
+		"Ya está abierto",
 	],
 	# Français
 	[
@@ -254,6 +259,7 @@ const TABLE := [
 		"Att.", "Type", "Def.P.", "Def.M.",
 		"Défier",
 		"Ton compte en ligne et ton classement seront également supprimés.",
+		"Déjà ouvert",
 	],
 	# Italiano
 	[
@@ -304,6 +310,7 @@ const TABLE := [
 		"Att.", "Tipo", "Dif.F.", "Dif.M.",
 		"Sfida",
 		"Verranno cancellati anche il tuo account online e il tuo punteggio.",
+		"Già aperto",
 	],
 	# Português (Brasil)
 	[
@@ -353,6 +360,7 @@ const TABLE := [
 		"Ata.", "Tipo", "Def.F.", "Def.M.",
 		"Desafiar",
 		"Sua conta online e sua pontuação também serão apagadas.",
+		"Já está aberto",
 	],
 	# Русский
 	[
@@ -402,6 +410,7 @@ const TABLE := [
 		"Атк.", "Тип", "Ф.Защ.", "М.Защ.",
 		"Вызов",
 		"Ваш онлайн-аккаунт и место в таблице лидеров также будут удалены.",
+		"Уже открыт",
 	],
 	# 日本語 - full retranslation from English (the reference table was mostly
 	# blank placeholders).
@@ -451,6 +460,7 @@ const TABLE := [
 		"攻撃", "種類", "物防", "魔防",
 		"対戦",
 		"オンラインアカウントとランキングの記録も削除されます。",
+		"使用中",
 	],
 	# 简体中文
 	[
@@ -495,6 +505,7 @@ const TABLE := [
 		"攻击", "类型", "物防", "法防",
 		"挑战",
 		"你的在线账号和排行榜成绩也会一并删除。",
+		"已在使用",
 	],
 ]
 

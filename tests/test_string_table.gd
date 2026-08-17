@@ -16,10 +16,17 @@ func _ready() -> void:
 			assert(row[i] is String and row[i] != "",
 				"language %d, string %d is empty" % [lang, i])
 
-	# The last enum member must line up with the last column, which is what
-	# proves the enum and the rows grew together.
-	assert(StringTable.ID_DELETE_SLOT_ONLINE == expected - 1,
-		"the enum has %d entries but each language row has %d" % [StringTable.ID_DELETE_SLOT_ONLINE + 1, expected])
+	# The enum and the rows must have grown together. Counted rather than
+	# checked against whichever ID happens to be last: naming one meant this
+	# assertion had to be edited every single time a string was added, which
+	# is precisely the moment a test should be doing the noticing for you.
+	# Members of an unnamed enum land in the script's constant map.
+	var ids := 0
+	for key in StringTable.get_script().get_script_constant_map():
+		if str(key).begins_with("ID_"):
+			ids += 1
+	assert(ids == expected,
+		"the enum has %d ID_ entries but each language row has %d strings" % [ids, expected])
 
 	# Every language index the OS locale map can produce has to exist.
 	for locale in StringTable.LANGUAGE_BY_LOCALE:
