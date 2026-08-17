@@ -28,7 +28,6 @@ ControllerUI="*res://scripts/ui/ControllerUI.gd"
 window/size/viewport_width=960
 window/size/viewport_height=544
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
 
 [physics]
 
