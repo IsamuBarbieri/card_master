@@ -65,15 +65,29 @@ var name_edit: LineEdit
 ## Online names are unique and chosen once - there is no rename - so the name
 ## is checked against the server while it is being typed and the slot cannot
 ## be created on a name somebody already holds.
-var name_check_label: Label
+var name_check_dot: Panel
 var name_error_label: Label
 var name_check_timer: Timer
 var name_available := false
 const NAME_CHECK_DELAY := 0.45
-const NAME_MARK_FREE := "✓"
-const NAME_MARK_TAKEN := "✗"
+const NAME_DOT_SIZE := 44.0
 const NAME_COLOR_FREE := Color(0.15, 0.65, 0.20)
 const NAME_COLOR_TAKEN := Color(0.75, 0.12, 0.10)
+
+func _name_dot_style(color: Color) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = color
+	var radius := int(NAME_DOT_SIZE / 2.0)
+	sb.corner_radius_top_left = radius
+	sb.corner_radius_top_right = radius
+	sb.corner_radius_bottom_left = radius
+	sb.corner_radius_bottom_right = radius
+	sb.border_width_left = 3
+	sb.border_width_right = 3
+	sb.border_width_top = 3
+	sb.border_width_bottom = 3
+	sb.border_color = Color(0, 0, 0, 0.7)
+	return sb
 var name_ok_btn: Button
 var name_cancel_btn: Button
 var confirm_dialog: Control
@@ -347,7 +361,7 @@ func _rebuild_collection_icons(box: Control, card_defs: Array) -> void:
 
 # --------------------------------------------------------------- dialogs
 
-func _build_dialog_shell(panel_size: Vector2) -> Control:
+func _build_dialog_shell(panel_size: Vector2, top_y: float = -1.0) -> Control:
 	var overlay := Control.new()
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	overlay.visible = false
@@ -360,7 +374,12 @@ func _build_dialog_shell(panel_size: Vector2) -> Control:
 	overlay.add_child(dim)
 
 	var panel := Control.new()
-	panel.position = (Vector2(SCREEN_W, SCREEN_H) - panel_size) / 2.0
+	# `top_y` pins a dialog near the top of the screen instead of centring it.
+	# Android's on-screen keyboard covers the bottom half, and a centred
+	# name-entry box put the field and its OK button right under it.
+	panel.position = Vector2(
+		(SCREEN_W - panel_size.x) / 2.0,
+		top_y if top_y >= 0.0 else (SCREEN_H - panel_size.y) / 2.0)
 	panel.size = panel_size
 	overlay.add_child(panel)
 
@@ -402,44 +421,52 @@ func _make_dialog_button(text: String, pos: Vector2, btn_size: Vector2, font: Fo
 	UIButtonStyle.fit_button_text(btn)
 	return btn
 
+## Name entry is the one dialog a phone player has to read and type into, so
+## it is the widest and the highest on the screen: Android's keyboard eats the
+## bottom half, and everything here has to stay above it.
+const NAME_DIALOG_SIZE := Vector2(760, 268)
+const NAME_DIALOG_TOP := 16.0
+
 func _build_name_dialog() -> void:
 	var font_stylish: Font = Game.font_stylish
-	name_dialog = _build_dialog_shell(Vector2(500, 300))
+	name_dialog = _build_dialog_shell(NAME_DIALOG_SIZE, NAME_DIALOG_TOP)
 	var panel: Control = name_dialog.get_meta("panel")
 
-	var label := _make_dialog_label(Vector2(70, 51), Vector2(359, 37), font_stylish)
+	var label := _make_dialog_label(Vector2(30, 16), Vector2(NAME_DIALOG_SIZE.x - 60, 48), font_stylish)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 40)
 	label.text = StringTable.get_string(StringTable.ID_ENTER_NAME)
 	panel.add_child(label)
 	UIButtonStyle.fit_button_text(label)
 
 	name_edit = LineEdit.new()
-	name_edit.position = Vector2(70, 134)
-	name_edit.size = Vector2(360, 56)
+	name_edit.position = Vector2(30, 74)
+	name_edit.size = Vector2(NAME_DIALOG_SIZE.x - 60 - NAME_DOT_SIZE - 16.0, 66)
 	name_edit.max_length = 20
 	name_edit.add_theme_font_override("font", font_stylish)
-	name_edit.add_theme_font_size_override("font_size", 25)
+	name_edit.add_theme_font_size_override("font_size", 40)
 	name_edit.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_edit.text_changed.connect(_on_name_typed)
 	panel.add_child(name_edit)
 
-	# Availability mark, in the strip the panel leaves to the right of the
-	# field (the field ends at x=430 inside a 500-wide panel).
-	#
-	# Deliberately NO font override: font_stylish has no check or cross glyph,
-	# and Godot's built-in default font does.
-	name_check_label = Label.new()
-	name_check_label.position = Vector2(436, 134)
-	name_check_label.size = Vector2(54, 56)
-	name_check_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_check_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	name_check_label.add_theme_font_size_override("font_size", 34)
-	panel.add_child(name_check_label)
+	# A filled dot rather than a tick or a cross: at this size a glyph is a few
+	# dark pixels either way and the two read alike at a glance, while colour
+	# and a solid shape carry across the room. Drawn as a rounded StyleBox so
+	# it doesn't depend on a font having the character at all - font_stylish
+	# has neither, which is why this was on the default font before.
+	name_check_dot = Panel.new()
+	name_check_dot.position = Vector2(name_edit.position.x + name_edit.size.x + 16.0, 74 + (66 - NAME_DOT_SIZE) / 2.0)
+	name_check_dot.size = Vector2(NAME_DOT_SIZE, NAME_DOT_SIZE)
+	name_check_dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	name_check_dot.visible = false
+	panel.add_child(name_check_dot)
 
-	# Why the cross is there, when it isn't "somebody has this name".
-	name_error_label = _make_dialog_label(Vector2(20, 192), Vector2(460, 30), font_stylish)
+	# Why the dot is red, when it isn't "somebody has this name".
+	name_error_label = _make_dialog_label(Vector2(30, 148), Vector2(NAME_DIALOG_SIZE.x - 60, 40), font_stylish)
 	name_error_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_error_label.add_theme_font_size_override("font_size", 20)
+	name_error_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	name_error_label.add_theme_font_size_override("font_size", 28)
 	name_error_label.add_theme_color_override("font_color", NAME_COLOR_TAKEN)
 	panel.add_child(name_error_label)
 
@@ -450,38 +477,45 @@ func _build_name_dialog() -> void:
 	name_check_timer.timeout.connect(_check_name_availability)
 	add_child(name_check_timer)
 
-	name_ok_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_OK), Vector2(19, 225), Vector2(214, 56), font_stylish)
+	# Both buttons on the dialog's last row, inside its 268px height so the
+	# whole thing clears an Android keyboard.
+	var btn_w := (NAME_DIALOG_SIZE.x - 60 - 20) / 2.0
+	name_ok_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_OK),
+		Vector2(30, 196), Vector2(btn_w, 56), font_stylish)
 	name_ok_btn.pressed.connect(_on_name_ok_pressed)
 	panel.add_child(name_ok_btn)
 
-	name_cancel_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_CANCEL), Vector2(267, 225), Vector2(214, 56), font_stylish)
+	name_cancel_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_CANCEL),
+		Vector2(30 + btn_w + 20, 196), Vector2(btn_w, 56), font_stylish)
 	name_cancel_btn.pressed.connect(_on_name_cancel_pressed)
 	panel.add_child(name_cancel_btn)
 
 func _build_confirm_dialog() -> void:
 	var font_stylish: Font = Game.font_stylish
-	confirm_dialog = _build_dialog_shell(Vector2(360, 260))
+	# Wider than it was, because it now carries two warnings (the save, then
+	# the online account) and the answer to that was shrinking the text to
+	# 18px - the smallest in the game, in a box asking to delete something
+	# permanently. The room comes from the panel instead.
+	confirm_dialog = _build_dialog_shell(Vector2(600, 320))
 	var panel: Control = confirm_dialog.get_meta("panel")
 
-	confirm_title_label = _make_dialog_label(Vector2(15, 20), Vector2(330, 60), font_stylish)
+	confirm_title_label = _make_dialog_label(Vector2(20, 16), Vector2(560, 66), font_stylish)
 	confirm_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	confirm_title_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	panel.add_child(confirm_title_label)
 
-	# Two lines now (the online account warning follows the local one), so the
-	# box is taller and the font a touch smaller to keep both fully visible.
-	confirm_msg_label = _make_dialog_label(Vector2(15, 88), Vector2(330, 100), font_stylish)
-	confirm_msg_label.add_theme_font_size_override("font_size", 18)
+	confirm_msg_label = _make_dialog_label(Vector2(20, 90), Vector2(560, 140), font_stylish)
+	confirm_msg_label.add_theme_font_size_override("font_size", 24)
 	confirm_msg_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	confirm_msg_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	confirm_msg_label.text = StringTable.get_string(StringTable.ID_DELETE_SLOT_MSG)
 	panel.add_child(confirm_msg_label)
 
-	confirm_ok_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_OK), Vector2(23, 190), Vector2(150, 56), font_stylish)
+	confirm_ok_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_OK), Vector2(20, 244), Vector2(270, 56), font_stylish)
 	confirm_ok_btn.pressed.connect(_on_confirm_delete_ok)
 	panel.add_child(confirm_ok_btn)
 
-	confirm_cancel_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_CANCEL), Vector2(187, 190), Vector2(150, 56), font_stylish)
+	confirm_cancel_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_CANCEL), Vector2(310, 244), Vector2(270, 56), font_stylish)
 	confirm_cancel_btn.pressed.connect(_on_confirm_delete_cancel)
 	panel.add_child(confirm_cancel_btn)
 
@@ -511,13 +545,15 @@ func _on_slot_pressed(slot_index: int) -> void:
 
 func _reset_name_check() -> void:
 	name_available = false
-	name_check_label.text = ""
+	name_check_dot.visible = false
 	name_error_label.text = ""
 	_update_name_ok()
 
 func _on_name_typed(_text: String) -> void:
+	# The dot goes away while the answer is stale rather than showing the
+	# previous name's verdict next to a different name.
 	name_available = false
-	name_check_label.text = ""
+	name_check_dot.visible = false
 	_update_name_ok()
 	name_check_timer.start()
 
@@ -535,12 +571,12 @@ func _check_name_availability() -> void:
 		return
 
 	name_available = res["ok"] and res["available"]
-	name_check_label.text = NAME_MARK_FREE if name_available else NAME_MARK_TAKEN
-	name_check_label.add_theme_color_override("font_color",
-		NAME_COLOR_FREE if name_available else NAME_COLOR_TAKEN)
-	# The reason for a cross matters: a taken name is the player's to fix, an
-	# unreachable server isn't, and without saying so the cross would look
-	# like the name was rejected.
+	name_check_dot.visible = true
+	name_check_dot.add_theme_stylebox_override("panel",
+		_name_dot_style(NAME_COLOR_FREE if name_available else NAME_COLOR_TAKEN))
+	# The reason for a red dot matters: a taken name is the player's to fix, an
+	# unreachable server isn't, and without saying so it would look like
+	# the name was rejected.
 	name_error_label.text = "" if res["ok"] else StringTable.get_string(StringTable.ID_ONLINE_ERROR)
 	_update_name_ok()
 

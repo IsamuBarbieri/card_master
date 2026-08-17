@@ -858,6 +858,16 @@ const END_INFO_VALUE_WIDTH := STAT_VALUE_WIDTH
 const COIN_LABEL_SIZE := Vector2(228, 50)
 const COIN_LABEL_MARGIN := 18.0
 
+## Floor for any text a player has to READ, as opposed to glance at. The 960x544
+## canvas is scaled to fit a phone's short edge, so on a ~6.3" screen in
+## landscape one design pixel lands at roughly 0.12mm: 22 is about 2.7mm, which
+## is around Android's own floor for body text, and this game's decorative
+## font needs more room than a UI font at the same size. Below this, text on a
+## phone stops being read and starts being guessed at.
+const MIN_READABLE_FONT_SIZE := 22
+## The end screen's instruction line - the one thing the player must act on.
+const END_MESSAGE_FONT_SIZE := 34
+
 func _build_card_info_panel() -> void:
 	var black := Color(0, 0, 0)
 
@@ -1143,7 +1153,7 @@ func _build_battle_end_ui() -> void:
 	owned_bkg.size = panel_owned.size
 	panel_owned.add_child(owned_bkg)
 
-	owned_label = _make_end_label(Vector2(0, 0), panel_owned.size, 22)
+	owned_label = _make_end_label(Vector2(0, 0), panel_owned.size, MIN_READABLE_FONT_SIZE)
 	owned_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	owned_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	panel_owned.add_child(owned_label)
@@ -1195,7 +1205,11 @@ func _build_battle_end_ui() -> void:
 	end_info_pdef_val = end_values[2]
 	end_info_mdef_val = end_values[3]
 
-	label_central_msg = _make_end_label(Vector2(46, 233), Vector2(742, 74), 25)
+	# The line telling the player what to do next on the end screen ("choose a
+	# card as your prize", "the opponent will now choose", the draw notice).
+	# It was 25 - the smallest running text in the game, on the one screen
+	# where the player has to act on what it says.
+	label_central_msg = _make_end_label(Vector2(46, 226), Vector2(742, 90), END_MESSAGE_FONT_SIZE)
 	label_central_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label_central_msg.autowrap_mode = TextServer.AUTOWRAP_WORD
 	label_central_msg.visible = false
