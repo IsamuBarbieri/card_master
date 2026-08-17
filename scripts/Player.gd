@@ -41,12 +41,24 @@ func add_captured_card(cstats: Card) -> void:
 
 ## (RAGEQUIT) - captured rage-quit cards reset to a low level instead of
 ## keeping their real stats.
+const RAGE_QUIT_MIN := 3
+const RAGE_QUIT_MAX := 12
+
 func add_captured_rage_quit_card(cstats: Card) -> void:
 	# Rescaled with the rest of the stat table: 1-9 used to land around Slime
 	# level, which is what makes the punishment bite. Slime now rolls 6-11.
-	cstats.attack_power = randi_range(3, 12)
-	cstats.physical_defense = randi_range(3, 12)
-	cstats.magical_defense = randi_range(3, 12)
+	#
+	# Clamped to the species' own ceiling. Slime caps at 10 attack and 8 magic
+	# defence, both under the 12 this can roll, so an unclamped reroll produced
+	# a Slime stronger than any Slime the game can otherwise make - and the
+	# online deck check, which knows those ceilings, refused the whole deck as
+	# tampered. Reachable in play: lose a Slime to the Rage Quit opponent, beat
+	# it, take the Slime back. Clamping keeps the punishment and keeps the card
+	# something the rest of the game agrees exists.
+	var def: CardManager.CardDef = CardManager.defs[cstats.def_id]
+	cstats.attack_power = mini(randi_range(RAGE_QUIT_MIN, RAGE_QUIT_MAX), def.max_attack_power)
+	cstats.physical_defense = mini(randi_range(RAGE_QUIT_MIN, RAGE_QUIT_MAX), def.max_physical_defense)
+	cstats.magical_defense = mini(randi_range(RAGE_QUIT_MIN, RAGE_QUIT_MAX), def.max_magical_defense)
 	cstats.is_favourite = false
 	cstats.is_on_deck = false
 	cards.append(cstats)

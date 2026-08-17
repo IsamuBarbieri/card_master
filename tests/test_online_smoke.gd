@@ -71,8 +71,11 @@ func _run() -> void:
 		return
 	print("rejected over-cap deck: ", cheat_res["error"])
 
-	# --- B queues legitimately
-	var deck_b := _deck(200, 3, 20)
+	# --- B queues legitimately. Its deck is deliberately far stronger than A's
+	# below: matchmaking takes whoever in the queue is CLOSEST in power, with
+	# no maximum distance, so two lonely players always find each other however
+	# far apart they are. A window would leave them both waiting forever.
+	var deck_b := _deck(200, 3, 30)
 	var qb = await Net.call_rpc("mp_enqueue", {"p_deck": deck_b})
 	if not qb["ok"]:
 		_fail("B enqueue: %s" % qb["error"])
@@ -85,13 +88,14 @@ func _run() -> void:
 	# --- A queues and should be paired with B
 	Net.access_token = token_a
 	Net.refresh_token = refresh_a
-	var deck_a := _deck(100, 3, 22)
+	var deck_a := _deck(100, 3, 7)
 	var qa = await Net.call_rpc("mp_enqueue", {"p_deck": deck_a})
 	if not qa["ok"]:
 		_fail("A enqueue: %s" % qa["error"])
 		return
 	if qa["data"]["status"] != "matched":
-		_fail("A should have been matched with B, got %s" % qa["data"]["status"])
+		_fail("decks %d and %d apart were left unmatched - matchmaking is not falling back to the closest opponent" % [
+			int(qb["data"]["power"]), 105])
 		return
 
 	var m: Dictionary = qa["data"]["match"]

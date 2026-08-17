@@ -711,10 +711,10 @@ func _build_ui() -> void:
 
 ## Gap between the turn marker and the text it points at.
 const CURSOR_GAP := 6.0
-## Share of a scoreboard line the turn marker fills. Derived rather than fixed
-## at the 48px it used to be: the field is shorter and narrower now, and a
-## marker taller than its own line hangs into the one above it.
-const CURSOR_ROW_SHARE := 0.9
+## The marker spans BOTH of a player's lines - name and score - because that
+## whole block is what it points at. Derived from the line height rather than
+## fixed in pixels, so it keeps its proportions if the art is rescaled again.
+const CURSOR_ROW_SHARE := 1.8
 
 static func cursor_size() -> float:
 	return scoreboard_row_height() * CURSOR_ROW_SHARE
@@ -738,14 +738,16 @@ static func scoreboard_text_width() -> float:
 	var inner := pergamena_inner()
 	return inner.size.x - cursor_size() - CURSOR_GAP
 
-## The score line runs the full width of the field, unindented: only the name
-## has to leave room for the marker.
+## The score sits directly under the name and starts on the same edge, so the
+## two read as one block belonging to one player.
 static func scoreboard_score_width() -> float:
-	return pergamena_inner().size.x
+	return scoreboard_text_width()
 
-## Where the turn marker sits for a player, centred on their name's line.
+## Where the turn marker sits for a player: centred on their two lines taken
+## together, not on the name alone - at nearly two lines tall it would hang
+## into the other player's block otherwise.
 static func cursor_row_y(player: int) -> float:
-	return scoreboard_row_y(player * 2) + (scoreboard_row_height() - cursor_size()) / 2.0
+	return scoreboard_row_y(player * 2) + (2.0 * scoreboard_row_height() - cursor_size()) / 2.0
 
 func _build_player_panel(idx: int, row: int, color: Color) -> void:
 	var text_x := scoreboard_text_x()
@@ -767,13 +769,12 @@ func _build_player_panel(idx: int, row: int, color: Color) -> void:
 	add_child(name_label)
 	name_labels.append(name_label)
 
-	# The number alone on the line under the name, right-aligned against the
-	# field's edge so 0 and 10 end in the same place.
-	var inner := pergamena_inner()
+	# The number alone on the line under the name, starting on the same left
+	# edge so the pair reads as one block.
 	var score_value := Label.new()
-	score_value.position = Vector2(inner.position.x, scoreboard_row_y(row + 1))
+	score_value.position = Vector2(text_x, scoreboard_row_y(row + 1))
 	score_value.size = Vector2(scoreboard_score_width(), row_h)
-	score_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	score_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	score_value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	score_value.add_theme_font_override("font", font_stylish)
 	score_value.add_theme_font_size_override("font_size", SCORE_FONT_SIZE)

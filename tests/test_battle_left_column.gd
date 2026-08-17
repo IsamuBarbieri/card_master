@@ -43,20 +43,24 @@ func _ready() -> void:
 		assert(y + row_h <= inner.end.y + 0.01,
 			"scoreboard line %d ends at y=%.0f, past the field's %.0f" % [row, y + row_h, inner.end.y])
 
-	# 4. the turn marker sits on its player's line and leaves room for text
+	# 4. the turn marker is centred on its player's two lines and stays out of
+	#    the other player's block
 	for player in 2:
 		var cy: float = Battle.cursor_row_y(player)
-		var name_y: float = Battle.scoreboard_row_y(player * 2)
-		assert(cy >= name_y - 0.01 and cy + Battle.cursor_size() <= name_y + row_h + 0.01,
-			"the turn marker for player %d is off its own line" % player)
+		var block_top: float = Battle.scoreboard_row_y(player * 2)
+		var block_h := 2.0 * row_h
+		assert(cy >= block_top - 0.01 and cy + Battle.cursor_size() <= block_top + block_h + 0.01,
+			"the turn marker for player %d spills out of that player's two lines" % player)
+		assert(absf((cy + Battle.cursor_size() / 2.0) - (block_top + block_h / 2.0)) < 0.01,
+			"the turn marker for player %d is not centred on its block" % player)
 	assert(Battle.scoreboard_text_width() > 100.0,
 		"only %.0fpx left for a name after the turn marker" % Battle.scoreboard_text_width())
 	assert(Battle.scoreboard_text_x() + Battle.scoreboard_text_width() <= inner.end.x + 0.01,
 		"the scoreboard text runs past the field's right edge")
 
-	# 4b. the score is the bare number at the name's size, spanning the field.
-	assert(absf(Battle.scoreboard_score_width() - inner.size.x) < 0.01,
-		"the score line doesn't span the field - it has no turn marker to leave room for, so it should")
+	# 4b. the score is the bare number at the name's size, lined up under it.
+	assert(absf(Battle.scoreboard_score_width() - Battle.scoreboard_text_width()) < 0.01,
+		"the score doesn't share the name's column")
 	assert(_c("SCORE_FONT_SIZE") == _c("NAME_FONT_SIZE"), "the score reads smaller than the name above it")
 	var widest_score := Game.font_stylish.get_string_size("10", HORIZONTAL_ALIGNMENT_LEFT, -1, _c("SCORE_FONT_SIZE")).x
 	assert(widest_score <= Battle.scoreboard_score_width(), "a two-digit score does not fit the field")
