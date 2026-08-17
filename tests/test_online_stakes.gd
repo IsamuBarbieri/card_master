@@ -163,6 +163,7 @@ func _run() -> void:
 	print("won card is stakeable by its new owner")
 
 	await _check_abandon_closes_the_match(p0_slot, p1_slot)
+	await _check_only_the_waiter_claims_the_clock(p0_slot, p1_slot)
 
 	print("OK - online stakes, ratings and the lost-card ledger all hold")
 	get_tree().quit()
@@ -205,6 +206,56 @@ func _check_abandon_closes_the_match(p0_slot: int, p1_slot: int) -> void:
 		return
 	await Net.call_rpc("mp_dequeue")
 	print("abandoning closes the match and frees both players")
+
+## Regression: the timeout claim used to go to whoever called first, because
+## the server has no way of its own to know whose turn it was. So the player
+## who let their OWN clock expire could claim the win against the one who had
+## been waiting for them - stalling beat playing. Only the side that has asked
+## for the opponent's move, which is what waiting looks like, may claim now.
+func _check_only_the_waiter_claims_the_clock(p0_slot: int, p1_slot: int) -> void:
+	var fresh := _deck(uid_base + 2000)
+
+	_use(p0_slot)
+	await Net.call_rpc("mp_enqueue", {"p_deck": fresh})
+	_use(p1_slot)
+	var paired = await Net.call_rpc("mp_enqueue", {"p_deck": fresh})
+	if not paired["ok"] or paired["data"]["status"] != "matched":
+		_fail("clock phase, pairing: %s" % str(paired))
+		return
+	var mid: String = paired["data"]["match"]["id"]
+
+	# p1 is the one waiting: asking for the opponent's move is what registers
+	# it. p0 is the one stalling, and never asks for anything.
+	var polled = await Net.call_rpc("mp_fetch_moves", {"p_match": mid, "p_after": 0})
+	if not polled["ok"]:
+		_fail("clock phase, poll: %s" % polled["error"])
+		return
+
+	# Nobody may claim while there is still time on the clock.
+	var early = await Net.call_rpc("mp_claim_timeout", {"p_match": mid})
+	if early["ok"]:
+		_fail("the clock was claimable before it had run out")
+		return
+	print("claim refused while the clock still runs: ", early["error"])
+
+	# Run it down. mp_abandon is the only way to move the deadline without
+	# waiting a real minute, and it also closes the match - so instead the
+	# stalling player simply tries to claim, which must fail on the waiter
+	# check alone regardless of the clock.
+	_use(p0_slot)
+	var staller = await Net.call_rpc("mp_claim_timeout", {"p_match": mid})
+	if staller["ok"]:
+		_fail("the player who was NOT waiting was allowed to claim the clock")
+		return
+	print("staller refused: ", staller["error"])
+
+	# Clean up: the staller concedes, which is the honest path for that side.
+	await Net.call_rpc("mp_abandon", {"p_match": mid})
+	_use(p1_slot)
+	await Net.call_rpc("mp_dequeue")
+	_use(p0_slot)
+	await Net.call_rpc("mp_dequeue")
+	print("only the waiting player can claim the clock")
 
 ## An earlier run that died mid-match leaves a match still marked active, and
 ## mp_enqueue rightly refuses to start a second one. Both players are these

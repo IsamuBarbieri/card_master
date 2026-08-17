@@ -143,6 +143,18 @@ create table if not exists matches (
 	ended_at     timestamptz
 );
 
+-- Who is currently sitting there waiting for the other player to move. Set by
+-- mp_fetch_moves, which is what a waiting client does and nothing else does,
+-- and required by mp_claim_timeout.
+--
+-- Without it the timeout claim was open to whoever called first, and the
+-- server cannot work out whose turn it was on its own: it deliberately knows
+-- no rules, and the move rows can't tell it either, since both players write
+-- at every index and one player can owe several decisions in a row. So the
+-- player who let their OWN clock expire could claim the win against the
+-- player who had been waiting for them - stalling beat playing.
+alter table matches add column if not exists waiter uuid;
+
 create index if not exists matches_active_idx on matches (p0, p1) where status = 'active';
 
 -- The lockstep channel. Both players write a row per turn index: the mover
@@ -479,6 +491,13 @@ begin
 	if not found or (v_match.p0 <> auth.uid() and v_match.p1 <> auth.uid()) then
 		raise exception 'no such match';
 	end if;
+
+	-- Asking for the opponent's move IS waiting for it, and a client that
+	-- owes a move never asks. This is what earns the right to claim the clock.
+	if v_match.status = 'active' and v_match.waiter is distinct from auth.uid() then
+		update matches set waiter = auth.uid() where id = p_match;
+	end if;
+
 	return jsonb_build_object(
 		'status', v_match.status::text,
 		'result', v_match.result,
@@ -616,10 +635,17 @@ begin
 end $$;
 
 -- Rage quit. Claimable by the player still sitting there once the abandoner's
--- clock runs out; the client also calls this straight away when it is told the
--- opponent closed the game, so nobody waits out the full timeout for nothing.
--- The winner still picks which card to take, through the normal end-of-match
--- screen, and files it with mp_claim_steal below.
+-- clock runs out.
+--
+-- Only by the registered waiter (see the matches.waiter column): otherwise
+-- the player who let their own clock run out could claim the win against the
+-- one who had been waiting for them.
+--
+-- No card changes hands here, and none does in mp_abandon either. The board
+-- was unfinished, so nobody had won anything on it - the abandoner pays with
+-- the loss, the rating, and a visible tally of walk-outs in the standings.
+-- Taking a card on top would also mean a dropped connection could cost
+-- somebody a card they were winning with.
 create or replace function mp_claim_timeout(p_match uuid)
 returns jsonb
 language plpgsql security definer set search_path = public as $$
@@ -640,6 +666,9 @@ begin
 	if now() < v_match.deadline then
 		raise exception 'the opponent still has time left';
 	end if;
+	if v_match.waiter is distinct from v_me then
+		raise exception 'you were not the one waiting for a move';
+	end if;
 
 	v_loser := case when v_match.p0 = v_me then v_match.p1 else v_match.p0 end;
 	select elo into v_p0_elo from profiles where id = v_match.p0;
@@ -658,55 +687,6 @@ begin
 	return jsonb_build_object('status', 'done', 'result', case when v_match.p0 = v_me then 0 else 1 end, 'by_timeout', true);
 end $$;
 
--- The single card a timeout winner takes. Separate from mp_finalize because a
--- timeout has no agreed final score to derive the stakes from.
-create or replace function mp_claim_steal(p_match uuid, p_stolen jsonb)
-returns jsonb
-language plpgsql security definer set search_path = public as $$
-declare
-	v_match matches;
-	v_loser uuid;
-	v_entry jsonb;
-begin
-	select * into v_match from matches where id = p_match for update;
-	if not found or (v_match.p0 <> auth.uid() and v_match.p1 <> auth.uid()) then
-		raise exception 'no such match';
-	end if;
-	if v_match.status <> 'done' or v_match.stolen is not null then
-		raise exception 'nothing to claim on this match';
-	end if;
-	if (v_match.result = 0 and v_match.p0 <> auth.uid())
-	or (v_match.result = 1 and v_match.p1 <> auth.uid()) then
-		raise exception 'only the winner claims';
-	end if;
-	if jsonb_array_length(coalesce(p_stolen, '[]'::jsonb)) <> 1 then
-		raise exception 'a timeout win takes exactly one card';
-	end if;
-
-	v_loser := case when v_match.result = 0 then v_match.p1 else v_match.p0 end;
-	for v_entry in select * from jsonb_array_elements(p_stolen) loop
-		if not exists (
-			select 1 from jsonb_array_elements(
-				case when v_match.result = 0 then v_match.deck1 else v_match.deck0 end) d
-			where (d->>'uid')::bigint = (v_entry->>'from')::bigint) then
-			raise exception 'card % was not staked in this match', v_entry->>'from';
-		end if;
-		if exists (select 1 from player_cards
-			where user_id = auth.uid() and unique_id = (v_entry->>'to')::bigint) then
-			raise exception 'card number % is already in use', v_entry->>'to';
-		end if;
-		update player_cards
-			set user_id = auth.uid(), unique_id = (v_entry->>'to')::bigint
-			where user_id = v_loser and unique_id = (v_entry->>'from')::bigint;
-		insert into lost_cards (user_id, unique_id)
-			values (v_loser, (v_entry->>'from')::bigint)
-			on conflict do nothing;
-	end loop;
-
-	update matches set stolen = p_stolen where id = p_match;
-	return jsonb_build_object('status', 'done', 'stolen', p_stolen);
-end $$;
-
 -- Voluntary surrender: window closed, or a stale match found still open when
 -- the player next reaches the lobby.
 --
@@ -717,12 +697,14 @@ end $$;
 -- forever and blocked the quitter from ever starting another one. Conceding
 -- outright cannot be abused: it only ever costs the caller.
 --
--- `stolen` is deliberately left null so the winner can still claim their one
--- card through mp_claim_steal whenever they next connect.
+-- No card changes hands: see mp_claim_timeout for why an unfinished board
+-- settles in rating only.
 --
 -- Dropped first because this used to return void: Postgres refuses to change
 -- a function's return type through create-or-replace.
 drop function if exists mp_abandon(uuid);
+-- Gone: an unfinished match no longer moves any card, so nothing claims one.
+drop function if exists mp_claim_steal(uuid, jsonb);
 
 create or replace function mp_abandon(p_match uuid)
 returns jsonb
@@ -814,7 +796,7 @@ grant execute on function
 	mp_profile_ensure(text), mp_match_json(matches), mp_delete_account(),
 	mp_enqueue(jsonb), mp_dequeue(), mp_current_match(),
 	mp_submit_move(uuid, int, jsonb, text, int, int), mp_fetch_moves(uuid, int),
-	mp_finalize(uuid, jsonb), mp_claim_timeout(uuid), mp_claim_steal(uuid, jsonb),
+	mp_finalize(uuid, jsonb), mp_claim_timeout(uuid),
 	mp_abandon(uuid), mp_leaderboard(int), mp_lost_cards()
 to authenticated;
 

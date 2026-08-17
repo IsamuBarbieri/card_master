@@ -2558,34 +2558,18 @@ func _on_online_voided() -> void:
 	await _show_online_notice(StringTable.get_string(StringTable.ID_MATCH_VOIDED))
 	_leave_online()
 
-## The opponent's clock ran out (or their window closed and they conceded).
-## The win is already recorded server-side by mp_claim_timeout; this claims
-## the single card that comes with it.
+## The opponent's clock ran out, or their window closed and they conceded.
+## The win, the rating and their walk-out tally are already recorded
+## server-side; nothing is applied here.
 ##
-## ponytail: the prize is picked automatically - the opponent's strongest
-## staked card - instead of reopening the end-of-match picker, because the
-## board is only half played at this point and that screen is built around a
-## finished board. Swap in a real picker if quitting turns out to be common.
+## No card comes with it. The board was unfinished, so neither player had won
+## anything on it - and a dropped connection would otherwise cost somebody a
+## card in a match they were winning.
 func _on_opponent_quit() -> void:
-	var deck: Array = Game.online_match.get("opponent_deck", [])
-	var best: Card = null
-	for card in deck:
-		if best == null or CardManager.deck_power([card]) > CardManager.deck_power([best]):
-			best = card
-
-	var message := StringTable.get_string(StringTable.ID_OPPONENT_QUIT)
-	if best != null:
-		var from_uid := best.unique_id
-		var prize := best.clone_stats()
-		prize.unique_id = CardManager.take_uid()
-		var res := await online.claim_steal([{"from": from_uid, "to": prize.unique_id}])
-		if res["ok"]:
-			Game.player.add_captured_card(prize)
-			Game.player.matches_won += 1
-
+	Game.player.matches_won += 1
 	Game.player.match_started = false
 	SaveSystem.save_player(Game.player)
-	await _show_online_notice(message)
+	await _show_online_notice(StringTable.get_string(StringTable.ID_OPPONENT_QUIT))
 	_leave_online()
 
 ## The server closed the match against us while we were waiting - our move

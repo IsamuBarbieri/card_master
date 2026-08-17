@@ -164,12 +164,6 @@ func finalize(stolen: Array) -> Dictionary:
 	finished = true
 	return await Net.call_rpc("mp_finalize", {"p_match": match_id, "p_stolen": stolen})
 
-## After a win by timeout there is no agreed final score for mp_finalize to
-## read the stakes from, so the single stolen card is filed separately.
-func claim_steal(stolen: Array) -> Dictionary:
-	finished = true
-	return await Net.call_rpc("mp_claim_steal", {"p_match": match_id, "p_stolen": stolen})
-
 ## The opponent sent something that isn't a legal move (a card that isn't in
 ## their hand, an occupied cell). A correct client cannot produce this, so
 ## treat it exactly like a hash mismatch: nothing changes hands.

@@ -129,14 +129,23 @@ func _connect() -> void:
 	# often to honest players.
 	var current := await Net.call_rpc("mp_current_match")
 	if current["ok"] and current["data"]["status"] == "matched":
-		await Net.call_rpc("mp_abandon", {"p_match": current["data"]["match"]["id"]})
-		# The online loss is already recorded server-side, so the offline
-		# rage-quit punishment (which reads this same flag on next launch)
-		# must not also fire for it.
+		var stale: String = current["data"]["match"]["id"]
+		# If BOTH players walked out, the one who gets back first used to be
+		# the one who conceded - which rewarded taking longer to return. Try
+		# the clock first: it only succeeds if we were the side registered as
+		# waiting for a move, so a genuine walk-out by the opponent is a win
+		# here rather than a loss.
+		var claimed := await Net.call_rpc("mp_claim_timeout", {"p_match": stale})
+		var won := claimed["ok"] and str(claimed["data"].get("status", "")) == "done"
+		if not won:
+			await Net.call_rpc("mp_abandon", {"p_match": stale})
+		# Whichever way it went, the match is closed and the result recorded
+		# server-side, so the offline rage-quit punishment (which reads this
+		# same flag on next launch) must not fire for it as well.
 		Game.player.match_started = false
 		SaveSystem.save_player(Game.player)
-		# Ours, not theirs: whoever is reading this screen is the one who left.
-		status_label.text = StringTable.get_string(StringTable.ID_LOST_BY_QUIT)
+		status_label.text = StringTable.get_string(
+			StringTable.ID_OPPONENT_QUIT if won else StringTable.ID_LOST_BY_QUIT)
 	else:
 		status_label.text = ""
 		await Net.call_rpc("mp_dequeue")
