@@ -8,13 +8,19 @@ const CARD_W := 96
 const CARD_H := 128
 const ASSETS_DIR := "res://assets/cards/"
 
-# card_border.png's inner clear area, measured on the actual asset: the frame
-# leaves x=8..87 clear, and the bottom trim stops covering things at y=119.
-# The stat text has to live inside that box or the frame eats it.
+# card_border.png's inner clear area, measured by walking the asset's own
+# alpha rather than by eye. Down to y=112 the frame leaves x=7.5..88 clear;
+# below that the bottom corner ornaments close in to about 68px. The band used
+# to run to y=119, so its lowest rows were printed straight over those
+# ornaments - which is what made the stats look like they were spilling onto
+# the frame.
 const STAT_AREA_LEFT := 8
-const STAT_AREA_RIGHT := 87
-const STAT_AREA_BOTTOM := 119
-const STAT_OUTLINE := 3
+const STAT_AREA_RIGHT := 88
+const STAT_AREA_BOTTOM := 112
+## Two rather than three: the stroke grows the glyphs outward on both sides, so
+## every pixel of it is a pixel the digits don't get, and at this size the
+## third one buys very little contrast.
+const STAT_OUTLINE := 2
 
 # Every card in the game - battle, shop, collection - is this same 96x128
 # CardView scaled as a whole, so the stat digits are only ever as legible as
@@ -25,8 +31,8 @@ const STAT_OUTLINE := 3
 # STAT_AREA_LEFT..RIGHT. tests/test_card_stat_fit.gd measures that against the
 # real font and fails if a font or asset change ever makes it overflow, so
 # this is a checked number rather than an eyeballed one.
-const STAT_FONT_SIZE := 24
-const STAT_FONT_SIZE_HEIGHT := 28
+const STAT_FONT_SIZE := 25
+const STAT_FONT_SIZE_HEIGHT := 29
 
 # Normalized (0..1) rects, in arrow order N,NE,E,SE,S,SW,W,NW - matches
 # CardManager.cs's dirsVertices/dirsTexcoords (same rect used for position

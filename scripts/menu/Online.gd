@@ -136,7 +136,7 @@ func _connect() -> void:
 		# waiting for a move, so a genuine walk-out by the opponent is a win
 		# here rather than a loss.
 		var claimed := await Net.call_rpc("mp_claim_timeout", {"p_match": stale})
-		var won := claimed["ok"] and str(claimed["data"].get("status", "")) == "done"
+		var won: bool = claimed["ok"] and str(claimed["data"].get("status", "")) == "done"
 		if not won:
 			await Net.call_rpc("mp_abandon", {"p_match": stale})
 		# Whichever way it went, the match is closed and the result recorded
