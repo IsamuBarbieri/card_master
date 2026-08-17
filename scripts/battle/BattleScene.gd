@@ -693,7 +693,7 @@ func _build_ui() -> void:
 	turn_cursor.texture = load(ASSETS + "battle/battle_cursor.png")
 	turn_cursor.stretch_mode = TextureRect.STRETCH_SCALE
 	turn_cursor.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	turn_cursor.position = Vector2(pergamena_inner().position.x, cursor_row_y(0))
+	turn_cursor.position = Vector2(CURSOR_X, cursor_row_y(0))
 	turn_cursor.size = Vector2(cursor_size(), cursor_size())
 	turn_cursor.visible = false
 	add_child(turn_cursor)
@@ -711,6 +711,10 @@ func _build_ui() -> void:
 
 ## Gap between the turn marker and the text it points at.
 const CURSOR_GAP := 6.0
+## The marker sits on the scroll's rolled left edge rather than inside the
+## writable field - it is art pointing at the block, not text that has to
+## respect the margins - which hands the whole of that margin to the name.
+const CURSOR_X := 0.0
 ## The marker spans BOTH of a player's lines - name and score - because that
 ## whole block is what it points at. Derived from the line height rather than
 ## fixed in pixels, so it keeps its proportions if the art is rescaled again.
@@ -732,14 +736,14 @@ const SCORE_FONT_SIZE := NAME_FONT_SIZE
 
 ## Left edge of the name, past the turn marker.
 static func scoreboard_text_x() -> float:
-	return pergamena_inner().position.x + cursor_size() + CURSOR_GAP
+	return CURSOR_X + cursor_size() + CURSOR_GAP
 
+## Runs from there to the writable field's right edge.
 static func scoreboard_text_width() -> float:
-	var inner := pergamena_inner()
-	return inner.size.x - cursor_size() - CURSOR_GAP
+	return pergamena_inner().end.x - scoreboard_text_x()
 
-## The score sits directly under the name and starts on the same edge, so the
-## two read as one block belonging to one player.
+## The score shares the name's box exactly - same left edge, same width - and
+## is centred in it, so the number sits under the middle of the name.
 static func scoreboard_score_width() -> float:
 	return scoreboard_text_width()
 
@@ -769,12 +773,12 @@ func _build_player_panel(idx: int, row: int, color: Color) -> void:
 	add_child(name_label)
 	name_labels.append(name_label)
 
-	# The number alone on the line under the name, starting on the same left
-	# edge so the pair reads as one block.
+	# The number alone on the line under the name, centred in the name's own
+	# box so it sits under the middle of it.
 	var score_value := Label.new()
 	score_value.position = Vector2(text_x, scoreboard_row_y(row + 1))
 	score_value.size = Vector2(scoreboard_score_width(), row_h)
-	score_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	score_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	score_value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	score_value.add_theme_font_override("font", font_stylish)
 	score_value.add_theme_font_size_override("font_size", SCORE_FONT_SIZE)

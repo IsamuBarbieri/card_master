@@ -53,10 +53,19 @@ func _ready() -> void:
 			"the turn marker for player %d spills out of that player's two lines" % player)
 		assert(absf((cy + Battle.cursor_size() / 2.0) - (block_top + block_h / 2.0)) < 0.01,
 			"the turn marker for player %d is not centred on its block" % player)
+	# The marker is allowed onto the scroll's rolled edge, outside the writable
+	# field - it's art, not text - but not off the screen or into the name.
+	assert(_c("CURSOR_X") >= 0.0, "the turn marker starts off the left of the screen")
+	assert(_c("CURSOR_X") + Battle.cursor_size() + _c("CURSOR_GAP") <= Battle.scoreboard_text_x() + 0.01,
+		"the turn marker runs into the name beside it")
 	assert(Battle.scoreboard_text_width() > 100.0,
 		"only %.0fpx left for a name after the turn marker" % Battle.scoreboard_text_width())
 	assert(Battle.scoreboard_text_x() + Battle.scoreboard_text_width() <= inner.end.x + 0.01,
 		"the scoreboard text runs past the field's right edge")
+	# Moving the marker off the field is only worth doing if the name gained
+	# by it: inside the field it would have started at the field's own edge.
+	assert(Battle.scoreboard_text_width() > inner.size.x - Battle.cursor_size() - _c("CURSOR_GAP"),
+		"the name is no roomier than it was with the marker inside the field")
 
 	# 4b. the score is the bare number at the name's size, lined up under it.
 	assert(absf(Battle.scoreboard_score_width() - Battle.scoreboard_text_width()) < 0.01,

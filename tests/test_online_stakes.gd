@@ -231,21 +231,28 @@ func _check_only_the_waiter_claims_the_clock(p0_slot: int, p1_slot: int) -> void
 		_fail("clock phase, poll: %s" % polled["error"])
 		return
 
-	# Nobody may claim while there is still time on the clock.
+	# The waiter is refused too, but only because the clock is still running -
+	# it would go through once it expired.
 	var early = await Net.call_rpc("mp_claim_timeout", {"p_match": mid})
 	if early["ok"]:
 		_fail("the clock was claimable before it had run out")
 		return
-	print("claim refused while the clock still runs: ", early["error"])
+	if not ("time left" in str(early["error"])):
+		_fail("the waiter was refused for the wrong reason: %s" % early["error"])
+		return
+	print("waiter refused while the clock still runs: ", early["error"])
 
-	# Run it down. mp_abandon is the only way to move the deadline without
-	# waiting a real minute, and it also closes the match - so instead the
-	# stalling player simply tries to claim, which must fail on the waiter
-	# check alone regardless of the clock.
+	# The staller must be refused on WHO IT IS, not on timing. Checked by the
+	# message: refusing it for the clock would prove nothing, since that would
+	# have happened before this rule existed too, and it would go through the
+	# moment the minute was up.
 	_use(p0_slot)
 	var staller = await Net.call_rpc("mp_claim_timeout", {"p_match": mid})
 	if staller["ok"]:
 		_fail("the player who was NOT waiting was allowed to claim the clock")
+		return
+	if not ("waiting" in str(staller["error"])):
+		_fail("the staller was refused for timing, not for not having waited: %s" % staller["error"])
 		return
 	print("staller refused: ", staller["error"])
 

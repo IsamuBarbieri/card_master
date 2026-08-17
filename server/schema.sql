@@ -663,11 +663,16 @@ begin
 	if v_match.status <> 'active' then
 		return jsonb_build_object('status', v_match.status::text, 'result', v_match.result);
 	end if;
-	if now() < v_match.deadline then
-		raise exception 'the opponent still has time left';
-	end if;
+	-- Identity before timing: whether you were the one waiting doesn't depend
+	-- on the clock, and answering that first gives the caller the real reason
+	-- instead of "still time left" followed by a different refusal a minute
+	-- later. It is also the only way to test this rule without sitting
+	-- through a real timeout.
 	if v_match.waiter is distinct from v_me then
 		raise exception 'you were not the one waiting for a move';
+	end if;
+	if now() < v_match.deadline then
+		raise exception 'the opponent still has time left';
 	end if;
 
 	v_loser := case when v_match.p0 = v_me then v_match.p1 else v_match.p0 end;
