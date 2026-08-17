@@ -211,11 +211,79 @@ var cpu_level: int = 7
 var font_stylish: Font = Game.font_stylish
 var font_info: Font = Game.font_info
 
+## Non-null only in an online match. Owns the move stream and the state-hash
+## exchange; see OnlineMatch.gd for how the two clients stay in lockstep.
+var online: OnlineMatch = null
+## Online only: the card the winning opponent actually chose, so the losing
+## client's slot-machine reveal lands on it instead of on its own roll.
+var end_cpu_forced_view: CardView = null
+var online_wait_label: Label = null
+var online_timer_label: Label = null
+## Turns red for the last stretch of the turn clock - a number counting down
+## in the corner is easy to not notice until it's a colour change.
+const TIMER_WARNING_SECONDS := 15
+
 func _ready() -> void:
 	board = Board.new()
+	if Game.online_mode:
+		online = OnlineMatch.new()
+		online.setup()
+		add_child(online)
+		online.voided.connect(_on_online_voided)
+		online.opponent_quit.connect(_on_opponent_quit)
+		online.lost_by_timeout.connect(_on_lost_by_timeout)
+		# Closing the window mid-match is exactly the rage quit this game
+		# already punishes offline - tell the server so the opponent gets their
+		# win immediately instead of staring at the board for 90 seconds.
+		get_tree().set_auto_accept_quit(false)
 	_build_ui()
+	if online != null:
+		_build_online_wait_label()
 	_setup_nav()
 	start_new_game()
+
+## Offline the opponent answers in half a second; online a human can take up
+## to the server's move clock, and a board that just sits there reads as a
+## freeze. Built here rather than in _build_ui because it only ever exists in
+## an online match.
+func _build_online_wait_label() -> void:
+	online_wait_label = Label.new()
+	# Along the bottom edge: the top of the board is where the opponent's card
+	# flies in from, and a banner sitting there was covering the one thing the
+	# player is waiting to watch.
+	online_wait_label.position = Vector2(0, SCREEN_H - 34)
+	online_wait_label.size = Vector2(SCREEN_W, 30)
+	online_wait_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	online_wait_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	online_wait_label.add_theme_font_override("font", font_info)
+	online_wait_label.add_theme_font_size_override("font_size", 22)
+	online_wait_label.add_theme_color_override("font_color", Color(1, 0.9, 0.6))
+	online_wait_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	online_wait_label.add_theme_constant_override("outline_size", 4)
+	online_wait_label.text = StringTable.get_string(StringTable.ID_OPPONENT_TURN)
+	online_wait_label.visible = false
+	add_child(online_wait_label)
+
+	# Turn clock, in the gap under the hand: the five hand slots zig-zag
+	# between x=718 and x=826 (HAND_POSITIONS), so this spans that whole band
+	# and centres in it, sitting below the lowest card (y=348+128=476).
+	# Black, like the rest of the text painted on the board surface.
+	online_timer_label = Label.new()
+	online_timer_label.position = Vector2(HAND_POSITIONS[1].x, 482)
+	online_timer_label.size = Vector2(HAND_POSITIONS[0].x + CARD_W - HAND_POSITIONS[1].x, 44)
+	online_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	online_timer_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	online_timer_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	online_timer_label.add_theme_font_override("font", font_stylish)
+	online_timer_label.add_theme_font_size_override("font_size", 34)
+	online_timer_label.add_theme_color_override("font_color", Color.BLACK)
+	online_timer_label.visible = false
+	add_child(online_timer_label)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST and online != null and not online.finished:
+		await online.abandon()
+		get_tree().quit()
 
 ## Registers every controller target once and leaves them registered for the
 ## whole match: each item's enabled_fn reads the live game state (busy,
@@ -471,6 +539,13 @@ func _get_player_deck() -> Array:
 ## (AIManager.ensure_dynamic_data lazily generates the starting set the
 ## first time this AI is used in the current save slot).
 func _get_cpu_deck() -> Array:
+	if Game.online_mode:
+		# The stats the SERVER validated and handed back, not anything the
+		# opponent's client says about its own cards.
+		var deck: Array = Game.online_match.get("opponent_deck", [])
+		if deck.size() == 5:
+			return deck
+		return CardManager.generate_playable_deck(5)
 	if Game.opponent_index >= 0:
 		var ai: AIManager.AIData = AIManager.get_ai(Game.opponent_index)
 		# Cached here rather than re-read every turn - this is the one place
@@ -484,6 +559,13 @@ func _get_cpu_deck() -> Array:
 func start_new_game() -> void:
 	end_panel.visible = false
 	end_bkg.position.y = -SCREEN_H
+
+	# Seed before anything rolls. Online both clients get the same seed from
+	# the server and therefore the same blocks, coin toss and combat rolls;
+	# offline the seed is itself random, so play is as varied as it always was.
+	var match_seed: int = int(Game.online_match.get("seed", 0)) if Game.online_mode else randi()
+	BattleRng.set_seed(match_seed)
+
 	board.reset()
 	board.place_random_blocks(MAX_BLOCKS)
 	_refresh_board_blocks()
@@ -530,13 +612,18 @@ func _build_ui() -> void:
 	pergamena.size = Vector2(280, 282)
 	add_child(pergamena)
 
-	var marmo := TextureRect.new()
-	marmo.texture = load(ASSETS + "battle/battle_marmo.png")
-	marmo.stretch_mode = TextureRect.STRETCH_SCALE
-	marmo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	marmo.position = Vector2(14, 282)
-	marmo.size = Vector2(248, 256)
-	add_child(marmo)
+	# Was battle_marmo.png, a marble slab unique to this screen. Swapped for
+	# the translucent box every other menu's info panel uses (Shop, Collection,
+	# the end-of-match readout right below) so the card-stats readout looks the
+	# same wherever the player meets it. Its frame is thinner than the marble's
+	# too, which is where the extra room for the larger text came from.
+	var info_bkg := TextureRect.new()
+	info_bkg.texture = load(ASSETS + "common_transp_box_a.png")
+	info_bkg.stretch_mode = TextureRect.STRETCH_SCALE
+	info_bkg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	info_bkg.position = Vector2(14, 282)
+	info_bkg.size = Vector2(248, 256)
+	add_child(info_bkg)
 
 	turn_cursor = TextureRect.new()
 	turn_cursor.texture = load(ASSETS + "battle/battle_cursor.png")
@@ -557,16 +644,29 @@ func _build_ui() -> void:
 	_build_end_panel()
 	_build_audio()
 
+## Widest a name may render inside the pergamena. The panel is 280px wide and
+## the label starts at x=60, leaving 220 minus a margin so a long name stops
+## short of the parchment's painted edge instead of spilling onto the board.
+const NAME_LABEL_WIDTH := 208.0
+const NAME_FONT_SIZE := 36
+## Names are player-entered (StartMenu caps the field at 20 characters), so
+## fitting is done by shrinking the font rather than counting characters -
+## twenty W's and twenty i's are nothing like the same width, and the same
+## rule then holds for every language.
+const NAME_MIN_FONT_SIZE := 18
+
 func _build_player_panel(idx: int, y: int, color: Color) -> void:
 	var name_label := Label.new()
 	name_label.position = Vector2(60, y)
+	name_label.size = Vector2(NAME_LABEL_WIDTH, NAME_FONT_SIZE + 8)
+	name_label.clip_text = true
 	name_label.add_theme_font_override("font", font_stylish)
-	name_label.add_theme_font_size_override("font_size", 36)
+	name_label.add_theme_font_size_override("font_size", NAME_FONT_SIZE)
 	name_label.add_theme_color_override("font_color", color)
 	name_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 	name_label.add_theme_constant_override("shadow_offset_x", 1)
 	name_label.add_theme_constant_override("shadow_offset_y", 1)
-	name_label.text = "You" if idx == 0 else "CPU"
+	_set_panel_name(name_label, _panel_name(idx))
 	add_child(name_label)
 	name_labels.append(name_label)
 
@@ -591,35 +691,111 @@ func _build_player_panel(idx: int, y: int, color: Color) -> void:
 	add_child(score_value)
 	score_value_labels.append(score_value)
 
+## Who each side of the scoreboard actually is. The save slot's own name for
+## the player (asked for at slot creation and never shown during a match
+## before), the opponent's profile name online, and the AI's own name from
+## ai_table.csv offline - "You"/"CPU" told the player nothing either way.
+func _panel_name(idx: int) -> String:
+	if idx == 0:
+		return Game.player.player_name if Game.player != null else "You"
+	if Game.online_mode:
+		var opponent := str(Game.online_match.get("opponent_name", ""))
+		return opponent if opponent != "" else "Online"
+	if Game.opponent_index >= 0:
+		return AIManager.get_ai(Game.opponent_index).ai_name
+	return "CPU"
+
+func _set_panel_name(label: Label, text: String) -> void:
+	label.text = text
+	label.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_width(
+		text, font_stylish, NAME_LABEL_WIDTH, NAME_FONT_SIZE, NAME_MIN_FONT_SIZE))
+
+# Clear interior of the common_transp_box_a.png panel drawn at (14,282)
+# 248x256 - the box has a thin border, so ten pixels of inset on each side is
+# enough to keep text off it.
+const INFO_LEFT := 24.0
+const INFO_RIGHT := 252.0
+const INFO_TOP := 292.0
+const INFO_BOTTOM := 528.0
+## Five lines (card name plus four stats) share the panel. This readout used
+## 24 while Shop's equivalent has always been at 36, in the screen the player
+## stares at longest - it now matches Shop. Captions and values are fitted to
+## their own boxes, so a long card name or a long translation shrinks itself
+## instead of running off the panel.
+const INFO_FONT_SIZE := 36
+const INFO_MIN_FONT_SIZE := 16
+const INFO_ROW_STEP := 46.0
+const INFO_ROW_HEIGHT := 42.0
+const INFO_CAPTION_WIDTH := 124.0
+const INFO_VALUE_WIDTH := 100.0
+
+## Both battle panels use the abbreviated captions. Shop and Collection have
+## room for the full words and keep them; here the full German or Russian form
+## would have to shrink to a third of the size of the number beside it.
+const STAT_CAPTION_IDS := [
+	StringTable.ID_CARD_ATTACK_SHORT, StringTable.ID_CARD_TYPE_SHORT,
+	StringTable.ID_CARD_PDEF_SHORT, StringTable.ID_CARD_MDEF_SHORT,
+]
+
+# End-of-match card readout, inside panel_info's own 228x224 box. Same font
+# size as the in-match panel; the box is smaller, so the rows are tighter.
+# The attack type is spelled out in full here (not the single letter the
+# in-match panel uses), which is why the value column is the wider of the two.
+const END_INFO_LEFT := 9.0
+const END_INFO_WIDTH := 210.0
+const END_INFO_ROWS_TOP := 52.0
+const END_INFO_ROW_STEP := 41.0
+const END_INFO_ROW_HEIGHT := 40.0
+const END_INFO_FONT_SIZE := INFO_FONT_SIZE
+const END_INFO_CAPTION_WIDTH := 96.0
+const END_INFO_VALUE_WIDTH := 114.0
+
 func _build_card_info_panel() -> void:
 	var black := Color(0, 0, 0)
 
 	info_name = Label.new()
-	info_name.position = Vector2(14, 340)
-	info_name.size = Vector2(248, 24)
+	info_name.position = Vector2(INFO_LEFT, INFO_TOP)
+	info_name.size = Vector2(INFO_RIGHT - INFO_LEFT, INFO_ROW_HEIGHT)
 	info_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	info_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	info_name.clip_text = true
 	info_name.add_theme_font_override("font", font_stylish)
-	info_name.add_theme_font_size_override("font_size", 24)
+	info_name.add_theme_font_size_override("font_size", INFO_FONT_SIZE)
 	info_name.add_theme_color_override("font_color", black)
 	add_child(info_name)
 
-	var rows := [
-		["Attack", 376], ["Type", 410], ["P.Def", 444], ["M.Def", 478],
-	]
+	# The four stat rows start below the name and step down to the bottom of
+	# the panel: 292 + 44 + 3*46 + 42 = 516, inside INFO_BOTTOM.
+	var rows_top := INFO_TOP + 44.0
+	# Was the hardcoded English ["Attack", "Type", "P.Def", "M.Def"] - the only
+	# untranslated text left on this screen.
+	var captions := STAT_CAPTION_IDS.map(func(id: int) -> String:
+		return StringTable.get_string(id))
 	var value_labels := []
-	for row in rows:
+	for i in captions.size():
+		var y := rows_top + i * INFO_ROW_STEP
+
 		var caption := Label.new()
-		caption.position = Vector2(32, row[1])
+		caption.position = Vector2(INFO_LEFT, y)
+		caption.size = Vector2(INFO_CAPTION_WIDTH, INFO_ROW_HEIGHT)
+		caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		caption.clip_text = true
 		caption.add_theme_font_override("font", font_stylish)
-		caption.add_theme_font_size_override("font_size", 24)
 		caption.add_theme_color_override("font_color", black)
-		caption.text = row[0]
+		caption.text = captions[i]
+		_fit_info_label(caption, INFO_CAPTION_WIDTH)
 		add_child(caption)
 
+		# Right-aligned against the slab's inner edge, so single- and
+		# triple-digit values line up in one column instead of drifting.
 		var value := Label.new()
-		value.position = Vector2(200, row[1])
+		value.position = Vector2(INFO_RIGHT - INFO_VALUE_WIDTH, y)
+		value.size = Vector2(INFO_VALUE_WIDTH, INFO_ROW_HEIGHT)
+		value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		value.clip_text = true
 		value.add_theme_font_override("font", font_stylish)
-		value.add_theme_font_size_override("font_size", 24)
+		value.add_theme_font_size_override("font_size", INFO_FONT_SIZE)
 		value.add_theme_color_override("font_color", black)
 		add_child(value)
 		value_labels.append(value)
@@ -628,6 +804,13 @@ func _build_card_info_panel() -> void:
 	info_type_val = value_labels[1]
 	info_pdef_val = value_labels[2]
 	info_mdef_val = value_labels[3]
+
+## Largest size at which this label's current text fits `width`, never below
+## INFO_MIN_FONT_SIZE. Used for the two things here whose length isn't known
+## in advance: the card name and the localized captions.
+func _fit_info_label(label: Label, width: float) -> void:
+	label.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_width(
+		label.text, font_stylish, width, INFO_FONT_SIZE, INFO_MIN_FONT_SIZE))
 
 func _board_cell_pos(row: int, col: int) -> Vector2:
 	return BOARD_POS + Vector2(col * (CARD_W + BOARD_GAP), row * (CARD_H + BOARD_GAP))
@@ -871,41 +1054,37 @@ func _build_battle_end_ui() -> void:
 	info_bkg.size = Vector2(228, 224)
 	panel_info.add_child(info_bkg)
 
-	end_info_name = _make_end_label(Vector2(9, 8), Vector2(210, 41), 25)
+	# Same readout as the in-match panel above, so it is built the same way and
+	# at the same size (END_INFO_FONT_SIZE == INFO_FONT_SIZE): this is the
+	# screen where the player decides which card to take, and it was the
+	# smallest text of the three stat panels in the game.
+	end_info_name = _make_end_label(Vector2(END_INFO_LEFT, 8), Vector2(END_INFO_WIDTH, END_INFO_ROW_HEIGHT), END_INFO_FONT_SIZE)
 	end_info_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	end_info_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	panel_info.add_child(end_info_name)
 
-	var info_offense_lbl := _make_end_label(Vector2(9, 48), Vector2(174, 41), 25)
-	info_offense_lbl.text = StringTable.get_string(StringTable.ID_CARD_ATTACK)
-	panel_info.add_child(info_offense_lbl)
-	UIButtonStyle.fit_button_text(info_offense_lbl)
-	end_info_offense_val = _make_end_label(Vector2(111, 48), Vector2(108, 41), 25)
-	end_info_offense_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	panel_info.add_child(end_info_offense_val)
+	var end_captions := STAT_CAPTION_IDS.map(func(id: int) -> String:
+		return StringTable.get_string(id))
+	var end_values := []
+	for i in end_captions.size():
+		var y := END_INFO_ROWS_TOP + i * END_INFO_ROW_STEP
 
-	var info_type_lbl := _make_end_label(Vector2(9, 89), Vector2(174, 41), 25)
-	info_type_lbl.text = StringTable.get_string(StringTable.ID_CARD_TYPE)
-	panel_info.add_child(info_type_lbl)
-	UIButtonStyle.fit_button_text(info_type_lbl)
-	end_info_type_val = _make_end_label(Vector2(111, 89), Vector2(108, 41), 25)
-	end_info_type_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	panel_info.add_child(end_info_type_val)
+		var caption := _make_end_label(Vector2(END_INFO_LEFT, y), Vector2(END_INFO_CAPTION_WIDTH, END_INFO_ROW_HEIGHT), END_INFO_FONT_SIZE)
+		caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		caption.text = end_captions[i]
+		panel_info.add_child(caption)
+		UIButtonStyle.fit_button_text(caption)
 
-	var info_pdef_lbl := _make_end_label(Vector2(9, 130), Vector2(169, 41), 25)
-	info_pdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_PHYSICAL_DEFENSE)
-	panel_info.add_child(info_pdef_lbl)
-	UIButtonStyle.fit_button_text(info_pdef_lbl)
-	end_info_pdef_val = _make_end_label(Vector2(111, 130), Vector2(108, 41), 25)
-	end_info_pdef_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	panel_info.add_child(end_info_pdef_val)
+		var value := _make_end_label(Vector2(END_INFO_LEFT + END_INFO_WIDTH - END_INFO_VALUE_WIDTH, y), Vector2(END_INFO_VALUE_WIDTH, END_INFO_ROW_HEIGHT), END_INFO_FONT_SIZE)
+		value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		panel_info.add_child(value)
+		end_values.append(value)
 
-	var info_mdef_lbl := _make_end_label(Vector2(9, 171), Vector2(169, 41), 25)
-	info_mdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_MAGICAL_DEFENSE)
-	panel_info.add_child(info_mdef_lbl)
-	UIButtonStyle.fit_button_text(info_mdef_lbl)
-	end_info_mdef_val = _make_end_label(Vector2(111, 171), Vector2(108, 41), 25)
-	end_info_mdef_val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	panel_info.add_child(end_info_mdef_val)
+	end_info_offense_val = end_values[0]
+	end_info_type_val = end_values[1]
+	end_info_pdef_val = end_values[2]
+	end_info_mdef_val = end_values[3]
 
 	label_central_msg = _make_end_label(Vector2(46, 233), Vector2(742, 74), 25)
 	label_central_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -1101,14 +1280,18 @@ func _highlight_targets(cards: Array, on: bool) -> void:
 
 func _show_card_info(card: Card) -> void:
 	if card == null:
-		info_name.text = "Card stats"
+		info_name.text = StringTable.get_string(StringTable.ID_CARD_STATS)
+		_fit_info_label(info_name, INFO_RIGHT - INFO_LEFT)
 		info_attack_val.text = ""
 		info_type_val.text = ""
 		info_pdef_val.text = ""
 		info_mdef_val.text = ""
 		return
 	var def: CardManager.CardDef = CardManager.defs[card.def_id]
+	# Card names vary from "Slime" to "Goblin Sciaman", so the heading is
+	# re-fitted every time rather than sized once for the shortest one.
 	info_name.text = def.name
+	_fit_info_label(info_name, INFO_RIGHT - INFO_LEFT)
 	info_attack_val.text = str(card.attack_power)
 	info_type_val.text = CardManager.attack_type_to_letter(card.attack_type)
 	info_pdef_val.text = str(card.physical_defense)
@@ -1117,7 +1300,13 @@ func _show_card_info(card: Card) -> void:
 # --------------------------------------------------------------- coin toss
 
 func gsCoinToss_Set() -> void:
-	var player0_wins := randi() % 2 == 0
+	# Online the server already decided who starts (and told both clients the
+	# same thing), so the coin is pure theatre showing a settled result. Note
+	# first_player is in the local frame: slot 0 is always "me", so both
+	# players see their own side of the same toss.
+	var player0_wins: bool = (
+		int(Game.online_match.get("first_player", 0)) == 0 if Game.online_mode
+		else BattleRng.below(2) == 0)
 
 	coin_sprite.visible = true
 	coin_sprite.modulate.a = 1.0
@@ -1326,6 +1515,14 @@ func gsCardPicking_Release(mouse_pos: Vector2) -> void:
 		_refresh_scores()
 		_show_card_info(null)
 
+		# Sent before the battles resolve, not after: the opponent replays this
+		# placement and then runs the same deterministic resolution itself, so
+		# the agreed state for this move is the board as it stands right now.
+		if online != null:
+			if not await online.submit({"uid": card.unique_id, "row": cell.x, "col": cell.y},
+					board, player_hand, cpu_hand, "place"):
+				return
+
 		await gsPreBattle_Set(card)
 		gsNextTurn_Set()
 	else:
@@ -1344,10 +1541,29 @@ func gsCPUTurn_Set() -> void:
 	await get_tree().create_timer(0.5).timeout
 
 	var live_cpu_hand: Array = cpu_hand.filter(func(c): return c != null)
-	var move := GsCPUTurn.choose_move(board, live_cpu_hand, cpu_level)
-	var card: Card = move["card"]
-	var row: int = move["row"]
-	var col: int = move["col"]
+	var card: Card
+	var row: int
+	var col: int
+	if online != null:
+		# Same seat in the code, different source of truth: online this turn
+		# belongs to a human on the other end, so the "AI decision" is simply
+		# replaced by their decision, and the animation below is unchanged.
+		online_wait_label.visible = true
+		var remote := await online.receive()
+		online_wait_label.visible = false
+		if remote.is_empty():
+			return
+		card = _find_in_hand(cpu_hand, int(remote.get("uid", -1)))
+		row = int(remote.get("row", -1))
+		col = int(remote.get("col", -1))
+		if card == null or not board.is_playable(row, col):
+			online.reject_illegal("uid %s at %d,%d" % [str(remote.get("uid")), row, col])
+			return
+	else:
+		var move := GsCPUTurn.choose_move(board, live_cpu_hand, cpu_level)
+		card = move["card"]
+		row = move["row"]
+		col = move["col"]
 
 	# fly a face-down mini card from the opponent stack to the board slot,
 	# then flip it to reveal the real card (gsCPUTurn.cs's quadPlayer1Cards
@@ -1381,8 +1597,22 @@ func gsCPUTurn_Set() -> void:
 	_update_slot_visual(row, col)
 	_refresh_scores()
 
+	# Our own view of the state the opponent just claimed. If the two hashes
+	# disagree the server voids the match here, before any battle resolves.
+	if online != null:
+		if not await online.submit({}, board, player_hand, cpu_hand, "place"):
+			return
+
 	await gsPreBattle_Set(card)
 	gsNextTurn_Set()
+
+## Cards are addressed across the wire by unique_id - the index into a hand
+## array isn't shared (each client nulls its own slots) but the id is.
+func _find_in_hand(hand: Array, uid: int) -> Card:
+	for card in hand:
+		if card != null and card.unique_id == uid:
+			return card
+	return null
 
 # ---------------------------------------------------- PreBattle / BattleCheck
 
@@ -1451,11 +1681,28 @@ func gsBattleChainBattle_Set(card: Card, depth: int, tied: Array) -> void:
 	elif fightable.size() == 1:
 		await gsBattle_Set(card, fightable[0], depth, tied)
 	elif card.owner != 0:
-		# New QoL addition (not in the reference, which shows the same
-		# "pick a target" highlight/delay for the CPU too): the AI's choice
-		# isn't a real decision the player watches unfold, so skip the
-		# target-selection UI entirely and fight immediately.
-		var target := GsCPUTurn.choose_battle_target(card, fightable, cpu_level)
+		var target: Card
+		if online != null:
+			# Which neighbour to attack is a real decision, so it travels as
+			# its own numbered move - the board looks identical either way, and
+			# guessing would desync the two clients instantly.
+			online_wait_label.visible = true
+			var remote := await online.receive()
+			online_wait_label.visible = false
+			if remote.is_empty():
+				return
+			target = _find_target(fightable, int(remote.get("uid", -1)))
+			if target == null:
+				online.reject_illegal("target uid %s" % str(remote.get("uid")))
+				return
+			if not await online.submit({}, board, player_hand, cpu_hand, "target:%d" % target.unique_id):
+				return
+		else:
+			# New QoL addition (not in the reference, which shows the same
+			# "pick a target" highlight/delay for the CPU too): the AI's choice
+			# isn't a real decision the player watches unfold, so skip the
+			# target-selection UI entirely and fight immediately.
+			target = GsCPUTurn.choose_battle_target(card, fightable, cpu_level)
 		await gsBattle_Set(card, target, depth, tied)
 	else:
 		# The player picking which candidate to fight next - and getting a
@@ -1463,7 +1710,18 @@ func gsBattleChainBattle_Set(card: Card, depth: int, tied: Array) -> void:
 		# farle attaccare" from the design doc: no separate up-front queue
 		# needed, this already resolves the order one decision at a time.
 		var target := await gsBattleSelTarget_Set(card, fightable)
+		if online != null:
+			if not await online.submit({"uid": target.unique_id}, board, player_hand, cpu_hand,
+					"target:%d" % target.unique_id):
+				return
 		await gsBattle_Set(card, target, depth, tied)
+
+## Same addressing as _find_in_hand, over the candidates on the board.
+func _find_target(candidates: Array, uid: int) -> Card:
+	for card in candidates:
+		if card != null and card.unique_id == uid:
+			return card
+	return null
 
 func gsBattleSelTarget_Set(last_placed: Card, candidates: Array) -> Card:
 	_highlight_targets(candidates, true)
@@ -1779,6 +2037,18 @@ func gsEndStart_Set() -> void:
 
 	var p0 := board.count_cards(0)
 	var p1 := board.count_cards(1)
+
+	# The final score, agreed by both clients, is what the server reads the
+	# winner off. It has to be sent from HERE and not inferred from the last
+	# placement: every move's score is submitted the instant a card lands,
+	# before its captures and chains resolve, so the last card played could
+	# swing the match without the server ever hearing about it. Both sides
+	# submit this one - there is no mover and no observer, just two clients
+	# stating the result they arrived at.
+	if online != null:
+		if not await online.submit({"final": true}, board, player_hand, cpu_hand, "end"):
+			return
+
 	var result: BattleResult
 	var banner_path: String
 
@@ -2126,10 +2396,100 @@ func _process(_delta: float) -> void:
 	if end_owned_view != null and panel_owned.visible:
 		_update_owned_panel_pos(end_owned_view)
 	y_continue_hint.visible = ControllerUI.is_gamepad() and button_done.visible
+	_update_online_timer()
+
+## The turn clock is shown for the whole online match and hidden the moment
+## the board is done, since the end-of-match screens have no move clock -
+## leaving a dead number ticking there would just look broken.
+func _update_online_timer() -> void:
+	if online == null:
+		return
+	var left := online.seconds_left()
+	if left < 0 or end_flow != EndFlow.NONE:
+		online_timer_label.visible = false
+		return
+	online_timer_label.visible = true
+	online_timer_label.text = "%d\"" % left
+	online_timer_label.add_theme_color_override("font_color",
+		Color(0.62, 0.06, 0.06) if left <= TIMER_WARNING_SECONDS else Color.BLACK)
 
 func _return_to_main_menu() -> void:
 	Game.crossfade_to_menu_music(0.85)
 	get_tree().change_scene_to_file("res://scenes/menu/Opponents.tscn")
+
+# ------------------------------------------------------------------- online
+
+## Every online exit route ends here: back to the lobby rather than the AI
+## opponent list, with online_mode cleared so the next offline battle isn't
+## still looking for a server.
+func _leave_online() -> void:
+	Game.online_mode = false
+	Game.online_match = {}
+	get_tree().set_auto_accept_quit(true)
+	busy_spinner.visible = false
+	Game.crossfade_to_menu_music(0.85)
+	get_tree().change_scene_to_file("res://scenes/menu/Online.tscn")
+
+## The two clients' states stopped matching, so the server threw the match
+## out. Nothing moves: not the cards, not the ratings.
+func _on_online_voided() -> void:
+	Game.player.match_started = false
+	SaveSystem.save_player(Game.player)
+	await _show_online_notice(StringTable.get_string(StringTable.ID_MATCH_VOIDED))
+	_leave_online()
+
+## The opponent's clock ran out (or their window closed and they conceded).
+## The win is already recorded server-side by mp_claim_timeout; this claims
+## the single card that comes with it.
+##
+## ponytail: the prize is picked automatically - the opponent's strongest
+## staked card - instead of reopening the end-of-match picker, because the
+## board is only half played at this point and that screen is built around a
+## finished board. Swap in a real picker if quitting turns out to be common.
+func _on_opponent_quit() -> void:
+	var deck: Array = Game.online_match.get("opponent_deck", [])
+	var best: Card = null
+	for card in deck:
+		if best == null or CardManager.deck_power([card]) > CardManager.deck_power([best]):
+			best = card
+
+	var message := StringTable.get_string(StringTable.ID_OPPONENT_QUIT)
+	if best != null:
+		var from_uid := best.unique_id
+		var prize := best.clone_stats()
+		prize.unique_id = CardManager.take_uid()
+		var res := await online.claim_steal([{"from": from_uid, "to": prize.unique_id}])
+		if res["ok"]:
+			Game.player.add_captured_card(prize)
+			Game.player.matches_won += 1
+
+	Game.player.match_started = false
+	SaveSystem.save_player(Game.player)
+	await _show_online_notice(message)
+	_leave_online()
+
+## The server closed the match against us while we were waiting - our move
+## clock ran out. The loss and the rating are already recorded there; the
+## cards the winner takes are their claim to make, so nothing is applied here.
+func _on_lost_by_timeout() -> void:
+	Game.player.match_started = false
+	SaveSystem.save_player(Game.player)
+	await _show_online_notice(StringTable.get_string(StringTable.ID_LOST_BY_QUIT))
+	_leave_online()
+
+## Minimal end-of-match message for the outcomes that skip the normal end
+## screens (void, opponent quit) - those screens are built around a finished
+## board that doesn't exist in either case.
+func _show_online_notice(text: String) -> void:
+	busy = true
+	end_panel.visible = true
+	end_bkg.position.y = 0.0
+	label_central_msg.text = text
+	label_central_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label_central_msg.visible = true
+	label_central_msg.modulate.a = 1.0
+	panel_info.visible = false
+	await get_tree().create_timer(2.5).timeout
 
 # Single Button_Done handler shared by all three end flows (matches which
 # one is live via end_flow), same as the reference wiring one ButtonAction
@@ -2162,7 +2522,7 @@ func gsEndPlayerPick_Set(result: BattleResult) -> void:
 	# screen is already gone. Both read _coin_reward(), which depends on
 	# ai.defeated still being false at this point.
 	label_coin_reward.text = "[center]+%d [img=28x28]res://assets/coins_icon.png[/img][/center]" % _coin_reward()
-	label_coin_reward.visible = true
+	label_coin_reward.visible = not Game.online_mode
 
 	if result == BattleResult.PLAYER_PERFECT:
 		end_remaining = 5
@@ -2393,6 +2753,10 @@ const COIN_REMATCH_STEP := 14
 # why this must be called BEFORE _end_player_pick_close sets it - both the
 # readout and the actual payout go through here so they can't drift apart.
 func _coin_reward() -> int:
+	# Online battles pay nothing, deliberately: two players can agree to feed
+	# each other wins, and the AI ladder is where the economy is balanced.
+	if Game.online_mode:
+		return 0
 	var ai: AIManager.AIData = AIManager.get_ai(Game.opponent_index)
 	var reward := (COIN_FIRST_BASE + COIN_FIRST_STEP * Game.opponent_index) if not ai.defeated \
 			else (COIN_REMATCH_BASE + COIN_REMATCH_STEP * Game.opponent_index)
@@ -2401,6 +2765,10 @@ func _coin_reward() -> int:
 	return reward
 
 func _end_player_pick_close() -> void:
+	if Game.online_mode:
+		await _online_player_pick_close()
+		return
+
 	var ai: AIManager.AIData = AIManager.get_ai(Game.opponent_index)
 	Game.player.coins += _coin_reward()
 
@@ -2423,6 +2791,45 @@ func _end_player_pick_close() -> void:
 	SaveSystem.save_player(Game.player)
 	busy_spinner.visible = false
 	_return_to_main_menu()
+
+## Online winner's side of the payout. The cards are renumbered on arrival
+## (unique_id is only unique within a save slot, so a won card can collide
+## with one already in this collection) and the server is told both numbers so
+## its own registry follows the card. No coins, no AI pools, no opponent
+## unlock - none of those exist in an online match.
+func _online_player_pick_close() -> void:
+	var taken: Array = []
+	var stolen: Array = []
+	for view in end_up_cards:
+		if end_movable.get(view, false):
+			var card: Card = view.card
+			var from_uid := card.unique_id
+			card.unique_id = CardManager.take_uid()
+			taken.append(card)
+			stolen.append({"from": from_uid, "to": card.unique_id})
+
+	# Broadcast the choice before finalizing: the loser's client is parked
+	# waiting for exactly this, and it is also the state both sides hash.
+	if not await online.submit({"stolen": stolen}, board, player_hand, cpu_hand,
+			"steal:%d" % stolen.size()):
+		_leave_online()
+		return
+
+	var res := await online.finalize(stolen)
+	if not res["ok"]:
+		# The server refused the payout (a mismatch, or a stake that wasn't
+		# really in this match). Nothing is added locally - the server's
+		# ledger is the one that decides who owns what.
+		push_warning("online payout refused: " + str(res["error"]))
+		_leave_online()
+		return
+
+	for card in taken:
+		Game.player.add_captured_card(card)
+	Game.player.match_started = false
+	Game.player.matches_won += 1
+	SaveSystem.save_player(Game.player)
+	_leave_online()
 
 # ------------------------------------------------------------ end: CPU pick
 
@@ -2470,6 +2877,26 @@ func gsEndCPUPick_Set(result: BattleResult) -> void:
 
 	await get_tree().create_timer(delay + 0.45).timeout
 
+	if online != null:
+		# The winner is a person taking their time over the choice, so the
+		# clock is explicitly not allowed to run out on them here.
+		var remote := await online.receive(false)
+		if remote.is_empty():
+			return
+		var stolen: Array = remote.get("stolen", [])
+		if not await online.submit({}, board, player_hand, cpu_hand, "steal:%d" % stolen.size()):
+			return
+		# Restrict what actually leaves this collection to the cards the winner
+		# named, rather than trusting this client's own end_movable guess.
+		var taken_uids := {}
+		for entry in stolen:
+			taken_uids[int(entry["from"])] = true
+		for view in end_up_cards:
+			if end_movable.get(view, false) and not taken_uids.has(view.card.unique_id):
+				end_movable[view] = false
+			elif taken_uids.has(view.card.unique_id):
+				end_cpu_forced_view = view
+
 	if result == BattleResult.CPU_WINS:
 		end_cpu_pick_mode = true
 		_end_cpu_pick_roulette()
@@ -2496,6 +2923,11 @@ func _end_cpu_pick_roulette() -> void:
 
 		if end_cpu_cur_pick <= 2.0:
 			end_cpu_pick_mode = false
+			# Online the spin is pure theatre - the winner already chose, so
+			# the wheel snaps to their card on the last frame.
+			if end_cpu_forced_view != null:
+				end_cpu_sel_view = end_cpu_forced_view
+				_show_end_card_info(end_cpu_sel_view.card)
 			await get_tree().create_timer(0.3).timeout
 			_end_cpu_pick_setup_move()
 			return
@@ -2521,6 +2953,18 @@ func _end_cpu_pick_setup_move() -> void:
 	_fade_in(button_done, mov_time)
 
 func _end_cpu_pick_close() -> void:
+	if Game.online_mode:
+		# The winner's client already told the server which cards moved; this
+		# side only mirrors the loss into the local collection. end_movable was
+		# narrowed to the winner's actual picks in gsEndCPUPick_Set.
+		for view in end_down_cards:
+			if end_movable.get(view, false):
+				Game.player.remove_card(view.card)
+		Game.player.match_started = false
+		SaveSystem.save_player(Game.player)
+		_leave_online()
+		return
+
 	var ai: AIManager.AIData = AIManager.get_ai(Game.opponent_index)
 
 	for view in end_down_cards:
@@ -2549,6 +2993,16 @@ func gsEndNonePick_Set() -> void:
 	_fade_in(button_done, 1.5)
 
 func _end_none_pick_close() -> void:
+	if Game.online_mode:
+		# A draw moves no cards, but the match still has to be closed out so
+		# both Elo ratings settle. Either side may call it; whoever gets there
+		# second reads back the recorded result instead of applying it twice.
+		await online.finalize([])
+		Game.player.match_started = false
+		SaveSystem.save_player(Game.player)
+		_leave_online()
+		return
+
 	Game.player.match_started = false
 	SaveSystem.save_player(Game.player)
 	busy_spinner.visible = false

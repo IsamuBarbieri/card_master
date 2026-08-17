@@ -98,6 +98,9 @@ func _ready() -> void:
 	lang_popup.add_item("日本語")
 	lang_popup.add_item("简体中文")
 	lang_popup.selected = Game.language
+	# The one text control on this screen that isn't a UIButtonStyle button,
+	# so it needs the same pointer feedback spelled out.
+	lang_popup.add_theme_color_override("font_hover_color", Color.WHITE)
 	lang_popup.item_selected.connect(_on_language_selected)
 	add_child(lang_popup)
 

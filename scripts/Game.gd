@@ -11,6 +11,12 @@ var player: Player = null
 var opponent_index: int = -1
 var rage_quit_mode: bool = false
 
+## Online match state, set by the matchmaking screen and read by BattleScene
+## (empty/false for every offline battle, so the AI path is untouched). Keys:
+## id, seed, first_player, my_slot, opponent_deck, opponent_name.
+var online_mode: bool = false
+var online_match: Dictionary = {}
+
 # Port of Game.cs's Options struct. These are app-level preferences (not
 # part of any player's save data - see SaveSystem.save_settings/
 # load_settings), so every setter persists immediately rather than relying

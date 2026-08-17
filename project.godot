@@ -22,6 +22,7 @@ AIManager="*res://scripts/AIManager.gd"
 Game="*res://scripts/Game.gd"
 StringTable="*res://scripts/StringTable.gd"
 ControllerUI="*res://scripts/ui/ControllerUI.gd"
+Net="*res://scripts/net/Net.gd"
 
 [display]
 

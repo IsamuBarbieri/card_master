@@ -40,6 +40,15 @@ const CARD_GRID_GAP := 5
 const CARD_GRID_CELL := Vector2(50, 67)
 const CARD_GRID_ART := Vector2(44, 59)
 
+# Card-stats readout, laid out from the info panel's own box (236,375 299x158)
+# rather than per-row hand-tuned positions.
+const INFO_ROWS_TOP := 384.0
+const INFO_ROW_STEP := 35.0
+const INFO_ROW_HEIGHT := 35.0
+const INFO_FONT_SIZE := 30
+const INFO_CAPTION_WIDTH := 163.0
+const INFO_VALUE_WIDTH := 116.0
+
 var card_matrix := CardMatrix.new()
 var sel_type_index := 0
 var sel_card_index := 0
@@ -163,41 +172,42 @@ func _build_ui() -> void:
 	info_bkg.size = Vector2(299, 158)
 	add_child(info_bkg)
 
-	var info_offense_lbl := _make_label(Vector2(246, 384), Vector2(153, 31), font_stylish, 25)
-	info_offense_lbl.text = StringTable.get_string(StringTable.ID_CARD_ATTACK)
-	add_child(info_offense_lbl)
-	UIButtonStyle.fit_button_text(info_offense_lbl)
-	label_value_offense = _make_label(Vector2(399, 384), Vector2(126, 31), font_stylish, 25)
-	label_value_offense.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	label_value_offense.text = "- - -"
-	add_child(label_value_offense)
+	# Four evenly-spaced rows filling the panel instead of the hand-placed
+	# 31/36/37/34-tall rows that used to leave a 10px strip idle at the bottom.
+	# 375 + 9 + 3*35 + 35 = 524, inside the panel's own 533 bottom edge.
+	# The font went 25 -> 30 with the reclaimed space: this readout is the only
+	# place a card's real numbers are legible at a glance, and at 25 it was
+	# noticeably smaller than Shop's equivalent panel (36).
+	var captions := [
+		StringTable.get_string(StringTable.ID_CARD_ATTACK),
+		StringTable.get_string(StringTable.ID_CARD_TYPE),
+		StringTable.get_string(StringTable.ID_CARD_PHYSICAL_DEFENSE),
+		StringTable.get_string(StringTable.ID_CARD_MAGICAL_DEFENSE),
+	]
+	var values := []
+	for i in captions.size():
+		var y := INFO_ROWS_TOP + i * INFO_ROW_STEP
 
-	var info_type_lbl := _make_label(Vector2(246, 416), Vector2(153, 36), font_stylish, 25)
-	info_type_lbl.text = StringTable.get_string(StringTable.ID_CARD_TYPE)
-	add_child(info_type_lbl)
-	UIButtonStyle.fit_button_text(info_type_lbl)
-	label_value_type = _make_label(Vector2(399, 416), Vector2(126, 36), font_stylish, 25)
-	label_value_type.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	label_value_type.text = "- - -"
-	add_child(label_value_type)
+		var caption := _make_label(Vector2(246, y), Vector2(INFO_CAPTION_WIDTH, INFO_ROW_HEIGHT), font_stylish, INFO_FONT_SIZE)
+		caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		caption.text = captions[i]
+		add_child(caption)
+		# Caption lengths swing wildly by language ("Type" vs "Phys.
+		# Verteidigung"), so each one shrinks to its own box rather than the
+		# whole panel dropping to the size the longest translation needs.
+		UIButtonStyle.fit_button_text(caption)
 
-	var info_pdef_lbl := _make_label(Vector2(246, 452), Vector2(153, 37), font_stylish, 25)
-	info_pdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_PHYSICAL_DEFENSE)
-	add_child(info_pdef_lbl)
-	UIButtonStyle.fit_button_text(info_pdef_lbl)
-	label_value_pdef = _make_label(Vector2(399, 452), Vector2(126, 37), font_stylish, 25)
-	label_value_pdef.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	label_value_pdef.text = "- - -"
-	add_child(label_value_pdef)
+		var value := _make_label(Vector2(246 + INFO_CAPTION_WIDTH, y), Vector2(INFO_VALUE_WIDTH, INFO_ROW_HEIGHT), font_stylish, INFO_FONT_SIZE)
+		value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		value.text = "- - -"
+		add_child(value)
+		values.append(value)
 
-	var info_mdef_lbl := _make_label(Vector2(246, 489), Vector2(153, 34), font_stylish, 25)
-	info_mdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_MAGICAL_DEFENSE)
-	add_child(info_mdef_lbl)
-	UIButtonStyle.fit_button_text(info_mdef_lbl)
-	label_value_mdef = _make_label(Vector2(399, 489), Vector2(126, 34), font_stylish, 25)
-	label_value_mdef.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	label_value_mdef.text = "- - -"
-	add_child(label_value_mdef)
+	label_value_offense = values[0]
+	label_value_type = values[1]
+	label_value_pdef = values[2]
+	label_value_mdef = values[3]
 
 	sfx_back = AudioStreamPlayer.new()
 	sfx_back.stream = load(ASSETS + "sfx/button_back_sound.wav")

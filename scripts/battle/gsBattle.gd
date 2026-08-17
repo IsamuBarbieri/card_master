@@ -47,8 +47,11 @@ static func resolve_battle(card0: Card, card1: Card) -> Dictionary:
 			else:
 				defense_stat = card1.magical_defense; letter1 = 3
 
-	var attack_rand := randi_range(0, attack_stat) if attack_stat > 0 else 0
-	var defense_rand := randi_range(0, defense_stat) if defense_stat > 0 else 0
+	# BattleRng rather than randi_range: this is the one roll that decides who
+	# wins a fight, so in an online match both clients have to draw the exact
+	# same numbers here or their boards diverge and the match gets voided.
+	var attack_rand := BattleRng.range_incl(0, attack_stat) if attack_stat > 0 else 0
+	var defense_rand := BattleRng.range_incl(0, defense_stat) if defense_stat > 0 else 0
 	var attack_value := attack_stat - attack_rand
 	var defense_value := defense_stat - defense_rand
 

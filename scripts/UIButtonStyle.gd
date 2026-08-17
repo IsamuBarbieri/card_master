@@ -29,6 +29,21 @@ static func apply(btn: Button) -> void:
 	# would fire. Not used by mouse input - FocusNav sets focus_mode = NONE
 	# on everything it registers, so nothing gets a focus ring by accident.
 	btn.add_theme_stylebox_override("focus", _make_stylebox("button_9patch_press.png"))
+	# Pointer feedback. Every screen overrides font_color (almost always to
+	# black) but none of them overrode the hover colour, so the label stayed
+	# exactly the same shade under the cursor and only MainMenu - whose buttons
+	# sit on their own icon art - read as responding. Set here rather than in
+	# each _make_text_button helper so every button in the game answers the
+	# mouse the same way; a caller wanting something else (MainMenu's Online
+	# circle wants gold) just overrides it after calling apply().
+	btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	btn.add_theme_color_override("font_hover_pressed_color", Color.WHITE)
+	# Pressed goes back to the resting colour. Every button in this game draws
+	# black text over the 9-patch, and without this a plain Button falls
+	# through to Godot's own default pressed colour (a pale grey) while a
+	# FixedSizeButton falls back to its font_color - so the two behaved
+	# differently on the way down.
+	btn.add_theme_color_override("font_pressed_color", Color.BLACK)
 
 static func _make_stylebox(texture_name: String) -> StyleBoxTexture:
 	var sb := StyleBoxTexture.new()

@@ -62,10 +62,23 @@ var confirm_slot := -1
 
 var name_dialog: Control
 var name_edit: LineEdit
+## Online names are unique and chosen once - there is no rename - so the name
+## is checked against the server while it is being typed and the slot cannot
+## be created on a name somebody already holds.
+var name_check_label: Label
+var name_error_label: Label
+var name_check_timer: Timer
+var name_available := false
+const NAME_CHECK_DELAY := 0.45
+const NAME_MARK_FREE := "✓"
+const NAME_MARK_TAKEN := "✗"
+const NAME_COLOR_FREE := Color(0.15, 0.65, 0.20)
+const NAME_COLOR_TAKEN := Color(0.75, 0.12, 0.10)
 var name_ok_btn: Button
 var name_cancel_btn: Button
 var confirm_dialog: Control
 var confirm_title_label: Label
+var confirm_msg_label: Label
 var confirm_ok_btn: Button
 var confirm_cancel_btn: Button
 
@@ -113,6 +126,13 @@ func _ready() -> void:
 		slot.add_child(stat_label)
 		slot_stat_labels.append(stat_label)
 
+		# A slot's content is these labels, not the button's own text, so the
+		# button has nothing of its own to recolour under the pointer - they
+		# are registered so they light up with it like any other button's
+		# label does. The coin total keeps its gold.
+		for label in [number_label, name_label, stat_label]:
+			slot.add_state_label(label)
+
 		# No "Collection:" caption above the grid - a row of card portraits
 		# reads as a collection on its own, and dropping the label frees the
 		# room COLLECTION_ICON_SIZE above grew into.
@@ -148,6 +168,9 @@ func _ready() -> void:
 		empty_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(empty_label)
 		slot_empty_labels.append(empty_label)
+		# "New" is what an empty slot shows, so it lights up with the pointer
+		# like the filled slots' own labels do.
+		slot.add_state_label(empty_label)
 
 		var del := _make_delete_button(SLOT_POSITIONS[i] + Vector2(SLOT_SIZE.x - DELETE_SIZE.x - DELETE_MARGIN, DELETE_MARGIN))
 		del.pressed.connect(_on_delete_pressed.bind(i))
@@ -221,6 +244,17 @@ func _close_keyboard() -> void:
 func _on_keyboard_confirmed(text: String) -> void:
 	_close_keyboard()
 	name_edit.text = text
+	# The pad path skips the text field entirely, so the check that runs while
+	# typing never happened - do it here before committing, or a name already
+	# taken would sail through on a controller.
+	await _check_name_availability()
+	if not is_inside_tree():
+		return
+	if name_ok_btn.disabled:
+		# Taken: show the dialog with the cross so the player can see why and
+		# pick something else.
+		name_dialog.visible = true
+		return
 	_on_name_ok_pressed()
 
 func _on_keyboard_cancelled() -> void:
@@ -372,7 +406,35 @@ func _build_name_dialog() -> void:
 	name_edit.add_theme_font_override("font", font_stylish)
 	name_edit.add_theme_font_size_override("font_size", 25)
 	name_edit.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_edit.text_changed.connect(_on_name_typed)
 	panel.add_child(name_edit)
+
+	# Availability mark, in the strip the panel leaves to the right of the
+	# field (the field ends at x=430 inside a 500-wide panel).
+	#
+	# Deliberately NO font override: font_stylish has no check or cross glyph,
+	# and Godot's built-in default font does.
+	name_check_label = Label.new()
+	name_check_label.position = Vector2(436, 134)
+	name_check_label.size = Vector2(54, 56)
+	name_check_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_check_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	name_check_label.add_theme_font_size_override("font_size", 34)
+	panel.add_child(name_check_label)
+
+	# Why the cross is there, when it isn't "somebody has this name".
+	name_error_label = _make_dialog_label(Vector2(20, 192), Vector2(460, 30), font_stylish)
+	name_error_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_error_label.add_theme_font_size_override("font_size", 20)
+	name_error_label.add_theme_color_override("font_color", NAME_COLOR_TAKEN)
+	panel.add_child(name_error_label)
+
+	# Typing fires per keystroke; the server is asked once the player pauses.
+	name_check_timer = Timer.new()
+	name_check_timer.one_shot = true
+	name_check_timer.wait_time = NAME_CHECK_DELAY
+	name_check_timer.timeout.connect(_check_name_availability)
+	add_child(name_check_timer)
 
 	name_ok_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_OK), Vector2(19, 225), Vector2(214, 56), font_stylish)
 	name_ok_btn.pressed.connect(_on_name_ok_pressed)
@@ -392,12 +454,14 @@ func _build_confirm_dialog() -> void:
 	confirm_title_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	panel.add_child(confirm_title_label)
 
-	var msg_label := _make_dialog_label(Vector2(15, 95), Vector2(330, 90), font_stylish)
-	msg_label.add_theme_font_size_override("font_size", 20)
-	msg_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	msg_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-	msg_label.text = StringTable.get_string(StringTable.ID_DELETE_SLOT_MSG)
-	panel.add_child(msg_label)
+	# Two lines now (the online account warning follows the local one), so the
+	# box is taller and the font a touch smaller to keep both fully visible.
+	confirm_msg_label = _make_dialog_label(Vector2(15, 88), Vector2(330, 100), font_stylish)
+	confirm_msg_label.add_theme_font_size_override("font_size", 18)
+	confirm_msg_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	confirm_msg_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	confirm_msg_label.text = StringTable.get_string(StringTable.ID_DELETE_SLOT_MSG)
+	panel.add_child(confirm_msg_label)
 
 	confirm_ok_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_OK), Vector2(23, 190), Vector2(150, 56), font_stylish)
 	confirm_ok_btn.pressed.connect(_on_confirm_delete_ok)
@@ -415,6 +479,7 @@ func _on_slot_pressed(slot_index: int) -> void:
 
 	if slot_names[slot_index] == null:
 		nav.push_layer(1)
+		_reset_name_check()
 		if ControllerUI.is_gamepad():
 			_open_keyboard()
 		else:
@@ -423,6 +488,49 @@ func _on_slot_pressed(slot_index: int) -> void:
 	else:
 		Game.player = SaveSystem.load_player(slot_index)
 		get_tree().change_scene_to_file("res://scenes/menu/MainMenu.tscn")
+
+func _reset_name_check() -> void:
+	name_available = false
+	name_check_label.text = ""
+	name_error_label.text = ""
+	_update_name_ok()
+
+func _on_name_typed(_text: String) -> void:
+	name_available = false
+	name_check_label.text = ""
+	_update_name_ok()
+	name_check_timer.start()
+
+## Asks the server whether the typed name is free. The reply is dropped if the
+## player has kept typing in the meantime, so a slow answer to an old name can
+## never mark the current one.
+func _check_name_availability() -> void:
+	var candidate := name_edit.text.strip_edges()
+	if candidate.is_empty():
+		_reset_name_check()
+		return
+
+	var res := await Net.is_name_available(candidate)
+	if not is_inside_tree() or name_edit.text.strip_edges() != candidate:
+		return
+
+	name_available = res["ok"] and res["available"]
+	name_check_label.text = NAME_MARK_FREE if name_available else NAME_MARK_TAKEN
+	name_check_label.add_theme_color_override("font_color",
+		NAME_COLOR_FREE if name_available else NAME_COLOR_TAKEN)
+	# The reason for a cross matters: a taken name is the player's to fix, an
+	# unreachable server isn't, and without saying so the cross would look
+	# like the name was rejected.
+	name_error_label.text = "" if res["ok"] else StringTable.get_string(StringTable.ID_ONLINE_ERROR)
+	_update_name_ok()
+
+## OK needs the server's word that the name is free - no connection, no new
+## save. Blunt, and deliberately so: the name is chosen once with no rename,
+## so letting a slot be created on an unverified name risks stranding it
+## offline forever. Playing an EXISTING save offline is unaffected; this gate
+## is only on creating one.
+func _update_name_ok() -> void:
+	name_ok_btn.disabled = not name_available
 
 func _on_name_ok_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
@@ -433,6 +541,12 @@ func _on_name_ok_pressed() -> void:
 	nav.pop_layer()
 	Game.player = SaveSystem.create_new_player(selected_slot, new_name)
 	_refresh_slots()
+	# Claim the name now, not at first online play: between here and then
+	# somebody else could take it, and there is no rename to recover with.
+	# Offline this simply fails and the claim happens on the first session
+	# that does reach the server.
+	Net.sign_out()
+	await Net.sign_in(selected_slot, new_name)
 
 func _on_name_cancel_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_back_sound.wav")
@@ -443,14 +557,26 @@ func _on_delete_pressed(slot_index: int) -> void:
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 	confirm_slot = slot_index
 	confirm_title_label.text = StringTable.get_string(StringTable.ID_DELETE_SLOT_TITLE) + ":\n" + str(slot_names[slot_index])
+	# Spelled out because it is the part that can't be undone or rebuilt: the
+	# local save is one player's own progress, but the online account takes
+	# the leaderboard standing and the name with it.
+	confirm_msg_label.text = "%s\n%s" % [
+		StringTable.get_string(StringTable.ID_DELETE_SLOT_MSG),
+		StringTable.get_string(StringTable.ID_DELETE_SLOT_ONLINE)]
 	confirm_dialog.visible = true
 	nav.push_layer(1)
 
 func _on_confirm_delete_ok() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
-	SaveSystem.delete_player(confirm_slot)
 	confirm_dialog.visible = false
 	nav.pop_layer()
+	# Server first: the online account has to be given back before the local
+	# save goes, both because deleting the save takes the session file with it
+	# and because the whole point is to release the name for somebody else.
+	await Net.delete_account(confirm_slot)
+	if not is_inside_tree():
+		return
+	SaveSystem.delete_player(confirm_slot)
 	_refresh_slots()
 
 func _on_confirm_delete_cancel() -> void:

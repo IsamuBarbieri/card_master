@@ -32,13 +32,15 @@ func reset() -> void:
 
 # Randomly blocks up to `max_blocks` empty cells (ported from
 # BattleScene.generateBlocks - the original rolls 0..(16-10) blocks since
-# 10 cells are needed for the two 5-card hands).
+# 10 cells are needed for the two 5-card hands). Draws from BattleRng, not
+# the global rng, so both clients of an online match lay out the same board
+# from the server's seed.
 func place_random_blocks(max_blocks: int) -> void:
-	var count := randi() % (max_blocks + 1)
+	var count := BattleRng.below(max_blocks + 1)
 	var placed := 0
 	while placed < count:
-		var row := randi() % NUM_ROWS
-		var col := randi() % NUM_COLS
+		var row := BattleRng.below(NUM_ROWS)
+		var col := BattleRng.below(NUM_COLS)
 		if slots[row][col] == null and not blocked[row][col]:
 			blocked[row][col] = true
 			placed += 1

@@ -56,6 +56,7 @@ func _ready() -> void:
 	var btn_shop := _make_menu_button(StringTable.get_string(StringTable.ID_SHOP), "button_shop.png", Vector2(131, 236), Vector2(274, 71), _on_shop_pressed)
 	var btn_collection := _make_menu_button(StringTable.get_string(StringTable.ID_COLLECTION), "button_collection.png", Vector2(556, 236), Vector2(274, 71), _on_collection_pressed)
 	var btn_options := _make_menu_button(StringTable.get_string(StringTable.ID_OPTIONS), "button_option.png", Vector2(343, 442), Vector2(274, 71), _on_options_pressed)
+	var btn_online := _make_online_button()
 
 	# No-op if a menu track is already playing (e.g. coming back from
 	# Opponents, which never touches the music itself) - keeps whatever's
@@ -65,7 +66,9 @@ func _ready() -> void:
 	_build_cat()
 	cat_wait_time = randf() * 3.5
 
-	_setup_nav([btn_battle, btn_shop, btn_collection, btn_options])
+	# Online goes last so the stored focus meta of the four original buttons
+	# keeps pointing at the same button it always did.
+	_setup_nav([btn_battle, btn_shop, btn_collection, btn_options, btn_online])
 
 ## The cat hotspot is registered too so the Help screen is reachable without
 ## a pointer - it's the only way in.
@@ -160,6 +163,75 @@ func _make_menu_button(label: String, texture_name: String, pos: Vector2, size: 
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(icon)
 	return btn
+
+## The four composer buttons sit around the edges of a diamond (y 26 / 236 /
+## 442); Online fills the hole in the middle. It stays round because that is
+## the only shape that fits there - the gap between Shop (ends x=405) and
+## Collection (starts x=556) is 151px, so a 274-wide button like the other
+## four cannot go in the centre at all.
+##
+## Unlike the other four, the art here is a solid emblem with no transparent
+## gap for a label to show through, so the order is reversed: the emblem is
+## laid down first and the button (flat, no background of its own) goes on top
+## carrying the text.
+const ONLINE_BUTTON_SIZE := 146.0
+const ONLINE_BUTTON_POS := Vector2(407, 199)
+## Black at rest like every other menu label, lighting up to the emblem's own
+## gold on hover and focus.
+const ONLINE_TEXT_COLOR := Color.BLACK
+const ONLINE_TEXT_HOVER := Color(0.93, 0.75, 0.32)
+const ONLINE_OUTLINE_SIZE := 2
+
+## outline_size is a single theme constant with no per-state variant, so the
+## rim has to be toggled by hand as the pointer or the pad focus arrives.
+func _set_online_outline(btn: Button, size: int) -> void:
+	btn.add_theme_constant_override("outline_size", size)
+
+func _make_online_button() -> Button:
+	var emblem := TextureRect.new()
+	emblem.texture = load(ASSETS + "button_online_round.png")
+	emblem.stretch_mode = TextureRect.STRETCH_SCALE
+	emblem.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	emblem.position = ONLINE_BUTTON_POS
+	emblem.size = Vector2(ONLINE_BUTTON_SIZE, ONLINE_BUTTON_SIZE)
+	emblem.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(emblem)
+
+	var btn := Button.new()
+	btn.flat = true
+	btn.text = StringTable.get_string(StringTable.ID_ONLINE)
+	btn.position = ONLINE_BUTTON_POS
+	btn.size = Vector2(ONLINE_BUTTON_SIZE, ONLINE_BUTTON_SIZE)
+	btn.add_theme_font_override("font", Game.font_stylish)
+	btn.add_theme_font_size_override("font_size", 36)
+	btn.add_theme_color_override("font_color", ONLINE_TEXT_COLOR)
+	btn.add_theme_color_override("font_hover_color", ONLINE_TEXT_HOVER)
+	btn.add_theme_color_override("font_focus_color", ONLINE_TEXT_HOVER)
+	btn.add_theme_color_override("font_pressed_color", ONLINE_TEXT_HOVER)
+	# Gold rim rather than the usual black one: black-on-black would vanish
+	# against the globe, and this picks up the emblem's own ring. It is dropped
+	# while highlighted - the label turns gold there, so keeping a gold rim
+	# around gold letters just reads as a heavier, blurrier font.
+	btn.add_theme_color_override("font_outline_color", ONLINE_TEXT_HOVER)
+	btn.add_theme_constant_override("outline_size", ONLINE_OUTLINE_SIZE)
+	btn.mouse_entered.connect(_set_online_outline.bind(btn, 0))
+	btn.mouse_exited.connect(_set_online_outline.bind(btn, ONLINE_OUTLINE_SIZE))
+	btn.focus_entered.connect(_set_online_outline.bind(btn, 0))
+	btn.focus_exited.connect(_set_online_outline.bind(btn, ONLINE_OUTLINE_SIZE))
+	btn.pressed.connect(_on_online_pressed)
+	add_child(btn)
+	# Fitted by hand rather than through fit_menu_button_text: that one is
+	# built for the four two-halves icons and CLEARS the outline overrides
+	# whenever the label fits between them (see UIButtonStyle), which quietly
+	# removed the gold rim set just above. The safe width here is the square
+	# inscribed in the circle, not the button's full 146.
+	btn.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_width(
+		btn.text, Game.font_stylish, ONLINE_BUTTON_SIZE * 0.70, 36, UIButtonStyle.MIN_FONT_SIZE))
+	return btn
+
+func _on_online_pressed() -> void:
+	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
+	get_tree().change_scene_to_file("res://scenes/menu/Online.tscn")
 
 func _on_battle_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")

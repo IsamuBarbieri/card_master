@@ -42,6 +42,19 @@ enum {
 	ID_OPPONENT_TURN, ID_MATCH_VOIDED, ID_OPPONENT_QUIT, ID_ONLINE_ERROR,
 	ID_ONLINE_NO_REWARD, ID_RANK, ID_LOST_BY_QUIT,
 	ID_BROWSE,
+	ID_RATING, ID_LOSSES,
+	# Abbreviated stat captions for the two cramped battle panels. The full
+	# forms ("Phys. Verteidigung") are 260px wide at the size those panels now
+	# use and have to shrink to 14px to fit 228px of panel - unreadable at any
+	# font size, because the limit is the string, not the type size. Shop and
+	# Collection have the room and keep the full words.
+	ID_CARD_ATTACK_SHORT, ID_CARD_TYPE_SHORT,
+	ID_CARD_PDEF_SHORT, ID_CARD_MDEF_SHORT,
+	## Online's own play button. Not ID_PLAY_BATTLE ("Play"): here it starts a
+	## match against a person, and the word carries that.
+	ID_CHALLENGE,
+	## Second line of the delete-save confirmation: the online account goes too.
+	ID_DELETE_SLOT_ONLINE,
 }
 
 const TABLE := [
@@ -89,6 +102,10 @@ const TABLE := [
 		"Keine Verbindung", "Online-Kämpfe bringen kein Geld", "Platz",
 		"Durch Aufgeben verloren",
 		"Blättern",
+		"Wertung", "Niederlagen",
+		"Ang.", "Typ", "P.Ver.", "M.Ver.",
+		"Herausfordern",
+		"Auch dein Online-Konto und deine Ranglistenpunkte werden gelöscht.",
 	],
 	# English
 	[
@@ -134,6 +151,10 @@ const TABLE := [
 		"No connection", "Online battles earn no coins", "Rank",
 		"Lost by quitting",
 		"Browse",
+		"Rating", "Losses",
+		"Atk", "Type", "P.Def", "M.Def",
+		"Challenge",
+		"Your online account and leaderboard score are deleted as well.",
 	],
 	# Español
 	[
@@ -179,6 +200,10 @@ const TABLE := [
 		"Sin conexión", "Los combates en línea no dan monedas", "Puesto",
 		"Perdida por abandono",
 		"Explorar",
+		"Puntuación", "Derrotas",
+		"Ata.", "Tipo", "D.Fis.", "D.Mag.",
+		"Desafiar",
+		"También se borran tu cuenta en línea y tu puntuación.",
 	],
 	# Français
 	[
@@ -225,6 +250,10 @@ const TABLE := [
 		"Pas de connexion", "Les combats en ligne ne rapportent pas d'argent", "Rang",
 		"Perdue par abandon",
 		"Parcourir",
+		"Score", "Défaites",
+		"Att.", "Type", "Def.P.", "Def.M.",
+		"Défier",
+		"Ton compte en ligne et ton classement seront également supprimés.",
 	],
 	# Italiano
 	[
@@ -271,6 +300,10 @@ const TABLE := [
 		"Nessuna connessione", "Le sfide online non danno monete", "Posizione",
 		"Persa per abbandono",
 		"Sfoglia",
+		"Punteggio", "Perse",
+		"Att.", "Tipo", "Dif.F.", "Dif.M.",
+		"Sfida",
+		"Verranno cancellati anche il tuo account online e il tuo punteggio.",
 	],
 	# Português (Brasil)
 	[
@@ -316,6 +349,10 @@ const TABLE := [
 		"Sem conexão", "Batalhas online não dão moedas", "Posição",
 		"Perdida por desistência",
 		"Navegar",
+		"Pontuação", "Derrotas",
+		"Ata.", "Tipo", "Def.F.", "Def.M.",
+		"Desafiar",
+		"Sua conta online e sua pontuação também serão apagadas.",
 	],
 	# Русский
 	[
@@ -361,6 +398,10 @@ const TABLE := [
 		"Нет соединения", "Онлайн-бои не приносят монет", "Место",
 		"Поражение из-за выхода",
 		"Просмотр",
+		"Рейтинг", "Поражения",
+		"Атк.", "Тип", "Ф.Защ.", "М.Защ.",
+		"Вызов",
+		"Ваш онлайн-аккаунт и место в таблице лидеров также будут удалены.",
 	],
 	# 日本語 - full retranslation from English (the reference table was mostly
 	# blank placeholders).
@@ -406,6 +447,10 @@ const TABLE := [
 		"接続できません", "オンライン対戦ではお金を獲得できません", "順位",
 		"途中退出により敗北",
 		"閲覧",
+		"レート", "敗北",
+		"攻撃", "種類", "物防", "魔防",
+		"対戦",
+		"オンラインアカウントとランキングの記録も削除されます。",
 	],
 	# 简体中文
 	[
@@ -446,6 +491,10 @@ const TABLE := [
 		"无法连接", "在线对战不会获得金币", "排名",
 		"因退出而判负",
 		"浏览",
+		"积分", "败场",
+		"攻击", "类型", "物防", "法防",
+		"挑战",
+		"你的在线账号和排行榜成绩也会一并删除。",
 	],
 ]
 

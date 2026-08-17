@@ -36,6 +36,16 @@ func next_uid() -> int:
 func set_next_uid(value: int) -> void:
 	_next_uid = value
 
+## Reserves the next unique_id without generating a card. Needed for cards won
+## online: unique_id is only unique within one save slot, so a card taken from
+## another player can collide with one this collection already holds and has
+## to be renumbered on arrival (the server is told the new number so its own
+## registry follows the card - see mp_finalize in server/schema.sql).
+func take_uid() -> int:
+	var uid := _next_uid
+	_next_uid += 1
+	return uid
+
 func letter_to_attack_type(letter: String) -> int:
 	match letter:
 		"P": return Card.AttackType.PHYSICAL
@@ -200,6 +210,18 @@ func card_price(card: Card) -> int:
 	# priced against the new rarity curve instead of the old one.
 	var total: float = 15.4 * (2.0 + f) * pow(val, t)
 	return int(total)
+
+## Matchmaking weight for a deck: the plain sum of the three numeric stats
+## across its cards. Deliberately NOT card_price() - that one folds in the
+## arrow count and a type premium, and arrows are explicitly excluded here so
+## an anti-chain low-arrow deck isn't matched against a heavier opponent for
+## a trait that cuts both ways (see the discussion above card_price).
+func deck_power(cards: Array) -> int:
+	var total := 0
+	for card in cards:
+		if card != null:
+			total += card.attack_power + card.physical_defense + card.magical_defense
+	return total
 
 func generate_random_deck(count: int) -> Array:
 	var deck := []

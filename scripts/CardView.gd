@@ -8,14 +8,25 @@ const CARD_W := 96
 const CARD_H := 128
 const ASSETS_DIR := "res://assets/cards/"
 
-# Widest possible 4-char stat_text() ("F"/hex digit x3 + widest attack-type
-# letter) is ~65px at size 22 in font_stylish.ttf, comfortably inside
-# card_border.png's ~79px-wide inner clear area (x=8..87) with room for the
-# outline stroke. STAT_AREA_BOTTOM is where that inner area stops being
-# clipped by the border's bottom trim (measured on the actual asset).
-const STAT_FONT_SIZE := 22
-const STAT_FONT_SIZE_HEIGHT := 25
+# card_border.png's inner clear area, measured on the actual asset: the frame
+# leaves x=8..87 clear, and the bottom trim stops covering things at y=119.
+# The stat text has to live inside that box or the frame eats it.
+const STAT_AREA_LEFT := 8
+const STAT_AREA_RIGHT := 87
 const STAT_AREA_BOTTOM := 119
+const STAT_OUTLINE := 3
+
+# Every card in the game - battle, shop, collection - is this same 96x128
+# CardView scaled as a whole, so the stat digits are only ever as legible as
+# this one number makes them. It was 22, which left roughly a fifth of the
+# available width unused and read as tiny on a phone; it is now the largest
+# size whose widest possible stat_text() ("F"-class digits plus the widest
+# attack-type letter, plus the outline stroke on both sides) still fits
+# STAT_AREA_LEFT..RIGHT. tests/test_card_stat_fit.gd measures that against the
+# real font and fails if a font or asset change ever makes it overflow, so
+# this is a checked number rather than an eyeballed one.
+const STAT_FONT_SIZE := 24
+const STAT_FONT_SIZE_HEIGHT := 28
 
 # Normalized (0..1) rects, in arrow order N,NE,E,SE,S,SW,W,NW - matches
 # CardManager.cs's dirsVertices/dirsTexcoords (same rect used for position
@@ -66,7 +77,7 @@ func _init() -> void:
 	_stat_label.size = Vector2(CARD_W, STAT_FONT_SIZE_HEIGHT)
 	_stat_label.add_theme_font_override("normal_font", Game.font_stylish)
 	_stat_label.add_theme_font_size_override("normal_font_size", STAT_FONT_SIZE)
-	_stat_label.add_theme_constant_override("outline_size", 3)
+	_stat_label.add_theme_constant_override("outline_size", STAT_OUTLINE)
 	_stat_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	_stat_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_stat_label)
