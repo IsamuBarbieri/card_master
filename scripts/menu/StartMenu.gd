@@ -383,11 +383,7 @@ func _build_dialog_shell(panel_size: Vector2, top_y: float = -1.0) -> Control:
 	panel.size = panel_size
 	overlay.add_child(panel)
 
-	var panel_bg := TextureRect.new()
-	panel_bg.texture = load(ASSETS + "common_transp_box_a.png")
-	panel_bg.stretch_mode = TextureRect.STRETCH_SCALE
-	panel_bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	panel_bg.size = panel_size
+	var panel_bg := UIPanel.make(panel_size)
 	panel.add_child(panel_bg)
 
 	add_child(overlay)

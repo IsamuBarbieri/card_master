@@ -420,12 +420,8 @@ func _build_ui() -> void:
 	image_shop_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(image_shop_icon)
 
-	var info_bkg := TextureRect.new()
-	info_bkg.texture = load(ASSETS + "common_transp_box_a.png")
-	info_bkg.stretch_mode = TextureRect.STRETCH_SCALE
-	info_bkg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	var info_bkg := UIPanel.make(Vector2(260, 252))
 	info_bkg.position = Vector2(364, 117)
-	info_bkg.size = Vector2(260, 252)
 	add_child(info_bkg)
 
 	label_info_name = _make_label(Vector2(373, 129), Vector2(242, 41), font_stylish, 36)

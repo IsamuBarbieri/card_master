@@ -37,11 +37,7 @@ func _init(initial_text: String = "") -> void:
 func _ready() -> void:
 	var font: Font = Game.font_stylish
 
-	var bg := TextureRect.new()
-	bg.texture = load("res://assets/common_transp_box_a.png")
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg.size = PANEL_SIZE
+	var bg := UIPanel.make(PANEL_SIZE)
 	add_child(bg)
 
 	_caret_label = Label.new()

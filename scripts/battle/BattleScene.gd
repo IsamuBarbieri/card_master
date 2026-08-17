@@ -681,12 +681,8 @@ func _build_ui() -> void:
 	# the end-of-match readout right below) so the card-stats readout looks the
 	# same wherever the player meets it. Its frame is thinner than the marble's
 	# too, which is where the extra room for the larger text came from.
-	var info_bkg := TextureRect.new()
-	info_bkg.texture = load(ASSETS + "common_transp_box_a.png")
-	info_bkg.stretch_mode = TextureRect.STRETCH_SCALE
-	info_bkg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	var info_bkg := UIPanel.make(Vector2(248, 256))
 	info_bkg.position = Vector2(14, 282)
-	info_bkg.size = Vector2(248, 256)
 	add_child(info_bkg)
 
 	turn_cursor = TextureRect.new()
@@ -1146,11 +1142,7 @@ func _build_battle_end_ui() -> void:
 	panel_owned.z_index = 60
 	end_panel.add_child(panel_owned)
 
-	var owned_bkg := TextureRect.new()
-	owned_bkg.texture = load(ASSETS + "common_transp_box_a.png")
-	owned_bkg.stretch_mode = TextureRect.STRETCH_SCALE
-	owned_bkg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	owned_bkg.size = panel_owned.size
+	var owned_bkg := UIPanel.make(panel_owned.size)
 	panel_owned.add_child(owned_bkg)
 
 	owned_label = _make_end_label(Vector2(0, 0), panel_owned.size, MIN_READABLE_FONT_SIZE)
@@ -1166,11 +1158,7 @@ func _build_battle_end_ui() -> void:
 	panel_info.z_index = 60  # see panel_owned's comment above
 	end_panel.add_child(panel_info)
 
-	var info_bkg := TextureRect.new()
-	info_bkg.texture = load(ASSETS + "common_transp_box_a.png")
-	info_bkg.stretch_mode = TextureRect.STRETCH_SCALE
-	info_bkg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	info_bkg.size = Vector2(228, 224)
+	var info_bkg := UIPanel.make(Vector2(228, 224))
 	panel_info.add_child(info_bkg)
 
 	# Same readout as the in-match panel above, so it is built the same way and

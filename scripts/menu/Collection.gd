@@ -164,12 +164,8 @@ func _build_ui() -> void:
 	card_list_box.custom_minimum_size = Vector2(230, 0)
 	card_scroll.add_child(card_list_box)
 
-	var info_bkg := TextureRect.new()
-	info_bkg.texture = load(ASSETS + "common_transp_box_a.png")
-	info_bkg.stretch_mode = TextureRect.STRETCH_SCALE
-	info_bkg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	var info_bkg := UIPanel.make(Vector2(299, 158))
 	info_bkg.position = Vector2(236, 375)
-	info_bkg.size = Vector2(299, 158)
 	add_child(info_bkg)
 
 	# Four evenly-spaced rows filling the panel instead of the hand-placed

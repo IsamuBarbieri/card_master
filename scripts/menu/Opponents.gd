@@ -108,12 +108,8 @@ func _build_ui() -> void:
 	bg.size = Vector2(SCREEN_W, SCREEN_H)
 	add_child(bg)
 
-	var desc_panel := TextureRect.new()
-	desc_panel.texture = load(ASSETS + "common_transp_box_a.png")
-	desc_panel.stretch_mode = TextureRect.STRETCH_SCALE
-	desc_panel.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	var desc_panel := UIPanel.make(Vector2(545, 56))
 	desc_panel.position = Vector2(207, 463)
-	desc_panel.size = Vector2(545, 56)
 	add_child(desc_panel)
 
 	var title := _make_label(Vector2(300, 9), Vector2(359, 36), font_stylish)
