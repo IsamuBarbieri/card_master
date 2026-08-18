@@ -44,7 +44,7 @@ const CARD_GRID_ART := Vector2(44, 59)
 # rather than per-row hand-tuned positions.
 const INFO_ROWS_TOP := 384.0
 const INFO_ROW_STEP := 35.0
-const INFO_ROW_HEIGHT := 35.0
+const INFO_ROW_HEIGHT := 38.0
 const INFO_FONT_SIZE := 30
 ## Rebalanced when the captions went short: the abbreviations need far less
 ## room than "P. Defense" did, and the value column carries the long strings
@@ -414,10 +414,18 @@ func _select_card(index: int) -> void:
 
 	big_card_view.setup(card, false, true)
 
-	label_value_pdef.text = str(card.physical_defense)
-	label_value_mdef.text = str(card.magical_defense)
-	label_value_offense.text = str(card.attack_power)
-	label_value_type.text = CardManager.attack_type_to_string(card.attack_type)
+	_set_stat_value(label_value_pdef, str(card.physical_defense))
+	_set_stat_value(label_value_mdef, str(card.magical_defense))
+	_set_stat_value(label_value_offense, str(card.attack_power))
+	_set_stat_value(label_value_type, CardManager.attack_type_to_string(card.attack_type))
+
+## Sets a stat value and picks the largest size that fits its box in BOTH
+## directions. Set flat, a spelled-out attack type overruns the column and a
+## 36px line overruns a 41px row - clipped either way.
+func _set_stat_value(label: Label, text: String) -> void:
+	label.text = text
+	label.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_box(
+		text, Game.font_stylish, label.size, INFO_FONT_SIZE))
 
 # Shared by both lists (bound with their own ScrollContainer, row-count
 # getter, and select callback): press-and-hold-still is a tap (selects the

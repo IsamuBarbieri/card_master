@@ -1151,18 +1151,26 @@ func _update_card_info(cstats: Card, is_player_card: bool, sel: int) -> void:
 	if cstats != null:
 		var def: CardManager.CardDef = CardManager.defs[cstats.def_id]
 		label_info_name.text = def.name
-		label_value_pdef.text = str(cstats.physical_defense)
-		label_value_mdef.text = str(cstats.magical_defense)
-		label_value_offense.text = str(cstats.attack_power)
-		label_value_type.text = CardManager.attack_type_to_string(cstats.attack_type)
+		_set_stat_value(label_value_pdef, str(cstats.physical_defense))
+		_set_stat_value(label_value_mdef, str(cstats.magical_defense))
+		_set_stat_value(label_value_offense, str(cstats.attack_power))
+		_set_stat_value(label_value_type, CardManager.attack_type_to_string(cstats.attack_type))
 		if is_player_card:
 			label_info_name.add_theme_color_override("font_color", Color(0.0, 130.0 / 255.0, 1.0))
 	else:
 		label_info_name.text = StringTable.get_string(StringTable.ID_CARD_STATS)
-		label_value_pdef.text = "---"
-		label_value_mdef.text = "---"
-		label_value_offense.text = "---"
-		label_value_type.text = "---"
+		_set_stat_value(label_value_pdef, "---")
+		_set_stat_value(label_value_mdef, "---")
+		_set_stat_value(label_value_offense, "---")
+		_set_stat_value(label_value_type, "---")
+
+## Sets a stat value and picks the largest size that fits its box in BOTH
+## directions. Set flat, a spelled-out attack type overruns the column and a
+## 36px line overruns a 41px row - clipped either way.
+func _set_stat_value(label: Label, text: String) -> void:
+	label.text = text
+	label.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_box(
+		text, Game.font_stylish, label.size, SHOP_INFO_FONT_SIZE))
 
 func _update_selection_outline() -> void:
 	if game_state != GameState.WAITING_INPUT:

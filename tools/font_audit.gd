@@ -12,8 +12,11 @@ extends Node
 ##   width     total width of every UI string, against the current font
 ##   card      largest stat quad that fits the card frame
 ##   panels    the tightest fitted size any stat panel is forced down to,
-##             across all nine languages - the number that decides whether a
-##             layout has to change at all
+##             across all nine languages, counting BOTH dimensions - the
+##             number that decides whether a layout has to change at all
+##   height     line height at 30, which is what the fixed-height rows have to
+##             hold; it is the half that was missing when the first two swaps
+##             came out clipped top and bottom
 ## Run: godot --headless --quit-after 2000 --script res://tools/font_audit.gd
 ## (or open tools/font_audit.tscn)
 
@@ -29,15 +32,17 @@ func _panels() -> Array:
 		StringTable.ID_CARD_PDEF_SHORT, StringTable.ID_CARD_MDEF_SHORT]
 	var types := [StringTable.ID_ATTACK_TYPE_PHYSICAL, StringTable.ID_ATTACK_TYPE_MAGICAL,
 		StringTable.ID_ATTACK_TYPE_FLEXIBLE, StringTable.ID_ATTACK_TYPE_ASSAULT]
+	# [name, box, max size, string ids] - box carries the row height too, which
+	# is what a width-only measurement kept missing.
 	return [
-		["battle caption", battle["INFO_CAPTION_WIDTH"], battle["INFO_FONT_SIZE"], captions],
-		["battle value", battle["INFO_VALUE_WIDTH"], battle["INFO_FONT_SIZE"], types],
-		["end caption", battle["END_INFO_CAPTION_WIDTH"], battle["END_INFO_FONT_SIZE"], captions],
-		["end value", battle["END_INFO_VALUE_WIDTH"], battle["END_INFO_FONT_SIZE"], types],
-		["shop caption", shop["SHOP_INFO_CAPTION_WIDTH"], shop["SHOP_INFO_FONT_SIZE"], captions],
-		["shop value", shop["SHOP_INFO_VALUE_WIDTH"], shop["SHOP_INFO_FONT_SIZE"], types],
-		["collection caption", collection["INFO_CAPTION_WIDTH"], collection["INFO_FONT_SIZE"], captions],
-		["collection value", collection["INFO_VALUE_WIDTH"], collection["INFO_FONT_SIZE"], types],
+		["battle caption", Vector2(battle["INFO_CAPTION_WIDTH"], battle["INFO_ROW_HEIGHT"]), battle["INFO_FONT_SIZE"], captions],
+		["battle value", Vector2(battle["INFO_VALUE_WIDTH"], battle["INFO_ROW_HEIGHT"]), battle["INFO_FONT_SIZE"], types],
+		["end caption", Vector2(battle["END_INFO_CAPTION_WIDTH"], battle["END_INFO_ROW_HEIGHT"]), battle["END_INFO_FONT_SIZE"], captions],
+		["end value", Vector2(battle["END_INFO_VALUE_WIDTH"], battle["END_INFO_ROW_HEIGHT"]), battle["END_INFO_FONT_SIZE"], types],
+		["shop caption", Vector2(shop["SHOP_INFO_CAPTION_WIDTH"], 41.0), shop["SHOP_INFO_FONT_SIZE"], captions],
+		["shop value", Vector2(shop["SHOP_INFO_VALUE_WIDTH"], 41.0), shop["SHOP_INFO_FONT_SIZE"], types],
+		["collection caption", Vector2(collection["INFO_CAPTION_WIDTH"], collection["INFO_ROW_HEIGHT"]), collection["INFO_FONT_SIZE"], captions],
+		["collection value", Vector2(collection["INFO_VALUE_WIDTH"], collection["INFO_ROW_HEIGHT"]), collection["INFO_FONT_SIZE"], types],
 	]
 
 ## Every character the nine language tables can put on screen.
@@ -90,17 +95,17 @@ func _report(label: String, font: Font, baseline: float) -> void:
 	for p in _panels():
 		for id in p[3]:
 			for lang in StringTable.TABLE.size():
-				var fitted := UIButtonStyle.fit_text_to_width(
+				var fitted := UIButtonStyle.fit_text_to_box(
 					StringTable.TABLE[lang][id], font, p[1], p[2], 1)
 				if fitted < tightest:
 					tightest = fitted
 					tightest_where = "%s, \"%s\"" % [p[0], StringTable.TABLE[lang][id]]
 
 	var width := _total_width(font)
-	print("%-24s | miss %4d %-13s | width %+5.1f%% | card %2d | panel %2d | %s" % [
+	print("%-24s | miss %4d %-13s | width %+5.1f%% | line %2.0f | card %2d | panel %2d | %s" % [
 		label, missing, ("(%d non-latin)" % missing) if missing > 0 else "",
 		0.0 if baseline == 0.0 else (width / baseline - 1.0) * 100.0,
-		_max_card_size(font), tightest,
+		font.get_height(30), _max_card_size(font), tightest,
 		tightest_where if tightest < FLOOR else "clears the %dpx floor" % FLOOR])
 
 func _ready() -> void:

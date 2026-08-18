@@ -294,7 +294,7 @@ func _ready() -> void:
 ## between x=718 and x=826 (HAND_POSITIONS) and the lowest card ends at
 ## y=348+128=476, leaving this band free.
 const ONLINE_STRIP_TOP := 478.0
-const ONLINE_TIMER_HEIGHT := 32.0
+const ONLINE_TIMER_HEIGHT := 40.0
 
 static func online_strip_x() -> float:
 	return HAND_POSITIONS[1].x
@@ -312,7 +312,8 @@ func _build_online_timer_label() -> void:
 	online_timer_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	online_timer_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	online_timer_label.add_theme_font_override("font", font_stylish)
-	online_timer_label.add_theme_font_size_override("font_size", 34)
+	online_timer_label.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_box(
+		"00", font_stylish, Vector2(online_strip_width(), ONLINE_TIMER_HEIGHT), 34))
 	online_timer_label.add_theme_color_override("font_color", Color.BLACK)
 	online_timer_label.visible = false
 	add_child(online_timer_label)
@@ -774,8 +775,9 @@ func _panel_name(idx: int) -> String:
 
 func _set_panel_name(label: Label, text: String) -> void:
 	label.text = text
-	label.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_width(
-		text, font_stylish, scoreboard_text_width(), NAME_FONT_SIZE, NAME_MIN_FONT_SIZE))
+	label.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_box(
+		text, font_stylish, Vector2(scoreboard_text_width(), scoreboard_row_height()),
+		NAME_FONT_SIZE, NAME_MIN_FONT_SIZE))
 
 # Clear interior of the common_transp_box_a.png panel drawn at (14,282)
 # 248x256 - the box has a thin border, so ten pixels of inset on each side is
@@ -792,7 +794,7 @@ const INFO_BOTTOM := 528.0
 const INFO_FONT_SIZE := 36
 const INFO_MIN_FONT_SIZE := 16
 const INFO_ROW_STEP := 46.0
-const INFO_ROW_HEIGHT := 42.0
+const INFO_ROW_HEIGHT := 46.0
 ## Column widths shared with the end-of-match readout, so the same card reads
 ## identically in both: same caption, same spelled-out attack type, and the
 ## same amount of room to fit them in - a value that has to shrink shrinks by
@@ -818,7 +820,7 @@ const END_INFO_LEFT := 6.0
 const END_INFO_WIDTH := 216.0
 const END_INFO_ROWS_TOP := 52.0
 const END_INFO_ROW_STEP := 41.0
-const END_INFO_ROW_HEIGHT := 40.0
+const END_INFO_ROW_HEIGHT := 44.0
 const END_INFO_FONT_SIZE := INFO_FONT_SIZE
 const END_INFO_CAPTION_WIDTH := STAT_CAPTION_WIDTH
 const END_INFO_VALUE_WIDTH := STAT_VALUE_WIDTH
@@ -897,8 +899,10 @@ func _build_card_info_panel() -> void:
 ## types swing wildly by language, and even a stat is one to three digits.
 func _fit_info_label(label: Label, text: String, width: float) -> void:
 	label.text = text
-	label.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_width(
-		text, font_stylish, width, INFO_FONT_SIZE, INFO_MIN_FONT_SIZE))
+	# The row height counts too: a line needs about 1.4x its font size, so
+	# 36 in a 42px row overflows and gets clipped top and bottom.
+	label.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_box(
+		text, font_stylish, Vector2(width, label.size.y), INFO_FONT_SIZE, INFO_MIN_FONT_SIZE))
 
 func _board_cell_pos(row: int, col: int) -> Vector2:
 	return BOARD_POS + Vector2(col * (CARD_W + BOARD_GAP), row * (CARD_H + BOARD_GAP))

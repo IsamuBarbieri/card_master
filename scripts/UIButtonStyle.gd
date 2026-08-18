@@ -91,9 +91,22 @@ const FONT_SHRINK_STEP := 1
 ## how far that shrink is allowed to go.
 const ABSOLUTE_MIN_FONT_SIZE := 10
 
+## Largest size at which `text` fits BOTH dimensions of `box`. Height matters
+## as much as width and is the half that kept being forgotten: a box has a
+## fixed height, and get_height() - ascent plus descent, the room a line
+## actually needs - runs about 1.4x the font size, so text sized on width
+## alone overflows its row and is clipped top and bottom. Every fixed-height
+## text box should come through here rather than carrying a hand-picked size,
+## which is also what lets the game change typeface without every panel
+## having to be re-tuned by hand.
+static func fit_text_to_box(text: String, font: Font, box: Vector2, max_font_size: int, floor_size: int = MIN_FONT_SIZE) -> int:
+	return _fit_font_to_box(text, font, box, max_font_size, floor_size)
+
 ## Largest font size <= max_font_size (down to floor_size) at which `font`
 ## renders `text` no wider than max_width. Never returns below floor_size
 ## even if text still doesn't fit there - caller decides what to do then.
+##
+## Width only: prefer fit_text_to_box wherever the box has a fixed height.
 static func fit_text_to_width(text: String, font: Font, max_width: float, max_font_size: int, floor_size: int = MIN_FONT_SIZE) -> int:
 	var size := max_font_size
 	while size > floor_size:
