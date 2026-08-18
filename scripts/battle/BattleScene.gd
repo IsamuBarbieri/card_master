@@ -263,7 +263,6 @@ var online: OnlineMatch = null
 ## Online only: the card the winning opponent actually chose, so the losing
 ## client's slot-machine reveal lands on it instead of on its own roll.
 var end_cpu_forced_view: CardView = null
-var online_wait_label: Label = null
 var online_timer_label: Label = null
 ## Turns red for the last stretch of the turn clock - a number counting down
 ## in the corner is easy to not notice until it's a colour change.
@@ -284,23 +283,18 @@ func _ready() -> void:
 		get_tree().set_auto_accept_quit(false)
 	_build_ui()
 	if online != null:
-		_build_online_wait_label()
+		_build_online_timer_label()
 	_setup_nav()
 	start_new_game()
 
-## Offline the opponent answers in half a second; online a human can take up
-## to the server's move clock, and a board that just sits there reads as a
-## freeze. Built here rather than in _build_ui because it only ever exists in
-## an online match.
-## Both online captions live in the strip under the hand: the five hand slots
-## zig-zag between x=718 and x=826 (HAND_POSITIONS) and the lowest card ends
-## at y=348+128=476, leaving this band free. The clock sits on top with the
-## turn message directly beneath it, both centred on the same column.
+## Built here rather than in _build_ui because it only ever exists in an
+## online match.
+##
+## The clock lives in the strip under the hand: the five hand slots zig-zag
+## between x=718 and x=826 (HAND_POSITIONS) and the lowest card ends at
+## y=348+128=476, leaving this band free.
 const ONLINE_STRIP_TOP := 478.0
 const ONLINE_TIMER_HEIGHT := 32.0
-const ONLINE_WAIT_HEIGHT := 30.0
-const ONLINE_WAIT_FONT_SIZE := 18
-const ONLINE_WAIT_MIN_FONT_SIZE := 12
 
 static func online_strip_x() -> float:
 	return HAND_POSITIONS[1].x
@@ -308,7 +302,7 @@ static func online_strip_x() -> float:
 static func online_strip_width() -> float:
 	return HAND_POSITIONS[0].x + CARD_W - HAND_POSITIONS[1].x
 
-func _build_online_wait_label() -> void:
+func _build_online_timer_label() -> void:
 	# Turn clock. Black, like the rest of the text painted on the board
 	# surface. Bare seconds - the trailing " read as an inch mark.
 	online_timer_label = Label.new()
@@ -322,27 +316,6 @@ func _build_online_wait_label() -> void:
 	online_timer_label.add_theme_color_override("font_color", Color.BLACK)
 	online_timer_label.visible = false
 	add_child(online_timer_label)
-
-	# Directly under the clock, same column, same centre line.
-	online_wait_label = Label.new()
-	online_wait_label.position = Vector2(online_strip_x(), ONLINE_STRIP_TOP + ONLINE_TIMER_HEIGHT)
-	online_wait_label.size = Vector2(online_strip_width(), ONLINE_WAIT_HEIGHT)
-	online_wait_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	online_wait_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	online_wait_label.clip_text = true
-	online_wait_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	online_wait_label.add_theme_font_override("font", font_info)
-	online_wait_label.add_theme_color_override("font_color", Color(1, 0.9, 0.6))
-	online_wait_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	online_wait_label.add_theme_constant_override("outline_size", 4)
-	var wait_text := StringTable.get_string(StringTable.ID_OPPONENT_TURN)
-	online_wait_label.text = wait_text
-	# The column is only ~204px wide, and this phrase is long in every
-	# language, so it shrinks to fit rather than being clipped mid-word.
-	online_wait_label.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_width(
-		wait_text, font_info, online_strip_width(), ONLINE_WAIT_FONT_SIZE, ONLINE_WAIT_MIN_FONT_SIZE))
-	online_wait_label.visible = false
-	add_child(online_wait_label)
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST and online != null and not online.finished:
@@ -824,8 +797,8 @@ const INFO_ROW_HEIGHT := 42.0
 ## identically in both: same caption, same spelled-out attack type, and the
 ## same amount of room to fit them in - a value that has to shrink shrinks by
 ## the same amount on both screens.
-const STAT_CAPTION_WIDTH := 96.0
-const STAT_VALUE_WIDTH := 114.0
+const STAT_CAPTION_WIDTH := 80.0
+const STAT_VALUE_WIDTH := 136.0
 const INFO_CAPTION_WIDTH := STAT_CAPTION_WIDTH
 const INFO_VALUE_WIDTH := STAT_VALUE_WIDTH
 
@@ -841,8 +814,8 @@ const STAT_CAPTION_IDS := [
 # size as the in-match panel; the box is smaller, so the rows are tighter.
 # The attack type is spelled out in full here (not the single letter the
 # in-match panel uses), which is why the value column is the wider of the two.
-const END_INFO_LEFT := 9.0
-const END_INFO_WIDTH := 210.0
+const END_INFO_LEFT := 6.0
+const END_INFO_WIDTH := 216.0
 const END_INFO_ROWS_TOP := 52.0
 const END_INFO_ROW_STEP := 41.0
 const END_INFO_ROW_HEIGHT := 40.0
@@ -1013,7 +986,7 @@ func _build_battle_overlay() -> void:
 	# a real outline (not a 1px shadow) holds contrast against any
 	# background, and font size roughly doubles the level-up text's.
 	chain_label = Label.new()
-	chain_label.add_theme_font_override("font", font_title)
+	chain_label.add_theme_font_override("font", Game.font_title)
 	chain_label.add_theme_font_size_override("font_size", 48)
 	chain_label.add_theme_color_override("font_color", Color(1, 0.85, 0.1))
 	chain_label.add_theme_color_override("font_outline_color", Color.BLACK)
@@ -1671,9 +1644,7 @@ func gsCPUTurn_Set() -> void:
 		# Same seat in the code, different source of truth: online this turn
 		# belongs to a human on the other end, so the "AI decision" is simply
 		# replaced by their decision, and the animation below is unchanged.
-		online_wait_label.visible = true
 		var remote := await online.receive()
-		online_wait_label.visible = false
 		if remote.is_empty():
 			return
 		card = _find_in_hand(cpu_hand, int(remote.get("uid", -1)))
@@ -1809,9 +1780,7 @@ func gsBattleChainBattle_Set(card: Card, depth: int, tied: Array) -> void:
 			# Which neighbour to attack is a real decision, so it travels as
 			# its own numbered move - the board looks identical either way, and
 			# guessing would desync the two clients instantly.
-			online_wait_label.visible = true
 			var remote := await online.receive()
-			online_wait_label.visible = false
 			if remote.is_empty():
 				return
 			target = _find_target(fightable, int(remote.get("uid", -1)))
@@ -2524,14 +2493,16 @@ func _process(_delta: float) -> void:
 	y_continue_hint.visible = ControllerUI.is_gamepad() and button_done.visible
 	_update_online_timer()
 
-## The turn clock is shown for the whole online match and hidden the moment
-## the board is done, since the end-of-match screens have no move clock -
-## leaving a dead number ticking there would just look broken.
+## The clock is only shown to the player who owes the move. On the opponent's
+## turn it is their clock, not something to act on, and the marker already
+## says whose turn it is - so the whole strip goes quiet, caption included.
+## Hidden once the board is done too: the end screens have no move clock, and
+## a dead number ticking there just looks broken.
 func _update_online_timer() -> void:
 	if online == null:
 		return
 	var left := online.seconds_left()
-	if left < 0 or end_flow != EndFlow.NONE:
+	if left < 0 or end_flow != EndFlow.NONE or active_player != 0:
 		online_timer_label.visible = false
 		return
 	online_timer_label.visible = true

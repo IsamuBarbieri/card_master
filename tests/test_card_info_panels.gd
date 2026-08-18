@@ -40,12 +40,8 @@ func _ready() -> void:
 	var battle := _consts("res://scripts/battle/BattleScene.gd")
 	var collection := _consts("res://scripts/menu/Collection.gd")
 
-	# Shop and Collection have room for the full captions; the two battle
-	# panels use the abbreviated ones.
-	var caption_ids := [
-		StringTable.ID_CARD_ATTACK, StringTable.ID_CARD_TYPE,
-		StringTable.ID_CARD_PHYSICAL_DEFENSE, StringTable.ID_CARD_MAGICAL_DEFENSE,
-	]
+	# Every stat readout is on the abbreviated captions: the full words fitted
+	# while the body face was narrower, and stopped when it wasn't.
 	var short_caption_ids := [
 		StringTable.ID_CARD_ATTACK_SHORT, StringTable.ID_CARD_TYPE_SHORT,
 		StringTable.ID_CARD_PDEF_SHORT, StringTable.ID_CARD_MDEF_SHORT,
@@ -57,7 +53,7 @@ func _ready() -> void:
 
 	# --- Collection: localized captions AND localized full-word attack types.
 	for lang in StringTable.TABLE.size():
-		for id in caption_ids:
+		for id in short_caption_ids:
 			_check(font, _string(lang, id), collection["INFO_CAPTION_WIDTH"],
 				collection["INFO_FONT_SIZE"], "collection caption (lang %d)" % lang)
 		for id in type_ids:
@@ -122,6 +118,21 @@ func _ready() -> void:
 	# whole pass achieved nothing.
 	assert(battle["INFO_FONT_SIZE"] > 24, "the battle readout is no larger than before")
 	assert(collection["INFO_FONT_SIZE"] > 25, "the collection readout is no larger than before")
+
+	# --- Shop: its own hand-placed boxes. On the abbreviated captions too now -
+	# the full words stopped fitting when the body face got wider.
+	var shop := _consts("res://scripts/menu/Shop.gd")
+	for lang in StringTable.TABLE.size():
+		for id in short_caption_ids:
+			_check(font, _string(lang, id), shop["SHOP_INFO_CAPTION_WIDTH"],
+				shop["SHOP_INFO_FONT_SIZE"], "shop caption (lang %d)" % lang)
+		for id in type_ids:
+			_check(font, _string(lang, id), shop["SHOP_INFO_VALUE_WIDTH"],
+				shop["SHOP_INFO_FONT_SIZE"], "shop type value (lang %d)" % lang)
+	assert(shop["SHOP_INFO_VALUE_X"] + shop["SHOP_INFO_VALUE_WIDTH"] <= 364.0 + 260.0 - 8.0,
+		"the shop's value column runs past its panel")
+	assert(shop["SHOP_INFO_CAPTION_X"] + shop["SHOP_INFO_CAPTION_WIDTH"] <= shop["SHOP_INFO_VALUE_X"],
+		"the shop's caption and value columns overlap")
 
 	print("OK - card info panels fit every language at %d/%d px" % [
 		battle["INFO_FONT_SIZE"], collection["INFO_FONT_SIZE"]])

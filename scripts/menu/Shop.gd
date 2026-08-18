@@ -60,6 +60,16 @@ const SHOP_CARD_PANEL_POS := [
 	Vector2(636, 115), Vector2(636, 160), Vector2(636, 205),
 	Vector2(636, 250), Vector2(636, 295), Vector2(636, 340),
 ]
+## Card-stats readout inside the info panel at (364,117) 260x252. The caption
+## column shrank and the value column grew when the captions went
+## abbreviated: the values now carry the long strings (the attack type is
+## spelled out) and "Физический" needs the room more than "Atk" does.
+const SHOP_INFO_CAPTION_X := 373.0
+const SHOP_INFO_CAPTION_WIDTH := 92.0
+const SHOP_INFO_VALUE_X := 471.0
+const SHOP_INFO_VALUE_WIDTH := 144.0
+const SHOP_INFO_FONT_SIZE := 36
+
 const SHOP_CARD_PANEL_SIZE := Vector2(306, 43)
 const SHOP_CARD_IMAGE_POS := Vector2(4, 1)
 const SHOP_CARD_IMAGE_SIZE := Vector2(30, 40)  # keeps the 96x128 card aspect
@@ -430,38 +440,38 @@ func _build_ui() -> void:
 	add_child(label_info_name)
 	UIButtonStyle.fit_button_text(label_info_name)
 
-	var info_offense_lbl := _make_label(Vector2(373, 172), Vector2(174, 41), font_stylish, 36)
-	info_offense_lbl.text = StringTable.get_string(StringTable.ID_CARD_ATTACK)
+	var info_offense_lbl := _make_label(Vector2(SHOP_INFO_CAPTION_X, 172), Vector2(SHOP_INFO_CAPTION_WIDTH, 41), font_stylish, SHOP_INFO_FONT_SIZE)
+	info_offense_lbl.text = StringTable.get_string(StringTable.ID_CARD_ATTACK_SHORT)
 	add_child(info_offense_lbl)
 	UIButtonStyle.fit_button_text(info_offense_lbl)
-	label_value_offense = _make_label(Vector2(505, 172), Vector2(108, 41), font_stylish, 36)
+	label_value_offense = _make_label(Vector2(SHOP_INFO_VALUE_X, 172), Vector2(SHOP_INFO_VALUE_WIDTH, 41), font_stylish, SHOP_INFO_FONT_SIZE)
 	label_value_offense.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label_value_offense.text = "- - -"
 	add_child(label_value_offense)
 
-	var info_type_lbl := _make_label(Vector2(373, 220), Vector2(174, 41), font_stylish, 36)
-	info_type_lbl.text = StringTable.get_string(StringTable.ID_CARD_TYPE)
+	var info_type_lbl := _make_label(Vector2(SHOP_INFO_CAPTION_X, 220), Vector2(SHOP_INFO_CAPTION_WIDTH, 41), font_stylish, SHOP_INFO_FONT_SIZE)
+	info_type_lbl.text = StringTable.get_string(StringTable.ID_CARD_TYPE_SHORT)
 	add_child(info_type_lbl)
 	UIButtonStyle.fit_button_text(info_type_lbl)
-	label_value_type = _make_label(Vector2(507, 220), Vector2(108, 41), font_stylish, 36)
+	label_value_type = _make_label(Vector2(SHOP_INFO_VALUE_X, 220), Vector2(SHOP_INFO_VALUE_WIDTH, 41), font_stylish, SHOP_INFO_FONT_SIZE)
 	label_value_type.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label_value_type.text = "---"
 	add_child(label_value_type)
 
-	var info_pdef_lbl := _make_label(Vector2(373, 268), Vector2(169, 41), font_stylish, 36)
-	info_pdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_PHYSICAL_DEFENSE)
+	var info_pdef_lbl := _make_label(Vector2(SHOP_INFO_CAPTION_X, 268), Vector2(SHOP_INFO_CAPTION_WIDTH, 41), font_stylish, SHOP_INFO_FONT_SIZE)
+	info_pdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_PDEF_SHORT)
 	add_child(info_pdef_lbl)
 	UIButtonStyle.fit_button_text(info_pdef_lbl)
-	label_value_pdef = _make_label(Vector2(505, 268), Vector2(108, 41), font_stylish, 36)
+	label_value_pdef = _make_label(Vector2(SHOP_INFO_VALUE_X, 268), Vector2(SHOP_INFO_VALUE_WIDTH, 41), font_stylish, SHOP_INFO_FONT_SIZE)
 	label_value_pdef.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label_value_pdef.text = "- - -"
 	add_child(label_value_pdef)
 
-	var info_mdef_lbl := _make_label(Vector2(373, 315), Vector2(169, 41), font_stylish, 36)
-	info_mdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_MAGICAL_DEFENSE)
+	var info_mdef_lbl := _make_label(Vector2(SHOP_INFO_CAPTION_X, 315), Vector2(SHOP_INFO_CAPTION_WIDTH, 41), font_stylish, SHOP_INFO_FONT_SIZE)
+	info_mdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_MDEF_SHORT)
 	add_child(info_mdef_lbl)
 	UIButtonStyle.fit_button_text(info_mdef_lbl)
-	label_value_mdef = _make_label(Vector2(505, 315), Vector2(108, 41), font_stylish, 36)
+	label_value_mdef = _make_label(Vector2(SHOP_INFO_VALUE_X, 315), Vector2(SHOP_INFO_VALUE_WIDTH, 41), font_stylish, SHOP_INFO_FONT_SIZE)
 	label_value_mdef.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label_value_mdef.text = "- - -"
 	add_child(label_value_mdef)

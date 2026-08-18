@@ -46,8 +46,12 @@ const INFO_ROWS_TOP := 384.0
 const INFO_ROW_STEP := 35.0
 const INFO_ROW_HEIGHT := 35.0
 const INFO_FONT_SIZE := 30
-const INFO_CAPTION_WIDTH := 163.0
-const INFO_VALUE_WIDTH := 116.0
+## Rebalanced when the captions went short: the abbreviations need far less
+## room than "P. Defense" did, and the value column carries the long strings
+## here (the attack type is spelled out in full) - "Физический" needs every
+## pixel of it.
+const INFO_CAPTION_WIDTH := 110.0
+const INFO_VALUE_WIDTH := 169.0
 
 var card_matrix := CardMatrix.new()
 var sel_type_index := 0
@@ -174,11 +178,15 @@ func _build_ui() -> void:
 	# The font went 25 -> 30 with the reclaimed space: this readout is the only
 	# place a card's real numbers are legible at a glance, and at 25 it was
 	# noticeably smaller than Shop's equivalent panel (36).
+	# The abbreviated captions, the same ones the battle panels use. The full
+	# words fitted while the body face was narrower; Noto Sans is wider, and
+	# "Phys. Verteidigung" now has to drop to 18px to make it into a 163px
+	# column - smaller than the number beside it and under the readable floor.
 	var captions := [
-		StringTable.get_string(StringTable.ID_CARD_ATTACK),
-		StringTable.get_string(StringTable.ID_CARD_TYPE),
-		StringTable.get_string(StringTable.ID_CARD_PHYSICAL_DEFENSE),
-		StringTable.get_string(StringTable.ID_CARD_MAGICAL_DEFENSE),
+		StringTable.get_string(StringTable.ID_CARD_ATTACK_SHORT),
+		StringTable.get_string(StringTable.ID_CARD_TYPE_SHORT),
+		StringTable.get_string(StringTable.ID_CARD_PDEF_SHORT),
+		StringTable.get_string(StringTable.ID_CARD_MDEF_SHORT),
 	]
 	var values := []
 	for i in captions.size():

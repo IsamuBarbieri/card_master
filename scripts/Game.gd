@@ -62,10 +62,9 @@ var _music_path := ""
 ##                at and the only place it doesn't get in the way.
 ##   font_stylish everything else. Was the decorative face too, which is why
 ##                the whole game read as a poster: 153 call sites against 23
-##                for font_info. It is Alegreya Sans now, a humanist sans that
-##                sits with the parchment without shouting, and whose digits
-##                are actually distinguishable at the sizes the stat panels
-##                use.
+##                for font_info. It is Noto Sans now - plain, even, and built
+##                to stay legible at small sizes, which is what most of this
+##                text needs to be.
 ##   font_info    the same body face; kept as a separate name because a
 ##                handful of screens already asked for "the information font"
 ##                and the distinction may earn its keep again later.
@@ -108,9 +107,8 @@ func _ready() -> void:
 	add_child(_music_player)
 
 	_font_title_default = load("res://assets/fonts/font_stylish.ttf")
-	# Alegreya Sans (SIL Open Font License, see AlegreyaSans-OFL.txt beside it).
-	_font_body = load("res://assets/fonts/AlegreyaSans-Regular.ttf")
-	_fallback_font = load("res://assets/fonts/NotoSans-Regular.ttf")
+	_font_body = load("res://assets/fonts/NotoSans-Regular.ttf")
+	_fallback_font = _font_body
 
 	_setup_mouse_cursor()
 
@@ -156,18 +154,11 @@ func _setup_mouse_cursor() -> void:
 ## current language - see _fallback_font's docstring above for why this
 ## swap exists instead of just attaching a fallback to the default fonts.
 func _update_fonts_for_language() -> void:
-	# Alegreya Sans covers Latin and Greek but not Cyrillic, same gap the old
-	# body face had, so Russian still falls back for everything including the
-	# headings - a title in a face that can't draw the alphabet is worse than
-	# a title in the wrong face.
-	if language == StringTable.LANGUAGE_BY_LOCALE["ru"]:
-		font_title = _fallback_font
-		font_stylish = _fallback_font
-		font_info = _fallback_font
-	else:
-		font_title = _font_title_default
-		font_stylish = _font_body
-		font_info = _font_body
+	# The body face already covers Cyrillic, so only the decorative heading
+	# face - which does not - has anything to fall back from.
+	font_stylish = _font_body
+	font_info = _font_body
+	font_title = _fallback_font if language == StringTable.LANGUAGE_BY_LOCALE["ru"] else _font_title_default
 
 ## First-launch default (before any language has ever been explicitly saved):
 ## match the OS/device language (Windows now, Android once that release
