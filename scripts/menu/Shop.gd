@@ -377,14 +377,14 @@ func _build_ui() -> void:
 	add_child(label_shop)
 	UIButtonStyle.fit_menu_button_text(label_shop, TITLE_ICON_GAP_WIDTH)
 
-	var label_sell := _make_label(Vector2(67, 16), Vector2(214, 62), Game.font_title, 36)
+	var label_sell := _make_label(Vector2(67, 16), Vector2(214, 62), Game.font_title, 50)
 	label_sell.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_sell.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label_sell.text = StringTable.get_string(StringTable.ID_SELL)
 	add_child(label_sell)
 	UIButtonStyle.fit_button_text(label_sell)
 
-	var label_buy := _make_label(Vector2(679, 16), Vector2(214, 62), Game.font_title, 36)
+	var label_buy := _make_label(Vector2(679, 16), Vector2(214, 62), Game.font_title, 50)
 	label_buy.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_buy.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label_buy.text = StringTable.get_string(StringTable.ID_BUY)
@@ -401,8 +401,6 @@ func _build_ui() -> void:
 
 	label_coins = _make_label(Vector2(711, 477), Vector2(156, 46), font_stylish, 36)
 	label_coins.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	# Same gold as the battle-end coin reward, so a coin count reads the same everywhere.
-	label_coins.add_theme_color_override("font_color", Color(1, 0.85, 0.1))
 	add_child(label_coins)
 
 	label_buy_value = _make_label(Vector2(530, 473), Vector2(123, 46), font_stylish, 46)
