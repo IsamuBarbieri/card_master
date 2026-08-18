@@ -41,7 +41,7 @@ func _ready() -> void:
 	prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	prompt_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	prompt_label.add_theme_font_override("font", Game.font_title)
-	prompt_label.add_theme_font_size_override("font_size", 60)
+	prompt_label.add_theme_font_size_override("font_size", UIConstants.TITLESCREEN_PROMPT_FONT_SIZE)
 	prompt_label.add_theme_color_override("font_color", Color.WHITE)
 	prompt_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	prompt_label.add_theme_constant_override("outline_size", 3)

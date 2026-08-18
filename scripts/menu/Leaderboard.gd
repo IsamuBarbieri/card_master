@@ -65,12 +65,12 @@ func _ready() -> void:
 
 	# Same 46 as Online's and Options' headings.
 	var title := FixedSizeLabel.new()
-	title.position = Vector2(300, 9)
+	title.position = UIConstants.LEADERBOARD_TITLE_POS
 	title.size = Vector2(359, 47)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title.add_theme_font_override("font", Game.font_title)
-	title.add_theme_font_size_override("font_size", 46)
+	title.add_theme_font_size_override("font_size", UIConstants.LEADERBOARD_TITLE_FONT_SIZE)
 	title.add_theme_color_override("font_color", Color.BLACK)
 	title.text = StringTable.get_string(StringTable.ID_LEADERBOARD)
 	add_child(title)
@@ -110,7 +110,7 @@ func _ready() -> void:
 	page_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	page_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	page_label.add_theme_font_override("font", Game.font_stylish)
-	page_label.add_theme_font_size_override("font_size", 28)
+	page_label.add_theme_font_size_override("font_size", UIConstants.LEADERBOARD_PAGE_FONT_SIZE)
 	page_label.add_theme_color_override("font_color", Color.BLACK)
 	add_child(page_label)
 
@@ -122,20 +122,20 @@ func _ready() -> void:
 	status_label.size = Vector2(SCREEN_W, 34)
 	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status_label.add_theme_font_override("font", Game.font_info)
-	status_label.add_theme_font_size_override("font_size", 24)
-	status_label.add_theme_color_override("font_color", Color(0.45, 0.18, 0.05))
+	status_label.add_theme_font_size_override("font_size", UIConstants.LEADERBOARD_STATUS_FONT_SIZE)
+	status_label.add_theme_color_override("font_color", UIConstants.COLOR_STATUS_BROWN)
 	status_label.text = "..."
 	add_child(status_label)
 
 	var back := FixedSizeButton.new()
 	UIButtonStyle.apply(back)
 	back.text = StringTable.get_string(StringTable.ID_BACK)
-	back.position = Vector2(42, 463)
-	back.size = Vector2(115, 56)
+	back.position = UIConstants.BACK_BUTTON_POS
+	back.size = UIConstants.BACK_BUTTON_SIZE
 	back.add_theme_font_override("font", Game.font_stylish)
-	back.add_theme_font_size_override("font_size", 36)
+	back.add_theme_font_size_override("font_size", UIConstants.BACK_BUTTON_FONT_SIZE)
 	back.add_theme_color_override("font_color", Color.BLACK)
-	back.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
+	back.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
 	back.add_theme_constant_override("shadow_offset_x", 1)
 	back.add_theme_constant_override("shadow_offset_y", 1)
 	back.pressed.connect(_on_back_pressed)
@@ -191,7 +191,7 @@ func _make_page_button(text: String, pos: Vector2, on_pressed: Callable) -> Butt
 	btn.position = pos
 	btn.size = Vector2(56, 56)
 	btn.add_theme_font_override("font", Game.font_stylish)
-	btn.add_theme_font_size_override("font_size", 36)
+	btn.add_theme_font_size_override("font_size", UIConstants.LEADERBOARD_NAV_BUTTON_FONT_SIZE)
 	btn.add_theme_color_override("font_color", Color.BLACK)
 	btn.pressed.connect(on_pressed)
 	add_child(btn)

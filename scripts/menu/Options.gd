@@ -8,7 +8,6 @@ extends Control
 const SCREEN_W := 960
 const SCREEN_H := 544
 const ASSETS := "res://assets/"
-const LABEL_FONT_SIZE := 36
 # Title reuses button_option.png the same "two icon halves + transparent
 # gap" trick as MainMenu's own Options button (see UIButtonStyle.gd), just
 # at this screen's own icon size (265x68 vs MainMenu's 274x71): native gap
@@ -50,41 +49,41 @@ func _ready() -> void:
 	icon.texture = load(ASSETS + "button_option.png")
 	icon.stretch_mode = TextureRect.STRETCH_SCALE
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.position = Vector2(347, 9)
+	icon.position = UIConstants.SCREEN_TITLE_ICON_POS
 	icon.size = Vector2(265, 68)
 	add_child(icon)
 
-	title = _make_label(Vector2(348, 13), Vector2(264, 60), Game.font_title, 46)
+	title = _make_label(UIConstants.SCREEN_TITLE_LABEL_POS, Vector2(264, 60), Game.font_title, UIConstants.OPTIONS_TITLE_FONT_SIZE)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(title)
 
-	label_music = _make_label(Vector2(64, 170), Vector2(205, 58), font_stylish, LABEL_FONT_SIZE)
+	label_music = _make_label(UIConstants.OPTIONS_LABEL_MUSIC_POS, Vector2(205, 58), font_stylish, UIConstants.LABEL_FONT_SIZE_36)
 	label_music.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label_music.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	add_child(label_music)
 
-	label_sfx = _make_label(Vector2(64, 243), Vector2(205, 58), font_stylish, LABEL_FONT_SIZE)
+	label_sfx = _make_label(UIConstants.OPTIONS_LABEL_SFX_POS, Vector2(205, 58), font_stylish, UIConstants.LABEL_FONT_SIZE_36)
 	label_sfx.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label_sfx.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	add_child(label_sfx)
 
-	label_lang = _make_label(Vector2(64, 326), Vector2(205, 58), font_stylish, LABEL_FONT_SIZE)
+	label_lang = _make_label(UIConstants.OPTIONS_LABEL_LANG_POS, Vector2(205, 58), font_stylish, UIConstants.LABEL_FONT_SIZE_36)
 	label_lang.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label_lang.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	add_child(label_lang)
 
-	slider_music = _make_slider(Vector2(298, 170), Vector2(362, 58), Game.music_volume * 100.0)
+	slider_music = _make_slider(UIConstants.OPTIONS_SLIDER_MUSIC_POS, Vector2(362, 58), Game.music_volume * 100.0)
 	slider_music.value_changed.connect(_on_music_value_changed)
 	add_child(slider_music)
 
-	slider_sfx = _make_slider(Vector2(298, 243), Vector2(362, 58), Game.sfx_volume * 100.0)
+	slider_sfx = _make_slider(UIConstants.OPTIONS_SLIDER_SFX_POS, Vector2(362, 58), Game.sfx_volume * 100.0)
 	slider_sfx.value_changed.connect(_on_sfx_value_changed)
 	slider_sfx.drag_started.connect(_on_sfx_drag_started)
 	slider_sfx.drag_ended.connect(_on_sfx_drag_ended)
 	add_child(slider_sfx)
 
 	lang_popup = OptionButton.new()
-	lang_popup.position = Vector2(300, 328)
+	lang_popup.position = UIConstants.OPTIONS_LANG_POPUP_POS
 	lang_popup.size = Vector2(360, 56)
 	# Order must match StringTable.TABLE (sorted alphabetically by each
 	# language's own native name).
@@ -113,16 +112,16 @@ func _ready() -> void:
 	ControllerUI.show_in_gamepad(lang_arrow_left)
 	ControllerUI.show_in_gamepad(lang_arrow_right)
 
-	back_button = _make_text_button("", Vector2(42, 463), Vector2(115, 56), font_stylish)
+	back_button = _make_text_button("", UIConstants.BACK_BUTTON_POS, UIConstants.BACK_BUTTON_SIZE, font_stylish)
 	back_button.pressed.connect(_on_back_pressed)
 
-	credits_button = _make_text_button("", Vector2(412, 463), Vector2(136, 56), font_stylish)
+	credits_button = _make_text_button("", UIConstants.OPTIONS_CREDITS_BUTTON_POS, Vector2(136, 56), font_stylish)
 	credits_button.pressed.connect(_on_credits_pressed)
 
 	# New addition (not in the reference): mirror of back_button on the
 	# opposite corner (960 - 42 - 115 = 803, same y/size) - returns to the
 	# Title Screen instead of MainMenu.
-	title_screen_button = _make_text_button("", Vector2(803, 463), Vector2(115, 56), font_stylish)
+	title_screen_button = _make_text_button("", UIConstants.OPTIONS_TITLE_SCREEN_BUTTON_POS, Vector2(115, 56), font_stylish)
 	title_screen_button.pressed.connect(_on_title_screen_pressed)
 
 	sfx_cat = AudioStreamPlayer.new()
@@ -188,7 +187,7 @@ func _make_label(pos: Vector2, size: Vector2, font: Font, font_size: int) -> Lab
 	label.add_theme_font_override("font", font)
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", Color.BLACK)
-	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
+	label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
 	label.add_theme_constant_override("shadow_offset_x", 1)
 	label.add_theme_constant_override("shadow_offset_y", 1)
 	return label
@@ -200,9 +199,9 @@ func _make_text_button(label: String, pos: Vector2, size: Vector2, font: Font) -
 	btn.position = pos
 	btn.size = size
 	btn.add_theme_font_override("font", font)
-	btn.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
+	btn.add_theme_font_size_override("font_size", UIConstants.LABEL_FONT_SIZE_36)
 	btn.add_theme_color_override("font_color", Color.BLACK)
-	btn.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
+	btn.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
 	btn.add_theme_constant_override("shadow_offset_x", 1)
 	btn.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(btn)
@@ -216,7 +215,7 @@ func _make_lang_arrow(text: String, pos: Vector2) -> Label:
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_override("font", Game.font_stylish)
-	label.add_theme_font_size_override("font_size", 30)
+	label.add_theme_font_size_override("font_size", UIConstants.OPTIONS_LANG_ARROW_FONT_SIZE)
 	label.add_theme_color_override("font_color", Color.WHITE)
 	label.add_theme_color_override("font_outline_color", Color.BLACK)
 	label.add_theme_constant_override("outline_size", 3)

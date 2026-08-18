@@ -55,14 +55,14 @@ func _ready() -> void:
 	icon.texture = load(ASSETS + "button_online.png")
 	icon.stretch_mode = TextureRect.STRETCH_SCALE
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.position = Vector2(347, 9)
+	icon.position = UIConstants.SCREEN_TITLE_ICON_POS
 	icon.size = Vector2(265, 68)
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(icon)
 
 	# Black at MainMenu's own button size (46), not this screen's smaller body
 	# size, so the heading matches "Shop"/"Options" wherever they appear.
-	var title := _make_label(Vector2(348, 13), Vector2(264, 60), Game.font_title)
+	var title := _make_label(UIConstants.SCREEN_TITLE_LABEL_POS, Vector2(264, 60), Game.font_title)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", TITLE_FONT_SIZE)
@@ -80,7 +80,7 @@ func _ready() -> void:
 	leaderboard_button.pressed.connect(_on_leaderboard_pressed)
 
 	back_button = _make_text_button(StringTable.get_string(StringTable.ID_BACK),
-		Vector2(42, 463), Vector2(115, 56), font_stylish)
+		UIConstants.BACK_BUTTON_POS, UIConstants.BACK_BUTTON_SIZE, font_stylish)
 	back_button.pressed.connect(_on_back_pressed)
 
 	# Standing, split across two lines instead of one run-on row. Each half is
@@ -90,8 +90,8 @@ func _ready() -> void:
 	rank_label = _make_info_label(BUTTON_TOP + 2 * BUTTON_STEP + 18.0, 28)
 	record_label = _make_info_label(BUTTON_TOP + 2 * BUTTON_STEP + 52.0, 24)
 
-	status_label = _make_info_label(404.0, 22)
-	status_label.add_theme_color_override("font_color", Color(0.45, 0.18, 0.05))
+	status_label = _make_info_label(UIConstants.ONLINE_STATUS_LABEL_Y, 22)
+	status_label.add_theme_color_override("font_color", UIConstants.COLOR_STATUS_BROWN)
 
 	# Online battles pay nothing on purpose (the AI ladder is where coins come
 	# from) - said up front so a player doesn't grind here expecting money.
@@ -99,7 +99,7 @@ func _ready() -> void:
 	# button beside them. Centred, so it clears the prompts, which run left to
 	# right from x=42.
 	var note := _make_info_label(ControllerUI.PROMPT_BAR_Y, 20)
-	note.add_theme_color_override("font_color", Color(0.25, 0.22, 0.18))
+	note.add_theme_color_override("font_color", UIConstants.ONLINE_NOTE_COLOR)
 	note.text = StringTable.get_string(StringTable.ID_ONLINE_NO_REWARD)
 
 	Game.ensure_menu_music()
@@ -192,7 +192,7 @@ func _make_label(pos: Vector2, size: Vector2, font: Font) -> Label:
 	label.add_theme_font_override("font", font)
 	label.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
 	label.add_theme_color_override("font_color", Color.BLACK)
-	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
+	label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
 	label.add_theme_constant_override("shadow_offset_x", 1)
 	label.add_theme_constant_override("shadow_offset_y", 1)
 	return label
@@ -221,7 +221,7 @@ func _make_text_button(label: String, pos: Vector2, size: Vector2, font: Font) -
 	btn.add_theme_font_override("font", font)
 	btn.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
 	btn.add_theme_color_override("font_color", Color.BLACK)
-	btn.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
+	btn.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
 	btn.add_theme_constant_override("shadow_offset_x", 1)
 	btn.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(btn)

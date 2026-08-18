@@ -41,18 +41,18 @@ func _ready() -> void:
 	add_child(bg)
 
 	_caret_label = Label.new()
-	_caret_label.position = Vector2(20, 10)
+	_caret_label.position = UIConstants.KEYBOARD_CARET_LABEL_POS
 	_caret_label.size = Vector2(PANEL_SIZE.x - 40, 36)
 	_caret_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_caret_label.add_theme_font_override("font", font)
-	_caret_label.add_theme_font_size_override("font_size", 28)
+	_caret_label.add_theme_font_size_override("font_size", UIConstants.KEYBOARD_CARET_FONT_SIZE)
 	_caret_label.add_theme_color_override("font_color", Color.BLACK)
 	add_child(_caret_label)
 
 	nav = FocusNav.new()
 	add_child(nav)
 
-	var y := 56.0
+	var y := UIConstants.KEYBOARD_ROWS_START_Y
 	for row in ROWS:
 		_add_key_row(row, y, font)
 		y += KEY_SIZE.y + KEY_GAP
@@ -77,7 +77,7 @@ func _add_key_row(chars: String, y: float, font: Font) -> void:
 		x += KEY_SIZE.x + KEY_GAP
 
 func _add_action_row(y: float, font: Font) -> void:
-	var x := 20.0
+	var x := UIConstants.KEYBOARD_ACTION_ROW_START_X
 	var shift_btn := _make_key("Shift", Vector2(x, y), Vector2(70, KEY_SIZE.y), font, 16)
 	nav.add_control(shift_btn, "SHIFT")
 	shift_btn.pressed.connect(_activate.bind("SHIFT"))
@@ -97,7 +97,7 @@ func _add_action_row(y: float, font: Font) -> void:
 	nav.add_control(done_btn, "DONE")
 	done_btn.pressed.connect(_activate.bind("DONE"))
 
-func _make_key(label: String, pos: Vector2, key_size: Vector2, font: Font, font_size: int = 20) -> Button:
+func _make_key(label: String, pos: Vector2, key_size: Vector2, font: Font, font_size: int = UIConstants.KEYBOARD_KEY_FONT_SIZE) -> Button:
 	var btn := FixedSizeButton.new()
 	UIButtonStyle.apply(btn)
 	btn.text = label

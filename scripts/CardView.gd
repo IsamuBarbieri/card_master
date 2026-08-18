@@ -102,7 +102,7 @@ func _init() -> void:
 	_price_label.position = Vector2(0, CARD_H / 2.0 - 15)
 	_price_label.size = Vector2(CARD_W, 30)
 	_price_label.add_theme_font_override("normal_font", Game.font_stylish)
-	_price_label.add_theme_font_size_override("normal_font_size", 24)
+	_price_label.add_theme_font_size_override("normal_font_size", UIConstants.CARDVIEW_PRICE_FONT_SIZE)
 	_price_label.add_theme_color_override("default_color", Color.WHITE)
 	_price_label.add_theme_constant_override("outline_size", 3)
 	_price_label.add_theme_color_override("font_outline_color", Color.BLACK)
@@ -138,7 +138,7 @@ func setup(new_card: Card, show_stats := true, show_arrows := true, show_price :
 	# card_bkg_%s.png + monster-art layering every other card uses, drawn
 	# over a plain black backdrop rather than the blue/red gradient bkg.
 	if def.name == "The Void":
-		_bkg.texture = load("res://assets/black8x8.png")
+		_bkg.texture = load(UIConstants.ICON_BLACK_PIXEL)
 		_art.texture = load(ASSETS_DIR + "the_void_%s.png" % color_name)
 	else:
 		_bkg.texture = load(ASSETS_DIR + "card_bkg_%s.png" % color_name)
@@ -157,7 +157,7 @@ func setup(new_card: Card, show_stats := true, show_arrows := true, show_price :
 
 	_price_label.visible = show_price
 	if show_price:
-		_price_label.text = "[center]%d [img=18x18]res://assets/coins_icon.png[/img][/center]" % CardManager.card_price(card)
+		_price_label.text = "[center]%d [img=18x18]%s[/img][/center]" % [CardManager.card_price(card), UIConstants.ICON_COIN]
 
 	for c in _arrows_box.get_children():
 		c.queue_free()

@@ -31,7 +31,6 @@ const CARD_H := 128
 const ITEM_MARGIN := 1
 const ITEM_SIZE := Vector2(CARD_W + ITEM_MARGIN * 2, CARD_H + ITEM_MARGIN * 2)
 const GRID_COLUMNS := 7  # opp_count (21, RAGEQUIT included) = exactly 3 rows of 7
-const LABEL_FONT_SIZE := 36
 
 var opp_count: int
 var selected_index := 0
@@ -109,31 +108,31 @@ func _build_ui() -> void:
 	add_child(bg)
 
 	var desc_panel := UIPanel.make(Vector2(545, 56))
-	desc_panel.position = Vector2(207, 463)
+	desc_panel.position = UIConstants.OPPONENTS_DESC_PANEL_POS
 	add_child(desc_panel)
 
-	var title := _make_label(Vector2(300, 2), Vector2(359, 46), Game.font_title)
+	var title := _make_label(UIConstants.OPPONENTS_TITLE_POS, Vector2(359, 46), Game.font_title)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title.text = StringTable.get_string(StringTable.ID_OPPONENT_SELECT)
 	add_child(title)
 	UIButtonStyle.fit_button_text(title)
 
-	label_desc = _make_label(Vector2(231, 463), Vector2(498, 56), font_stylish)
+	label_desc = _make_label(UIConstants.OPPONENTS_LABEL_DESC_POS, Vector2(498, 56), font_stylish)
 	label_desc.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	add_child(label_desc)
 
-	back_button = _make_text_button(StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56), font_stylish)
+	back_button = _make_text_button(StringTable.get_string(StringTable.ID_BACK), UIConstants.BACK_BUTTON_POS, UIConstants.BACK_BUTTON_SIZE, font_stylish)
 	back_button.pressed.connect(_on_back_pressed)
 
 	# ID_PLAY_BATTLE ("Play"/"Gioca") rather than ID_SELECT - the button
 	# commits to the currently-previewed opponent and launches deck select,
 	# "Play" says that more directly, in both mouse and gamepad mode.
-	select_button = _make_text_button(StringTable.get_string(StringTable.ID_PLAY_BATTLE), Vector2(805, 463), Vector2(115, 56), font_stylish)
+	select_button = _make_text_button(StringTable.get_string(StringTable.ID_PLAY_BATTLE), UIConstants.OPPONENTS_SELECT_BUTTON_POS, Vector2(115, 56), font_stylish)
 	select_button.pressed.connect(_on_select_pressed)
 
 	scroll = ScrollContainer.new()
-	scroll.position = Vector2(95, 50)
+	scroll.position = UIConstants.OPPONENTS_SCROLL_POS
 	scroll.size = Vector2(770, 402)  # exactly fits 3 rows of 7 (98x130 items, 14/6 sep) with no scrollbar
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED  # GridListScrollOrientation.Vertical
 	add_child(scroll)
@@ -170,9 +169,9 @@ func _make_label(pos: Vector2, size: Vector2, font: Font) -> Label:
 	label.position = pos
 	label.size = size
 	label.add_theme_font_override("font", font)
-	label.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
+	label.add_theme_font_size_override("font_size", UIConstants.LABEL_FONT_SIZE_36)
 	label.add_theme_color_override("font_color", Color.BLACK)
-	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
+	label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
 	label.add_theme_constant_override("shadow_offset_x", 1)
 	label.add_theme_constant_override("shadow_offset_y", 1)
 	return label
@@ -184,9 +183,9 @@ func _make_text_button(label: String, pos: Vector2, size: Vector2, font: Font) -
 	btn.position = pos
 	btn.size = size
 	btn.add_theme_font_override("font", font)
-	btn.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
+	btn.add_theme_font_size_override("font_size", UIConstants.LABEL_FONT_SIZE_36)
 	btn.add_theme_color_override("font_color", Color.BLACK)
-	btn.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
+	btn.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
 	btn.add_theme_constant_override("shadow_offset_x", 1)
 	btn.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(btn)

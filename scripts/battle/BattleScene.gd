@@ -27,14 +27,11 @@ const COLOR_P0 := Color(0.0, 130.0 / 255.0, 1.0, 0.8)
 const COLOR_P1 := Color(225.0 / 255.0, 0.0, 0.0, 0.8)
 
 # Board.cs boardCardsRect: uniform 101x133 pitch for a 96x128 card -> 5px gap.
-const BOARD_POS := Vector2(282, 7)
+const BOARD_POS := UIConstants.BATTLE_BOARD_POS
 const BOARD_GAP := 5
 
 # Board.cs idleCardsRect - the player's own 5 hand slots (zig-zag stack).
-const HAND_POSITIONS := [
-	Vector2(826, 68), Vector2(718, 134), Vector2(826, 208),
-	Vector2(718, 283), Vector2(826, 348),
-]
+const HAND_POSITIONS := UIConstants.BATTLE_HAND_POSITIONS
 
 # --------------------------------------------------- left column geometry
 #
@@ -45,7 +42,7 @@ const HAND_POSITIONS := [
 # when the pergamena art was reproportioned - and hand-placed numbers give no
 # warning when they start overlapping.
 
-const PERGAMENA_POS := Vector2(0, 4)
+const PERGAMENA_POS := UIConstants.BATTLE_PERGAMENA_POS
 const PERGAMENA_WIDTH := 280.0
 ## The flat writable field inside the scroll's rolled edges, as a fraction of
 ## the texture, measured off battle_pergamena.png. Fractions rather than
@@ -119,10 +116,10 @@ const HOVER_GLOW_FLASH_TIME := 0.8
 # both while leaving room for a bigger font. Scoped to just this branch of
 # gsEndPlayerPick_Set - every other label_central_msg/button_takeall use
 # keeps the reference's original position/alignment.
-const END_TAKEALL_MSG_POS := Vector2(40, 175)
+const END_TAKEALL_MSG_POS := UIConstants.BATTLE_END_TAKEALL_MSG_POS
 const END_TAKEALL_MSG_SIZE := Vector2(880, 65)
 const END_TAKEALL_MSG_FONT_SIZE := 30
-const END_TAKEALL_BUTTON_POS := Vector2(401, 255)
+const END_TAKEALL_BUTTON_POS := UIConstants.BATTLE_END_TAKEALL_OVERRIDE_BUTTON_POS
 
 # Battle countdown number: centered in the vertical space between
 # card_border.png's top inner edge (y=9) and the top of the stat text
@@ -140,7 +137,7 @@ const COIN_TOSS_SPIN_LIFE := 1.38
 const COIN_TOSS_MOVE_LIFE := 0.6
 
 # gsEndStart.cs layout/timings.
-const END_PL0_START := Vector2(80, 40)
+const END_PL0_START := UIConstants.BATTLE_END_PL0_START
 const END_PL0_WIDTH := 700.0
 const END_PL1_START := Vector2(260, 544 - 40 - 128)
 const END_PL1_WIDTH := (960.0 - 300.0 - 20.0) - 100.0
@@ -647,8 +644,8 @@ func _build_ui() -> void:
 	# the end-of-match readout right below) so the card-stats readout looks the
 	# same wherever the player meets it. Its frame is thinner than the marble's
 	# too, which is where the extra room for the larger text came from.
-	var info_bkg := UIPanel.make(Vector2(248, 256))
-	info_bkg.position = Vector2(14, 282)
+	var info_bkg := UIPanel.make(UIConstants.BATTLE_INFO_PANEL_SIZE)
+	info_bkg.position = UIConstants.BATTLE_INFO_BKG_POS
 	add_child(info_bkg)
 
 	turn_cursor = TextureRect.new()
@@ -728,7 +725,7 @@ func _build_player_panel(idx: int, row: int, color: Color) -> void:
 	name_label.add_theme_font_override("font", font_stylish)
 	name_label.add_theme_font_size_override("font_size", NAME_FONT_SIZE)
 	name_label.add_theme_color_override("font_color", color)
-	name_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	name_label.add_theme_color_override("font_shadow_color", UIConstants.BATTLE_NAME_SHADOW_COLOR)
 	name_label.add_theme_constant_override("shadow_offset_x", 1)
 	name_label.add_theme_constant_override("shadow_offset_y", 1)
 	_set_panel_name(name_label, _panel_name(idx))
@@ -844,7 +841,7 @@ func _build_board() -> void:
 			var target := Label.new()
 			target.text = "Target?"
 			target.add_theme_font_override("font", font_stylish)
-			target.add_theme_font_size_override("font_size", 22)
+			target.add_theme_font_size_override("font_size", UIConstants.BATTLE_TARGET_LABEL_FONT_SIZE)
 			target.add_theme_color_override("font_color", Color.WHITE)
 			target.add_theme_color_override("font_outline_color", Color.BLACK)
 			target.add_theme_constant_override("outline_size", 4)
@@ -894,8 +891,8 @@ func _build_battle_overlay() -> void:
 	# background, and font size roughly doubles the level-up text's.
 	chain_label = Label.new()
 	chain_label.add_theme_font_override("font", Game.font_title)
-	chain_label.add_theme_font_size_override("font_size", 48)
-	chain_label.add_theme_color_override("font_color", Color(1, 0.85, 0.1))
+	chain_label.add_theme_font_size_override("font_size", UIConstants.BATTLE_CHAIN_LABEL_FONT_SIZE)
+	chain_label.add_theme_color_override("font_color", UIConstants.COLOR_GOLD)
 	chain_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	chain_label.add_theme_constant_override("outline_size", 5)
 	chain_label.visible = false
@@ -908,7 +905,7 @@ func _build_battle_overlay() -> void:
 		var value_label := Label.new()
 		value_label.add_theme_font_override("font", font_stylish)
 		value_label.add_theme_font_size_override("font_size", BATTLE_VALUE_FONT_SIZE)
-		value_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.1))
+		value_label.add_theme_color_override("font_color", UIConstants.BATTLE_VALUE_LABEL_COLOR)
 		value_label.add_theme_color_override("font_outline_color", Color.BLACK)
 		value_label.add_theme_constant_override("outline_size", 3)
 		value_label.visible = false
@@ -928,8 +925,8 @@ func _build_battle_overlay() -> void:
 	coin_sprite.texture = coin_blue_tex
 	coin_sprite.stretch_mode = TextureRect.STRETCH_SCALE
 	coin_sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	coin_sprite.size = Vector2(96, 96)
-	coin_sprite.pivot_offset = Vector2(48, 48)
+	coin_sprite.size = UIConstants.BATTLE_COIN_SPRITE_SIZE
+	coin_sprite.pivot_offset = UIConstants.BATTLE_COIN_SPRITE_PIVOT
 	coin_sprite.position = Vector2((SCREEN_W - 96) / 2.0, (SCREEN_H - 96) / 2.0)
 	coin_sprite.visible = false
 	add_child(coin_sprite)
@@ -1031,14 +1028,14 @@ func _build_battle_end_ui() -> void:
 	panel_owned.add_child(owned_label)
 
 	panel_info = Control.new()
-	panel_info.position = Vector2(8, 311)
-	panel_info.size = Vector2(228, 224)
+	panel_info.position = UIConstants.BATTLE_END_PANEL_INFO_POS
+	panel_info.size = UIConstants.BATTLE_END_INFO_PANEL_SIZE
 	panel_info.clip_contents = true
 	panel_info.visible = false
 	panel_info.z_index = 60  # see panel_owned's comment above
 	end_panel.add_child(panel_info)
 
-	var info_bkg := UIPanel.make(Vector2(228, 224))
+	var info_bkg := UIPanel.make(UIConstants.BATTLE_END_INFO_PANEL_SIZE)
 	panel_info.add_child(info_bkg)
 
 	# Same readout as the in-match panel, same component, so the same card
@@ -1051,7 +1048,7 @@ func _build_battle_end_ui() -> void:
 	# card as your prize", "the opponent will now choose", the draw notice).
 	# It was 25 - the smallest running text in the game, on the one screen
 	# where the player has to act on what it says.
-	label_central_msg = _make_end_label(Vector2(46, 226), Vector2(742, 90), END_MESSAGE_FONT_SIZE)
+	label_central_msg = _make_end_label(UIConstants.BATTLE_END_CENTRAL_MSG_POS, UIConstants.BATTLE_CENTRAL_MSG_SIZE, END_MESSAGE_FONT_SIZE)
 	label_central_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label_central_msg.autowrap_mode = TextServer.AUTOWRAP_WORD
 	label_central_msg.visible = false
@@ -1073,20 +1070,20 @@ func _build_battle_end_ui() -> void:
 	label_coin_reward.position = Vector2(SCREEN_W - COIN_LABEL_SIZE.x - COIN_LABEL_MARGIN, COIN_LABEL_MARGIN)
 	label_coin_reward.size = COIN_LABEL_SIZE
 	label_coin_reward.add_theme_font_override("normal_font", font_stylish)
-	label_coin_reward.add_theme_font_size_override("normal_font_size", 36)
-	label_coin_reward.add_theme_color_override("default_color", Color(1, 0.85, 0.1))
+	label_coin_reward.add_theme_font_size_override("normal_font_size", UIConstants.BATTLE_COIN_REWARD_FONT_SIZE)
+	label_coin_reward.add_theme_color_override("default_color", UIConstants.COLOR_GOLD)
 	label_coin_reward.add_theme_constant_override("outline_size", 4)
 	label_coin_reward.add_theme_color_override("font_outline_color", Color.BLACK)
 	label_coin_reward.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label_coin_reward.visible = false
 	end_panel.add_child(label_coin_reward)
 
-	button_done = _make_end_button(StringTable.get_string(StringTable.ID_DONE), Vector2(790, 463), Vector2(122, 56))
+	button_done = _make_end_button(StringTable.get_string(StringTable.ID_DONE), UIConstants.BATTLE_END_DONE_BUTTON_POS, UIConstants.BATTLE_DONE_BUTTON_SIZE)
 	button_done.visible = false
 	button_done.pressed.connect(_on_end_done_pressed)
 	end_panel.add_child(button_done)
 
-	button_takeall = _make_end_button(StringTable.get_string(StringTable.ID_TAKE_ALL), Vector2(795, 242), Vector2(158, 56))
+	button_takeall = _make_end_button(StringTable.get_string(StringTable.ID_TAKE_ALL), UIConstants.BATTLE_TAKEALL_BUTTON_POS, UIConstants.BATTLE_TAKEALL_BUTTON_SIZE)
 	button_takeall.visible = false
 	button_takeall.pressed.connect(_on_end_takeall_pressed)
 	end_panel.add_child(button_takeall)
@@ -1095,7 +1092,7 @@ func _build_battle_end_ui() -> void:
 	image_arrow.texture = load(ASSETS + "cursor.png")
 	image_arrow.stretch_mode = TextureRect.STRETCH_SCALE
 	image_arrow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	image_arrow.size = Vector2(64, 64)
+	image_arrow.size = UIConstants.BATTLE_ARROW_ICON_SIZE
 	image_arrow.visible = false
 	image_arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	end_panel.add_child(image_arrow)
@@ -1104,16 +1101,16 @@ func _build_battle_end_ui() -> void:
 	help_arrow.texture = load(ASSETS + "help_arrow.png")
 	help_arrow.stretch_mode = TextureRect.STRETCH_SCALE
 	help_arrow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	help_arrow.position = Vector2(574, 98)
-	help_arrow.size = Vector2(159, 317)
+	help_arrow.position = UIConstants.BATTLE_HELP_ARROW_POS
+	help_arrow.size = UIConstants.BATTLE_HELP_ARROW_SIZE
 	help_arrow.visible = false
 	help_arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	end_panel.add_child(help_arrow)
 
 	busy_spinner = BusySpinner.new()
-	busy_spinner.position = Vector2(912, 496)
-	busy_spinner.size = Vector2(48, 48)
-	busy_spinner.pivot_offset = Vector2(24, 24)
+	busy_spinner.position = UIConstants.BUSY_SPINNER_POS
+	busy_spinner.size = UIConstants.BUSY_SPINNER_SIZE
+	busy_spinner.pivot_offset = UIConstants.BUSY_SPINNER_PIVOT
 	busy_spinner.visible = false
 	end_panel.add_child(busy_spinner)
 
@@ -1124,7 +1121,7 @@ func _make_end_label(pos: Vector2, label_size: Vector2, font_size: int) -> Label
 	label.add_theme_font_override("font", font_stylish)
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", Color.BLACK)
-	label.add_theme_color_override("font_shadow_color", Color(128.0 / 255.0, 128.0 / 255.0, 128.0 / 255.0, 0.5))
+	label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
 	label.add_theme_constant_override("shadow_offset_x", 1)
 	label.add_theme_constant_override("shadow_offset_y", 1)
 	return label
@@ -1136,9 +1133,9 @@ func _make_end_button(text: String, pos: Vector2, btn_size: Vector2) -> Button:
 	btn.position = pos
 	btn.size = btn_size
 	btn.add_theme_font_override("font", font_stylish)
-	btn.add_theme_font_size_override("font_size", 36)
+	btn.add_theme_font_size_override("font_size", UIConstants.BATTLE_END_BUTTON_FONT_SIZE)
 	btn.add_theme_color_override("font_color", Color.BLACK)
-	btn.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
+	btn.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
 	btn.add_theme_constant_override("shadow_offset_x", 2)
 	btn.add_theme_constant_override("shadow_offset_y", 1)
 	UIButtonStyle.fit_button_text(btn)
@@ -2248,9 +2245,9 @@ func _show_level_up_text(view: CardView, line0: String, line1: String) -> void:
 	# glance. Color/shadow match the reference exactly (light grey, black
 	# drop shadow).
 	label.add_theme_font_override("font", font_info)
-	label.add_theme_font_size_override("font_size", 26)
-	label.add_theme_color_override("font_color", Color(213.0 / 255.0, 213.0 / 255.0, 213.0 / 255.0))
-	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
+	label.add_theme_font_size_override("font_size", UIConstants.BATTLE_CARD_OWNER_FONT_SIZE)
+	label.add_theme_color_override("font_color", UIConstants.BATTLE_CARD_OWNER_COLOR)
+	label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_STRONG)
 	label.add_theme_constant_override("shadow_offset_x", 1)
 	label.add_theme_constant_override("shadow_offset_y", 1)
 	label.text = line0 + "\n" + line1
@@ -2367,7 +2364,7 @@ func _update_online_timer() -> void:
 	online_timer_label.visible = true
 	online_timer_label.text = str(left)
 	online_timer_label.add_theme_color_override("font_color",
-		Color(0.62, 0.06, 0.06) if left <= TIMER_WARNING_SECONDS else Color.BLACK)
+		UIConstants.BATTLE_TIMER_WARNING_COLOR if left <= TIMER_WARNING_SECONDS else Color.BLACK)
 
 func _return_to_main_menu() -> void:
 	Game.crossfade_to_menu_music(0.85)
@@ -2474,7 +2471,7 @@ func gsEndPlayerPick_Set(result: BattleResult) -> void:
 	# player sees what they earned while picking their card, not after the
 	# screen is already gone. Both read _coin_reward(), which depends on
 	# ai.defeated still being false at this point.
-	label_coin_reward.text = "[right]+%d [img=40x40]res://assets/coins_icon.png[/img][/right]" % _coin_reward()
+	label_coin_reward.text = "[right]+%d [img=40x40]%s[/img][/right]" % [_coin_reward(), UIConstants.ICON_COIN]
 	label_coin_reward.visible = not Game.online_mode
 
 	if result == BattleResult.PLAYER_PERFECT:

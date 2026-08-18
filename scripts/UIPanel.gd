@@ -21,12 +21,12 @@ extends RefCounted
 
 ## Warm parchment rather than the old flat white, to sit with the scroll and
 ## the card art. Slightly translucent so the background still reads through.
-const FILL := Color(0.96, 0.93, 0.85, 0.94)
+const FILL := UIConstants.COLOR_PANEL_FILL
 ## Dark bronze, the same family as the gold rims on the buttons and the globe.
-const FRAME := Color(0.42, 0.30, 0.14)
+const FRAME := UIConstants.COLOR_PANEL_FRAME
 ## A thin brighter line just inside the frame - the one touch that reads as
 ## "ornate" rather than "rounded rectangle", for one extra node.
-const INNER_LINE := Color(0.80, 0.66, 0.36, 0.75)
+const INNER_LINE := UIConstants.COLOR_PANEL_INNER_LINE
 const FRAME_WIDTH := 4
 const RADIUS := 12
 const INNER_INSET := 6.0
@@ -56,7 +56,7 @@ static func make(size: Vector2) -> Panel:
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var outer := _style(FILL, FRAME, FRAME_WIDTH, RADIUS)
-	outer.shadow_color = Color(0, 0, 0, 0.35)
+	outer.shadow_color = UIConstants.COLOR_SHADOW_SOFT
 	outer.shadow_size = 5
 	outer.shadow_offset = Vector2(0, 3)
 	panel.add_theme_stylebox_override("panel", outer)

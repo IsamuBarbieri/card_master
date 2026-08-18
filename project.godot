@@ -21,6 +21,7 @@ CardManager="*res://scripts/CardManager.gd"
 AIManager="*res://scripts/AIManager.gd"
 Game="*res://scripts/Game.gd"
 StringTable="*res://scripts/StringTable.gd"
+UIConstants="*res://scripts/UIConstants.gd"
 ControllerUI="*res://scripts/ui/ControllerUI.gd"
 Net="*res://scripts/net/Net.gd"
 
@@ -36,13 +37,8 @@ window/stretch/mode="canvas_items"
 
 [rendering]
 
-; Godot's default clear colour is a mid grey. It shows in two places: the
-; letterbox bars on any screen that isn't 960x544 (every phone), and for the
-; frame between one scene being freed and the next one drawing - which read as
-; the screen flashing grey on every transition. Black is what the art already
-; sits on.
-environment/defaults/default_clear_color=Color(0, 0, 0, 1)
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0, 0, 0, 1)

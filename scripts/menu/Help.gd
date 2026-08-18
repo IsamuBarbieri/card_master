@@ -111,7 +111,7 @@ func _make_page(bg_path: String) -> Control:
 	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var bg_color := ColorRect.new()
-	bg_color.color = Color(153.0 / 255.0, 153.0 / 255.0, 153.0 / 255.0)
+	bg_color.color = UIConstants.HELP_BG_COLOR
 	bg_color.size = Vector2(SCREEN_W, SCREEN_H)
 	bg_color.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	page.add_child(bg_color)
@@ -136,7 +136,7 @@ func _add_label(page: Control, pos: Vector2, size: Vector2, string_id: int, cent
 	backing.position = pos
 	backing.size = size
 	var backing_sb := StyleBoxFlat.new()
-	backing_sb.bg_color = Color(0, 0, 0, 0.55)
+	backing_sb.bg_color = UIConstants.HELP_BACKING_COLOR
 	backing_sb.corner_radius_top_left = 8
 	backing_sb.corner_radius_top_right = 8
 	backing_sb.corner_radius_bottom_left = 8
@@ -168,12 +168,12 @@ func _add_label(page: Control, pos: Vector2, size: Vector2, string_id: int, cent
 
 func _build_presentation_page() -> Control:
 	var page := _make_page("help/help_presentation.png")
-	_add_label(page, Vector2(47, 63), Vector2(880, 305), StringTable.ID_HELP_PRESENTATION)
+	_add_label(page, UIConstants.HELP_PRESENTATION_LABEL_POS, Vector2(880, 305), StringTable.ID_HELP_PRESENTATION)
 	return page
 
 func _build_cards_page() -> Control:
 	var page := _make_page("help/help_card.png")
-	_add_label(page, Vector2(31, 36), Vector2(600, 386), StringTable.ID_HELP_CARDS)
+	_add_label(page, UIConstants.HELP_CARDS_LABEL_POS, Vector2(600, 386), StringTable.ID_HELP_CARDS)
 	return page
 
 func _build_main_page() -> Control:
@@ -183,46 +183,46 @@ func _build_main_page() -> Control:
 	# everything). Online and Options have no such clear gap of their own, so
 	# their captions sit directly on their own buttons instead, like the
 	# stat-panel captions elsewhere in Help already do.
-	_add_label(page, Vector2(330, 100), Vector2(300, 95), StringTable.ID_HELP_MAIN1, true)
-	_add_label(page, Vector2(16, 100), Vector2(300, 95), StringTable.ID_HELP_MAIN2, true)
-	_add_label(page, Vector2(644, 100), Vector2(300, 95), StringTable.ID_HELP_MAIN3, true)
-	_add_label(page, Vector2(377, 216), Vector2(206, 113), StringTable.ID_HELP_MAIN_ONLINE, true)
-	_add_label(page, Vector2(313, 442), Vector2(334, 90), StringTable.ID_HELP_MAIN4, true)
+	_add_label(page, UIConstants.HELP_MAIN1_LABEL_POS, Vector2(300, 95), StringTable.ID_HELP_MAIN1, true)
+	_add_label(page, UIConstants.HELP_MAIN2_LABEL_POS, Vector2(300, 95), StringTable.ID_HELP_MAIN2, true)
+	_add_label(page, UIConstants.HELP_MAIN3_LABEL_POS, Vector2(300, 95), StringTable.ID_HELP_MAIN3, true)
+	_add_label(page, UIConstants.HELP_MAIN_ONLINE_LABEL_POS, Vector2(206, 113), StringTable.ID_HELP_MAIN_ONLINE, true)
+	_add_label(page, UIConstants.HELP_MAIN4_LABEL_POS, Vector2(334, 90), StringTable.ID_HELP_MAIN4, true)
 	return page
 
 func _build_deckselect_page() -> Control:
 	var page := _make_page("help/help_deck_select.png")
-	_add_label(page, Vector2(0, 0), Vector2(960, 50), StringTable.ID_HELP_DECKSELECT1, true)
+	_add_label(page, UIConstants.HELP_DECKSELECT1_LABEL_POS, Vector2(960, 50), StringTable.ID_HELP_DECKSELECT1, true)
 	# Tall enough to cover the stats panel it sits over end to end - a partial
 	# overlap let the panel's own text half-show through the translucent
 	# backing, doubling as a ghost image instead of just being covered.
-	_add_label(page, Vector2(353, 76), Vector2(253, 274), StringTable.ID_HELP_DECKSELECT2, true)
-	_add_label(page, Vector2(46, 141), Vector2(253, 125), StringTable.ID_HELP_DECKSELECT3, true)
-	_add_label(page, Vector2(283, 399), Vector2(393, 125), StringTable.ID_HELP_DECKSELECT4, true)
+	_add_label(page, UIConstants.HELP_DECKSELECT2_LABEL_POS, Vector2(253, 274), StringTable.ID_HELP_DECKSELECT2, true)
+	_add_label(page, UIConstants.HELP_DECKSELECT3_LABEL_POS, Vector2(253, 125), StringTable.ID_HELP_DECKSELECT3, true)
+	_add_label(page, UIConstants.HELP_DECKSELECT4_LABEL_POS, Vector2(393, 125), StringTable.ID_HELP_DECKSELECT4, true)
 	return page
 
 func _build_battle_page() -> Control:
 	var page := _make_page("help/help_battle.png")
-	_add_label(page, Vector2(472, 135), Vector2(239, 125), StringTable.ID_HELP_BATTLE1, true)
-	_add_label(page, Vector2(320, 10), Vector2(222, 125), StringTable.ID_HELP_BATTLE2, true)
+	_add_label(page, UIConstants.HELP_BATTLE1_LABEL_POS, Vector2(239, 125), StringTable.ID_HELP_BATTLE1, true)
+	_add_label(page, UIConstants.HELP_BATTLE2_LABEL_POS, Vector2(222, 125), StringTable.ID_HELP_BATTLE2, true)
 	# Kept clear of the stats panel just below it (starts y=292) - dipping into
 	# it left the panel's own "Card Stats" heading half-dimmed by the backing,
 	# reading as a ghost duplicate instead of one clean label.
-	_add_label(page, Vector2(17, 200), Vector2(252, 80), StringTable.ID_HELP_BATTLE3, true)
-	_add_label(page, Vector2(47, 100), Vector2(177, 35), StringTable.ID_HELP_BATTLE4, true)
-	_add_label(page, Vector2(66, 340), Vector2(151, 46), StringTable.ID_HELP_BATTLE5, true)
+	_add_label(page, UIConstants.HELP_BATTLE3_LABEL_POS, Vector2(252, 80), StringTable.ID_HELP_BATTLE3, true)
+	_add_label(page, UIConstants.HELP_BATTLE4_LABEL_POS, Vector2(177, 35), StringTable.ID_HELP_BATTLE4, true)
+	_add_label(page, UIConstants.HELP_BATTLE5_LABEL_POS, Vector2(151, 46), StringTable.ID_HELP_BATTLE5, true)
 	return page
 
 func _build_shop_page() -> Control:
 	var page := _make_page("help/help_shop.png")
-	_add_label(page, Vector2(280, 267), Vector2(253, 125), StringTable.ID_HELP_SHOP1, true)
-	_add_label(page, Vector2(644, 388), Vector2(253, 110), StringTable.ID_HELP_SHOP2, true)
-	_add_label(page, Vector2(651, 110), Vector2(280, 268), StringTable.ID_HELP_SHOP3, true)
+	_add_label(page, UIConstants.HELP_SHOP1_LABEL_POS, Vector2(253, 125), StringTable.ID_HELP_SHOP1, true)
+	_add_label(page, UIConstants.HELP_SHOP2_LABEL_POS, Vector2(253, 110), StringTable.ID_HELP_SHOP2, true)
+	_add_label(page, UIConstants.HELP_SHOP3_LABEL_POS, Vector2(280, 268), StringTable.ID_HELP_SHOP3, true)
 	return page
 
 func _make_close_button() -> Button:
 	var btn := Button.new()
-	btn.position = Vector2(901, 484)
+	btn.position = UIConstants.HELP_CLOSE_BUTTON_POS
 	btn.size = Vector2(42, 42)
 	# A font glyph instead of button_delete_save.png's raster X: same X at any
 	# scale reads crisp (the PNG was low-res and blurred/blocked when the
@@ -230,10 +230,10 @@ func _make_close_button() -> Button:
 	# theme overrides instead of needing a separately-authored asset.
 	btn.text = "X"
 	btn.add_theme_font_override("font", Game.font_stylish)
-	btn.add_theme_font_size_override("font_size", 26)
-	btn.add_theme_color_override("font_color", Color(0.85, 0.1, 0.1))
-	btn.add_theme_color_override("font_hover_color", Color(1.0, 0.25, 0.25))
-	btn.add_theme_color_override("font_pressed_color", Color(0.6, 0.0, 0.0))
+	btn.add_theme_font_size_override("font_size", UIConstants.HELP_CLOSE_BUTTON_FONT_SIZE)
+	btn.add_theme_color_override("font_color", UIConstants.COLOR_DANGER)
+	btn.add_theme_color_override("font_hover_color", UIConstants.COLOR_DANGER_HOVER)
+	btn.add_theme_color_override("font_pressed_color", UIConstants.COLOR_DANGER_PRESSED)
 	btn.add_theme_color_override("font_outline_color", Color.BLACK)
 	btn.add_theme_constant_override("outline_size", 2)
 
@@ -274,7 +274,7 @@ func _build_page_dots() -> void:
 		var dot := ColorRect.new()
 		dot.size = Vector2(DOT_SIZE, DOT_SIZE)
 		dot.position = Vector2(start_x + i * (DOT_SIZE + DOT_GAP), DOT_Y)
-		dot.color = Color(1, 1, 1, 1.0 if i == 0 else 0.35)
+		dot.color = UIConstants.HELP_DOT_COLOR if i == 0 else Color(1, 1, 1, UIConstants.HELP_DOT_INACTIVE_ALPHA)
 		dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(dot)
 		_dots.append(dot)

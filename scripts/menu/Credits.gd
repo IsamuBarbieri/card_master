@@ -24,11 +24,11 @@ func _ready() -> void:
 	bg.pressed.connect(_on_back_pressed)
 	add_child(bg)
 
-	_make_label(Vector2(320, 36), Vector2(320, 94), font_stylish, "Samuele Barbieri\nGame Design, Graphics")
-	_make_label(Vector2(263, 170), Vector2(432, 94), font_stylish, "Viviana Massicut\nCards Graphics")
-	_make_label(Vector2(320, 305), Vector2(320, 94), font_stylish, "Marco Castrucci\nSpecial Thanks")
+	_make_label(UIConstants.CREDITS_DESIGN_LABEL_POS, Vector2(320, 94), font_stylish, "Samuele Barbieri\nGame Design, Graphics")
+	_make_label(UIConstants.CREDITS_CARDS_LABEL_POS, Vector2(432, 94), font_stylish, "Viviana Massicut\nCards Graphics")
+	_make_label(UIConstants.CREDITS_THANKS_LABEL_POS, Vector2(320, 94), font_stylish, "Marco Castrucci\nSpecial Thanks")
 
-	_make_label(Vector2(0, 448), Vector2(958, 79), font_stylish, "Music: Essa (soundcloud)\nSFX: http://www.freesfx.co.uk")
+	_make_label(UIConstants.CREDITS_MUSIC_LABEL_POS, Vector2(958, 79), font_stylish, "Music: Essa (soundcloud)\nSFX: http://www.freesfx.co.uk")
 
 	# Whole screen is one button, so there's nothing to navigate between and
 	# nothing meaningful for the hand to point at - A/B are handled directly

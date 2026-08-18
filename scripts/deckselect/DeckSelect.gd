@@ -18,10 +18,7 @@ const SCREEN_H := 544
 const ASSETS := "res://assets/"
 const LABEL_FONT_SIZE := 36
 
-const PLACEHOLDER_POS := [
-	Vector2(237, 391), Vector2(334, 391), Vector2(431, 391),
-	Vector2(528, 391), Vector2(625, 391),
-]
+const PLACEHOLDER_POS := UIConstants.DECKSELECT_PLACEHOLDER_POS
 const PLACEHOLDER_SIZE := Vector2(96, 128)
 
 const GET_BACK_TIME := 0.1
@@ -461,12 +458,12 @@ func _build_ui() -> void:
 	deck_bar.texture = load(ASSETS + "common_transp_box_b.png")
 	deck_bar.stretch_mode = TextureRect.STRETCH_SCALE
 	deck_bar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	deck_bar.position = Vector2(228, 377)
+	deck_bar.position = UIConstants.DECKSELECT_DECK_BAR_POS
 	deck_bar.size = Vector2(503, 157)
 	add_child(deck_bar)
 
-	panel_left = _make_selector_panel(Vector2(0, 72), Vector2(348, 348))
-	panel_right = _make_selector_panel(Vector2(612, 72), Vector2(348, 348))
+	panel_left = _make_selector_panel(UIConstants.DECKSELECT_PANEL_LEFT_POS, Vector2(348, 348))
+	panel_right = _make_selector_panel(UIConstants.DECKSELECT_PANEL_RIGHT_POS, Vector2(348, 348))
 
 	for i in 5:
 		var ph := Control.new()
@@ -475,41 +472,41 @@ func _build_ui() -> void:
 		ph.clip_contents = true
 		ph.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var bg_rect := ColorRect.new()
-		bg_rect.color = Color(153.0 / 255.0, 153.0 / 255.0, 153.0 / 255.0, 127.0 / 255.0)
+		bg_rect.color = UIConstants.COLOR_PANEL_FILL_GRAY
 		bg_rect.size = PLACEHOLDER_SIZE
 		bg_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		ph.add_child(bg_rect)
 		add_child(ph)
 		placeholders.append(ph)
 
-	button_play = _make_text_button(StringTable.get_string(StringTable.ID_PLAY_BATTLE), Vector2(798, 463), Vector2(115, 56), font_stylish)
+	button_play = _make_text_button(StringTable.get_string(StringTable.ID_PLAY_BATTLE), UIConstants.DECKSELECT_PLAY_BUTTON_POS, Vector2(115, 56), font_stylish)
 	button_play.pressed.connect(_on_play_pressed)
 
-	var back_button := _make_text_button(StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56), font_stylish)
+	var back_button := _make_text_button(StringTable.get_string(StringTable.ID_BACK), UIConstants.BACK_BUTTON_POS, UIConstants.BACK_BUTTON_SIZE, font_stylish)
 	back_button.pressed.connect(_on_back_pressed)
 	# B already backs out via nav.cancelled (_setup_nav) - hide the button
 	# itself in gamepad mode rather than also making it a redundant focus stop.
 	ControllerUI.hide_in_gamepad(back_button)
 
 	var info_bkg := UIPanel.make(Vector2(260, 252))
-	info_bkg.position = Vector2(352, 106)
+	info_bkg.position = UIConstants.DECKSELECT_INFO_BKG_POS
 	add_child(info_bkg)
 
-	var label_select5 := _make_label(Vector2(313, 10), Vector2(333, 62), Game.font_title)
+	var label_select5 := _make_label(UIConstants.DECKSELECT_LABEL_SELECT5_POS, Vector2(333, 62), Game.font_title)
 	label_select5.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_select5.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label_select5.text = StringTable.get_string(StringTable.ID_DECK_SELECT_CARDS)
 	add_child(label_select5)
 	UIButtonStyle.fit_button_text(label_select5)
 
-	var label_your_deck := _make_label(Vector2(67, 12), Vector2(214, 60), Game.font_title)
+	var label_your_deck := _make_label(UIConstants.DECKSELECT_LABEL_YOUR_DECK_POS, Vector2(214, 60), Game.font_title)
 	label_your_deck.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_your_deck.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label_your_deck.text = StringTable.get_string(StringTable.ID_CARDS)
 	add_child(label_your_deck)
 	UIButtonStyle.fit_button_text(label_your_deck)
 
-	var label_your_prefs := _make_label(Vector2(679, 12), Vector2(214, 60), Game.font_title)
+	var label_your_prefs := _make_label(UIConstants.DECKSELECT_LABEL_YOUR_PREFS_POS, Vector2(214, 60), Game.font_title)
 	label_your_prefs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_your_prefs.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label_your_prefs.text = StringTable.get_string(StringTable.ID_FAVORITE_CARDS)
@@ -517,13 +514,13 @@ func _build_ui() -> void:
 	UIButtonStyle.fit_button_text(label_your_prefs)
 
 	stat_panel = CardStatPanel.make(Vector2(242, 232))
-	stat_panel.position = Vector2(361, 118)
+	stat_panel.position = UIConstants.DECKSELECT_STAT_PANEL_POS
 	add_child(stat_panel)
 
 	busy_indicator = BusySpinner.new()
-	busy_indicator.position = Vector2(912, 496)
-	busy_indicator.size = Vector2(48, 48)
-	busy_indicator.pivot_offset = Vector2(24, 24)
+	busy_indicator.position = UIConstants.BUSY_SPINNER_POS
+	busy_indicator.size = UIConstants.BUSY_SPINNER_SIZE
+	busy_indicator.pivot_offset = UIConstants.BUSY_SPINNER_PIVOT
 	busy_indicator.visible = false
 	add_child(busy_indicator)
 
@@ -569,7 +566,7 @@ func _make_label(pos: Vector2, label_size: Vector2, font: Font) -> Label:
 	label.add_theme_font_override("font", font)
 	label.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
 	label.add_theme_color_override("font_color", Color.BLACK)
-	label.add_theme_color_override("font_shadow_color", Color(128.0 / 255.0, 128.0 / 255.0, 128.0 / 255.0, 0.5))
+	label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
 	label.add_theme_constant_override("shadow_offset_x", 1)
 	label.add_theme_constant_override("shadow_offset_y", 1)
 	return label
@@ -583,7 +580,7 @@ func _make_text_button(label: String, pos: Vector2, btn_size: Vector2, font: Fon
 	btn.add_theme_font_override("font", font)
 	btn.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
 	btn.add_theme_color_override("font_color", Color.BLACK)
-	btn.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
+	btn.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
 	btn.add_theme_constant_override("shadow_offset_x", 1)
 	btn.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(btn)

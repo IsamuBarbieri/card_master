@@ -54,7 +54,7 @@ const NAME_COLOR := Color.BLACK
 const TEXT_COLOR := Color.BLACK
 ## A one-pixel soft drop shadow. The readouts sit on a pale panel and read
 ## flat without it; this is the same offset the menu labels already use.
-const SHADOW_COLOR := Color(0.0, 0.0, 0.0, 0.35)
+const SHADOW_COLOR := UIConstants.COLOR_SHADOW_SOFT
 const SHADOW_OFFSET := 1
 
 var name_label: Label

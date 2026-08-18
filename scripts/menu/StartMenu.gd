@@ -29,7 +29,7 @@ const ASSETS := "res://assets/"
 ## scales this canvas up to fill the real screen - on a phone, small design-
 ## canvas text reads as genuinely tiny, so every label below is sized to the
 ## biggest font that still fits its box rather than an arbitrary pick.
-const SLOT_POSITIONS := [Vector2(40, 42), Vector2(340, 42), Vector2(640, 42)]
+const SLOT_POSITIONS := UIConstants.STARTMENU_SLOT_POSITIONS
 const SLOT_SIZE := Vector2(280, 460)
 const DELETE_SIZE := Vector2(48, 48)
 const DELETE_MARGIN := 6.0  # gap from the card's top-right corner, both axes
@@ -86,7 +86,7 @@ func _name_dot_style(color: Color) -> StyleBoxFlat:
 	sb.border_width_right = 3
 	sb.border_width_top = 3
 	sb.border_width_bottom = 3
-	sb.border_color = Color(0, 0, 0, 0.7)
+	sb.border_color = UIConstants.STARTMENU_SLOT_BORDER_COLOR
 	return sb
 var name_ok_btn: Button
 var name_cancel_btn: Button
@@ -119,23 +119,23 @@ func _ready() -> void:
 		add_child(slot)
 		slot_buttons.append(slot)
 
-		var number_label := _make_dialog_label(Vector2(0, 6), Vector2(SLOT_SIZE.x, 46), font_stylish)
+		var number_label := _make_dialog_label(UIConstants.STARTMENU_SLOT_NUMBER_LABEL_POS, Vector2(SLOT_SIZE.x, 46), font_stylish)
 		number_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		number_label.add_theme_font_size_override("font_size", 38)
+		number_label.add_theme_font_size_override("font_size", UIConstants.STARTMENU_SLOT_NUMBER_FONT_SIZE)
 		number_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		number_label.text = str(i + 1)
 		slot.add_child(number_label)
 		slot_number_labels.append(number_label)
 
-		var name_label := _make_dialog_label(Vector2(12, 56), Vector2(SLOT_SIZE.x - 24, 40), font_stylish)
+		var name_label := _make_dialog_label(UIConstants.STARTMENU_SLOT_NAME_LABEL_POS, Vector2(SLOT_SIZE.x - 24, 40), font_stylish)
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		name_label.add_theme_font_size_override("font_size", 30)
+		name_label.add_theme_font_size_override("font_size", UIConstants.STARTMENU_SLOT_NAME_FONT_SIZE)
 		name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(name_label)
 		slot_name_labels.append(name_label)
 
-		var stat_label := _make_dialog_label(Vector2(12, 100), Vector2(SLOT_SIZE.x - 24, 62), font_stylish)
-		stat_label.add_theme_font_size_override("font_size", 24)
+		var stat_label := _make_dialog_label(UIConstants.STARTMENU_SLOT_STAT_LABEL_POS, Vector2(SLOT_SIZE.x - 24, 62), font_stylish)
+		stat_label.add_theme_font_size_override("font_size", UIConstants.STARTMENU_SLOT_STAT_FONT_SIZE)
 		stat_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(stat_label)
 		slot_stat_labels.append(stat_label)
@@ -151,7 +151,7 @@ func _ready() -> void:
 		# reads as a collection on its own, and dropping the label frees the
 		# room COLLECTION_ICON_SIZE above grew into.
 		var collection_box := Control.new()
-		collection_box.position = Vector2(6, 172)
+		collection_box.position = UIConstants.STARTMENU_COLLECTION_BOX_POS
 		collection_box.size = COLLECTION_BOX_SIZE
 		collection_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(collection_box)
@@ -167,18 +167,18 @@ func _ready() -> void:
 		coins_label.position = Vector2(12, SLOT_SIZE.y - 60)
 		coins_label.size = Vector2(SLOT_SIZE.x - 24, 48)
 		coins_label.add_theme_font_override("normal_font", font_stylish)
-		coins_label.add_theme_font_size_override("normal_font_size", 34)
-		coins_label.add_theme_color_override("default_color", Color(1, 0.85, 0.1))
+		coins_label.add_theme_font_size_override("normal_font_size", UIConstants.STARTMENU_COINS_FONT_SIZE)
+		coins_label.add_theme_color_override("default_color", UIConstants.COLOR_GOLD)
 		coins_label.add_theme_constant_override("outline_size", 3)
 		coins_label.add_theme_color_override("font_outline_color", Color.BLACK)
 		coins_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(coins_label)
 		slot_coins_labels.append(coins_label)
 
-		var empty_label := _make_dialog_label(Vector2(0, 52), Vector2(SLOT_SIZE.x, SLOT_SIZE.y - 52), font_stylish)
+		var empty_label := _make_dialog_label(UIConstants.STARTMENU_EMPTY_LABEL_POS, Vector2(SLOT_SIZE.x, SLOT_SIZE.y - 52), font_stylish)
 		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		empty_label.add_theme_font_size_override("font_size", 40)
+		empty_label.add_theme_font_size_override("font_size", UIConstants.STARTMENU_EMPTY_SLOT_FONT_SIZE)
 		empty_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(empty_label)
 		slot_empty_labels.append(empty_label)
@@ -289,10 +289,10 @@ func _make_delete_button(pos: Vector2) -> Button:
 	# theme overrides instead of needing a separately-authored asset.
 	btn.text = "X"
 	btn.add_theme_font_override("font", Game.font_stylish)
-	btn.add_theme_font_size_override("font_size", 34)
-	btn.add_theme_color_override("font_color", Color(0.85, 0.1, 0.1))
-	btn.add_theme_color_override("font_hover_color", Color(1.0, 0.25, 0.25))
-	btn.add_theme_color_override("font_pressed_color", Color(0.6, 0.0, 0.0))
+	btn.add_theme_font_size_override("font_size", UIConstants.STARTMENU_DELETE_BUTTON_FONT_SIZE)
+	btn.add_theme_color_override("font_color", UIConstants.COLOR_DANGER)
+	btn.add_theme_color_override("font_hover_color", UIConstants.COLOR_DANGER_HOVER)
+	btn.add_theme_color_override("font_pressed_color", UIConstants.COLOR_DANGER_PRESSED)
 	btn.add_theme_color_override("font_outline_color", Color.BLACK)
 	btn.add_theme_constant_override("outline_size", 3)
 
@@ -336,7 +336,7 @@ func _refresh_slots() -> void:
 			]
 			if in_use:
 				slot_stat_labels[i].text = StringTable.get_string(StringTable.ID_SLOT_IN_USE)
-			slot_coins_labels[i].text = "[right]%d [img=34x34]res://assets/coins_icon.png[/img][/right]" % summary["coins"]
+			slot_coins_labels[i].text = "[right]%d [img=34x34]%s[/img][/right]" % [summary["coins"], UIConstants.ICON_COIN]
 			_rebuild_collection_icons(slot_collection_boxes[i], summary["card_defs"])
 		else:
 			_rebuild_collection_icons(slot_collection_boxes[i], [])
@@ -368,7 +368,7 @@ func _build_dialog_shell(panel_size: Vector2, top_y: float = -1.0) -> Control:
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 
 	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.6)
+	dim.color = UIConstants.STARTMENU_DIM_COLOR
 	dim.size = Vector2(SCREEN_W, SCREEN_H)
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	overlay.add_child(dim)
@@ -395,9 +395,9 @@ func _make_dialog_label(pos: Vector2, label_size: Vector2, font: Font) -> Label:
 	label.position = pos
 	label.size = label_size
 	label.add_theme_font_override("font", font)
-	label.add_theme_font_size_override("font_size", 25)
+	label.add_theme_font_size_override("font_size", UIConstants.STARTMENU_DIALOG_LABEL_FONT_SIZE)
 	label.add_theme_color_override("font_color", Color.BLACK)
-	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
+	label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
 	label.add_theme_constant_override("shadow_offset_x", 1)
 	label.add_theme_constant_override("shadow_offset_y", 1)
 	return label
@@ -409,9 +409,9 @@ func _make_dialog_button(text: String, pos: Vector2, btn_size: Vector2, font: Fo
 	btn.position = pos
 	btn.size = btn_size
 	btn.add_theme_font_override("font", font)
-	btn.add_theme_font_size_override("font_size", 25)
+	btn.add_theme_font_size_override("font_size", UIConstants.STARTMENU_DIALOG_BUTTON_FONT_SIZE)
 	btn.add_theme_color_override("font_color", Color.BLACK)
-	btn.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
+	btn.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
 	btn.add_theme_constant_override("shadow_offset_x", 1)
 	btn.add_theme_constant_override("shadow_offset_y", 1)
 	UIButtonStyle.fit_button_text(btn)
@@ -428,20 +428,20 @@ func _build_name_dialog() -> void:
 	name_dialog = _build_dialog_shell(NAME_DIALOG_SIZE, NAME_DIALOG_TOP)
 	var panel: Control = name_dialog.get_meta("panel")
 
-	var label := _make_dialog_label(Vector2(30, 16), Vector2(NAME_DIALOG_SIZE.x - 60, 48), font_stylish)
+	var label := _make_dialog_label(UIConstants.STARTMENU_NAME_LABEL_POS, Vector2(NAME_DIALOG_SIZE.x - 60, 48), font_stylish)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 40)
+	label.add_theme_font_size_override("font_size", UIConstants.STARTMENU_NAME_DIALOG_FONT_SIZE)
 	label.text = StringTable.get_string(StringTable.ID_ENTER_NAME)
 	panel.add_child(label)
 	UIButtonStyle.fit_button_text(label)
 
 	name_edit = LineEdit.new()
-	name_edit.position = Vector2(30, 74)
+	name_edit.position = UIConstants.STARTMENU_NAME_EDIT_POS
 	name_edit.size = Vector2(NAME_DIALOG_SIZE.x - 60 - NAME_DOT_SIZE - 16.0, 66)
 	name_edit.max_length = 20
 	name_edit.add_theme_font_override("font", font_stylish)
-	name_edit.add_theme_font_size_override("font_size", 40)
+	name_edit.add_theme_font_size_override("font_size", UIConstants.STARTMENU_NAME_DIALOG_FONT_SIZE)
 	name_edit.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_edit.text_changed.connect(_on_name_typed)
 	panel.add_child(name_edit)
@@ -459,10 +459,10 @@ func _build_name_dialog() -> void:
 	panel.add_child(name_check_dot)
 
 	# Why the dot is red, when it isn't "somebody has this name".
-	name_error_label = _make_dialog_label(Vector2(30, 148), Vector2(NAME_DIALOG_SIZE.x - 60, 40), font_stylish)
+	name_error_label = _make_dialog_label(UIConstants.STARTMENU_NAME_ERROR_LABEL_POS, Vector2(NAME_DIALOG_SIZE.x - 60, 40), font_stylish)
 	name_error_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_error_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	name_error_label.add_theme_font_size_override("font_size", 28)
+	name_error_label.add_theme_font_size_override("font_size", UIConstants.STARTMENU_NAME_ERROR_FONT_SIZE)
 	name_error_label.add_theme_color_override("font_color", NAME_COLOR_TAKEN)
 	panel.add_child(name_error_label)
 
@@ -477,7 +477,7 @@ func _build_name_dialog() -> void:
 	# whole thing clears an Android keyboard.
 	var btn_w := (NAME_DIALOG_SIZE.x - 60 - 20) / 2.0
 	name_ok_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_OK),
-		Vector2(30, 196), Vector2(btn_w, 56), font_stylish)
+		UIConstants.STARTMENU_NAME_OK_BTN_POS, Vector2(btn_w, 56), font_stylish)
 	name_ok_btn.pressed.connect(_on_name_ok_pressed)
 	panel.add_child(name_ok_btn)
 
@@ -495,23 +495,23 @@ func _build_confirm_dialog() -> void:
 	confirm_dialog = _build_dialog_shell(Vector2(600, 320))
 	var panel: Control = confirm_dialog.get_meta("panel")
 
-	confirm_title_label = _make_dialog_label(Vector2(20, 16), Vector2(560, 66), font_stylish)
+	confirm_title_label = _make_dialog_label(UIConstants.STARTMENU_CONFIRM_TITLE_POS, Vector2(560, 66), font_stylish)
 	confirm_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	confirm_title_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	panel.add_child(confirm_title_label)
 
-	confirm_msg_label = _make_dialog_label(Vector2(20, 90), Vector2(560, 140), font_stylish)
-	confirm_msg_label.add_theme_font_size_override("font_size", 24)
+	confirm_msg_label = _make_dialog_label(UIConstants.STARTMENU_CONFIRM_MSG_POS, Vector2(560, 140), font_stylish)
+	confirm_msg_label.add_theme_font_size_override("font_size", UIConstants.STARTMENU_CONFIRM_MSG_FONT_SIZE)
 	confirm_msg_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	confirm_msg_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	confirm_msg_label.text = StringTable.get_string(StringTable.ID_DELETE_SLOT_MSG)
 	panel.add_child(confirm_msg_label)
 
-	confirm_ok_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_OK), Vector2(20, 244), Vector2(270, 56), font_stylish)
+	confirm_ok_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_OK), UIConstants.STARTMENU_CONFIRM_OK_BTN_POS, Vector2(270, 56), font_stylish)
 	confirm_ok_btn.pressed.connect(_on_confirm_delete_ok)
 	panel.add_child(confirm_ok_btn)
 
-	confirm_cancel_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_CANCEL), Vector2(310, 244), Vector2(270, 56), font_stylish)
+	confirm_cancel_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_CANCEL), UIConstants.STARTMENU_CONFIRM_CANCEL_BTN_POS, Vector2(270, 56), font_stylish)
 	confirm_cancel_btn.pressed.connect(_on_confirm_delete_cancel)
 	panel.add_child(confirm_cancel_btn)
 

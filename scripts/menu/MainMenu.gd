@@ -15,7 +15,6 @@ const SCREEN_W := 960
 const SCREEN_H := 544
 const ASSETS := "res://assets/"
 
-const CAT_POS := Vector2(850, 416)
 const CAT_FRAME_SIZE := Vector2(160, 138)
 const CAT_FRAME_COUNT := 28
 const CAT_FPS := 10.0
@@ -52,10 +51,10 @@ func _ready() -> void:
 	bg.size = Vector2(SCREEN_W, SCREEN_H)
 	add_child(bg)
 
-	var btn_battle := _make_menu_button(StringTable.get_string(StringTable.ID_BATTLE), "button_battle.png", Vector2(343, 26), Vector2(274, 71), _on_battle_pressed)
-	var btn_shop := _make_menu_button(StringTable.get_string(StringTable.ID_SHOP), "button_shop.png", Vector2(131, 236), Vector2(274, 71), _on_shop_pressed)
-	var btn_collection := _make_menu_button(StringTable.get_string(StringTable.ID_COLLECTION), "button_collection.png", Vector2(556, 236), Vector2(274, 71), _on_collection_pressed)
-	var btn_options := _make_menu_button(StringTable.get_string(StringTable.ID_OPTIONS), "button_option.png", Vector2(343, 442), Vector2(274, 71), _on_options_pressed)
+	var btn_battle := _make_menu_button(StringTable.get_string(StringTable.ID_BATTLE), "button_battle.png", UIConstants.MAIN_MENU_BATTLE_BUTTON_POS, Vector2(274, 71), _on_battle_pressed)
+	var btn_shop := _make_menu_button(StringTable.get_string(StringTable.ID_SHOP), "button_shop.png", UIConstants.MAIN_MENU_SHOP_BUTTON_POS, Vector2(274, 71), _on_shop_pressed)
+	var btn_collection := _make_menu_button(StringTable.get_string(StringTable.ID_COLLECTION), "button_collection.png", UIConstants.MAIN_MENU_COLLECTION_BUTTON_POS, Vector2(274, 71), _on_collection_pressed)
+	var btn_options := _make_menu_button(StringTable.get_string(StringTable.ID_OPTIONS), "button_option.png", UIConstants.MAIN_MENU_OPTIONS_BUTTON_POS, Vector2(274, 71), _on_options_pressed)
 	var btn_online := _make_online_button()
 
 	# No-op if a menu track is already playing (e.g. coming back from
@@ -115,12 +114,12 @@ func _build_cat() -> void:
 	cat_sprite.animation = "idle"
 	cat_sprite.centered = false
 	cat_sprite.scale = CAT_FRAME_SIZE / Vector2(frame_w, frame_h)
-	cat_sprite.position = CAT_POS
+	cat_sprite.position = UIConstants.MAIN_MENU_CAT_POS
 	add_child(cat_sprite)
 
 	cat_button = Button.new()
 	cat_button.flat = true
-	cat_button.position = CAT_POS
+	cat_button.position = UIConstants.MAIN_MENU_CAT_POS
 	cat_button.size = CAT_FRAME_SIZE
 	cat_button.pressed.connect(_on_cat_pressed)
 	add_child(cat_button)
@@ -145,9 +144,9 @@ func _make_menu_button(label: String, texture_name: String, pos: Vector2, size: 
 	btn.position = pos
 	btn.size = size
 	btn.add_theme_font_override("font", font_stylish)
-	btn.add_theme_font_size_override("font_size", 46)
+	btn.add_theme_font_size_override("font_size", UIConstants.MAIN_MENU_BUTTON_FONT_SIZE)
 	btn.add_theme_color_override("font_color", Color.BLACK)
-	btn.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.5))
+	btn.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
 	btn.add_theme_constant_override("shadow_offset_x", 1)
 	btn.add_theme_constant_override("shadow_offset_y", 1)
 	btn.pressed.connect(on_pressed)
@@ -175,7 +174,6 @@ func _make_menu_button(label: String, texture_name: String, pos: Vector2, size: 
 ## laid down first and the button (flat, no background of its own) goes on top
 ## carrying the text.
 const ONLINE_BUTTON_SIZE := 146.0
-const ONLINE_BUTTON_POS := Vector2(407, 199)
 ## Black at rest like every other menu label, lighting up to the emblem's own
 ## gold on hover and focus.
 const ONLINE_TEXT_COLOR := Color.BLACK
@@ -192,7 +190,7 @@ func _make_online_button() -> Button:
 	emblem.texture = load(ASSETS + "button_online_round.png")
 	emblem.stretch_mode = TextureRect.STRETCH_SCALE
 	emblem.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	emblem.position = ONLINE_BUTTON_POS
+	emblem.position = UIConstants.MAIN_MENU_ONLINE_BUTTON_POS
 	emblem.size = Vector2(ONLINE_BUTTON_SIZE, ONLINE_BUTTON_SIZE)
 	emblem.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(emblem)
@@ -200,10 +198,10 @@ func _make_online_button() -> Button:
 	var btn := Button.new()
 	btn.flat = true
 	btn.text = StringTable.get_string(StringTable.ID_ONLINE)
-	btn.position = ONLINE_BUTTON_POS
+	btn.position = UIConstants.MAIN_MENU_ONLINE_BUTTON_POS
 	btn.size = Vector2(ONLINE_BUTTON_SIZE, ONLINE_BUTTON_SIZE)
 	btn.add_theme_font_override("font", Game.font_title)
-	btn.add_theme_font_size_override("font_size", 36)
+	btn.add_theme_font_size_override("font_size", UIConstants.MAIN_MENU_ONLINE_BUTTON_FONT_SIZE)
 	btn.add_theme_color_override("font_color", ONLINE_TEXT_COLOR)
 	# Same touch caveat as every other button - see UIButtonStyle.hover_color.
 	btn.add_theme_color_override("font_hover_color", UIButtonStyle.hover_color(ONLINE_TEXT_HOVER))
