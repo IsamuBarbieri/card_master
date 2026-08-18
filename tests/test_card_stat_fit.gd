@@ -35,8 +35,10 @@ func _widest_stat_text(font: Font, size: int) -> Dictionary:
 	return {"text": text, "width": font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x}
 
 func _ready() -> void:
-	var font: Font = Game.font_stylish
-	assert(font != null, "Game.font_stylish is not loaded")
+	# The quad is drawn in the emphasis cut, not the body one - measuring the
+	# wrong weight would report a size that then overflows on screen.
+	var font: Font = Game.font_emphasis
+	assert(font != null, "Game.font_emphasis is not loaded")
 
 	var available: float = CardView.STAT_AREA_RIGHT - CardView.STAT_AREA_LEFT
 	# The outline stroke grows the glyphs outward on both sides, so it eats

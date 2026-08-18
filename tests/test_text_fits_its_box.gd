@@ -33,8 +33,6 @@ func _ready() -> void:
 		["scoreboard line", load("res://scripts/battle/BattleScene.gd").new().scoreboard_row_height(),
 			battle["NAME_FONT_SIZE"]],
 		["online clock", battle["ONLINE_TIMER_HEIGHT"], 34],
-		["card stat band", _consts("res://scripts/CardView.gd")["STAT_FONT_SIZE_HEIGHT"],
-			_consts("res://scripts/CardView.gd")["STAT_FONT_SIZE"]],
 	]
 
 	for b in boxes:
@@ -49,8 +47,9 @@ func _ready() -> void:
 			"%s: %dpx renders %.0fpx tall in a %.0fpx box" % [b[0], fits, font.get_height(fits), box_h])
 
 	# The card band is the one place the size is fixed rather than fitted, so
-	# it has to be right on its own.
+	# it has to be right on its own - and it is drawn in the emphasis cut.
 	var card := _consts("res://scripts/CardView.gd")
+	font = Game.font_emphasis
 	assert(font.get_height(card["STAT_FONT_SIZE"]) <= float(card["STAT_FONT_SIZE_HEIGHT"]) + 0.5,
 		"the card's stat band is %dpx for a %.0fpx line" % [card["STAT_FONT_SIZE_HEIGHT"], font.get_height(card["STAT_FONT_SIZE"])])
 

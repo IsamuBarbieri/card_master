@@ -31,8 +31,8 @@ const STAT_OUTLINE := 2
 # STAT_AREA_LEFT..RIGHT. tests/test_card_stat_fit.gd measures that against the
 # real font and fails if a font or asset change ever makes it overflow, so
 # this is a checked number rather than an eyeballed one.
-const STAT_FONT_SIZE := 24
-const STAT_FONT_SIZE_HEIGHT := 34
+const STAT_FONT_SIZE := 28
+const STAT_FONT_SIZE_HEIGHT := 35
 
 # Normalized (0..1) rects, in arrow order N,NE,E,SE,S,SW,W,NW - matches
 # CardManager.cs's dirsVertices/dirsTexcoords (same rect used for position
@@ -81,7 +81,10 @@ func _init() -> void:
 	# flush with the card's bottom edge - or the frame's bottom trim covers it.
 	_stat_label.position = Vector2(0, STAT_AREA_BOTTOM - STAT_FONT_SIZE_HEIGHT)
 	_stat_label.size = Vector2(CARD_W, STAT_FONT_SIZE_HEIGHT)
-	_stat_label.add_theme_font_override("normal_font", Game.font_stylish)
+	# Medium, not Regular: four characters over busy card art at the
+	# smallest size in the game - the extra weight is what keeps them
+	# readable rather than merely present.
+	_stat_label.add_theme_font_override("normal_font", Game.font_emphasis)
 	_stat_label.add_theme_font_size_override("normal_font_size", STAT_FONT_SIZE)
 	_stat_label.add_theme_constant_override("outline_size", STAT_OUTLINE)
 	_stat_label.add_theme_color_override("font_outline_color", Color.BLACK)

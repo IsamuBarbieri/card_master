@@ -62,21 +62,28 @@ var _music_path := ""
 ##                at and the only place it doesn't get in the way.
 ##   font_stylish everything else. Was the decorative face too, which is why
 ##                the whole game read as a poster: 153 call sites against 23
-##                for font_info. It is Noto Sans now - plain, even, and built
-##                to stay legible at small sizes, which is what most of this
-##                text needs to be.
+##                for font_info. It is Fira Sans Regular now - drawn for small
+##                screens, which is the problem this game actually has, and
+##                with the shortest line of the faces measured, so the
+##                fixed-height rows hold a bigger size before shrinking.
 ##   font_info    the same body face; kept as a separate name because a
 ##                handful of screens already asked for "the information font"
 ##                and the distinction may earn its keep again later.
+##   font_emphasis Fira Sans Medium. For the stat quad printed on a card face:
+##                four characters over busy art at the smallest size in the
+##                game, where Regular goes thin and the extra weight is the
+##                difference between reading it and guessing.
 ##
 ## _update_fonts_for_language() below still swaps them for scripts none of
 ## these cover.
 var font_title: Font
 var font_stylish: Font
 var font_info: Font
+var font_emphasis: Font
 
 var _font_title_default: FontFile
 var _font_body: FontFile
+var _font_emphasis_default: FontFile
 ## font_stylish.ttf/font_info.ttf's own fallback mechanism turned out to be
 ## broken (confirmed via every mechanism Godot offers - .fallbacks,
 ## FontVariation, forcing a fresh non-cached load - Cyrillic still measures/
@@ -106,9 +113,13 @@ func _ready() -> void:
 	_music_player.bus = "Music"
 	add_child(_music_player)
 
+	# Fira Sans, SIL Open Font License - FiraSans-OFL.txt sits beside them.
 	_font_title_default = load("res://assets/fonts/font_stylish.ttf")
-	_font_body = load("res://assets/fonts/NotoSans-Regular.ttf")
-	_fallback_font = _font_body
+	_font_body = load("res://assets/fonts/FiraSans-Regular.ttf")
+	_font_emphasis_default = load("res://assets/fonts/FiraSans-Medium.ttf")
+	# Fira Sans covers Cyrillic, so nothing but the decorative heading face
+	# needs a fallback at all.
+	_fallback_font = load("res://assets/fonts/NotoSans-Regular.ttf")
 
 	_setup_mouse_cursor()
 
@@ -158,6 +169,7 @@ func _update_fonts_for_language() -> void:
 	# face - which does not - has anything to fall back from.
 	font_stylish = _font_body
 	font_info = _font_body
+	font_emphasis = _font_emphasis_default
 	font_title = _fallback_font if language == StringTable.LANGUAGE_BY_LOCALE["ru"] else _font_title_default
 
 ## First-launch default (before any language has ever been explicitly saved):
