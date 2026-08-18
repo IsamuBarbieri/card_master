@@ -257,8 +257,13 @@ func _update_language_texts() -> void:
 	# may now point at a different actual font than when these controls were
 	# built, if the language just switched to/from one that needs a
 	# different font (see Game._update_fonts_for_language).
-	for ctrl in [title, label_music, label_sfx, label_lang, back_button, credits_button, title_screen_button]:
+	for ctrl in [label_music, label_sfx, label_lang, back_button, credits_button, title_screen_button]:
 		ctrl.add_theme_font_override("font", Game.font_stylish)
+	# The heading is the one control here on the decorative face. It was in
+	# the loop above, which meant it was set to the decorative font at
+	# construction and then quietly overwritten with the body font a few lines
+	# later - every time, since this runs once at startup too.
+	title.add_theme_font_override("font", Game.font_title)
 
 	title.text = StringTable.get_string(StringTable.ID_OPTIONS)
 	UIButtonStyle.fit_menu_button_text(title, TITLE_ICON_GAP_WIDTH)
