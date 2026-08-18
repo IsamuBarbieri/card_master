@@ -13,3 +13,6 @@
 # handful of Xbox glyphs copied into assets/prompts/, so the pack itself stays
 # out of git. addons/.gdignore also keeps Godot from importing all of it.
 /addons/
+
+# Font candidates for tools/font_audit.gd - measured, never shipped.
+/assets/fonts/candidates/
