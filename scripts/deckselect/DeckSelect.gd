@@ -42,11 +42,7 @@ var panel_left: Control
 var panel_right: Control
 var placeholders: Array = []  # Array[Control], 5
 
-var label_info_name: Label
-var label_value_offense: Label
-var label_value_type: Label
-var label_value_pdef: Label
-var label_value_mdef: Label
+var stat_panel: CardStatPanel
 var button_play: Button
 var busy_indicator: BusySpinner
 
@@ -520,51 +516,9 @@ func _build_ui() -> void:
 	add_child(label_your_prefs)
 	UIButtonStyle.fit_button_text(label_your_prefs)
 
-	var label_info_offense := _make_label(Vector2(361, 161), Vector2(174, 41), font_stylish)
-	label_info_offense.text = StringTable.get_string(StringTable.ID_CARD_ATTACK)
-	add_child(label_info_offense)
-	UIButtonStyle.fit_button_text(label_info_offense)
-
-	var label_info_type := _make_label(Vector2(361, 209), Vector2(174, 41), font_stylish)
-	label_info_type.text = StringTable.get_string(StringTable.ID_CARD_TYPE)
-	add_child(label_info_type)
-	UIButtonStyle.fit_button_text(label_info_type)
-
-	var label_info_pdef := _make_label(Vector2(361, 257), Vector2(169, 41), font_stylish)
-	label_info_pdef.text = StringTable.get_string(StringTable.ID_CARD_PHYSICAL_DEFENSE)
-	add_child(label_info_pdef)
-	UIButtonStyle.fit_button_text(label_info_pdef)
-
-	var label_info_mdef := _make_label(Vector2(361, 304), Vector2(169, 41), font_stylish)
-	label_info_mdef.text = StringTable.get_string(StringTable.ID_CARD_MAGICAL_DEFENSE)
-	add_child(label_info_mdef)
-	UIButtonStyle.fit_button_text(label_info_mdef)
-
-	label_info_name = _make_label(Vector2(361, 118), Vector2(242, 41), font_stylish)
-	label_info_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label_info_name.text = StringTable.get_string(StringTable.ID_CARD_STATS)
-	add_child(label_info_name)
-	UIButtonStyle.fit_button_text(label_info_name)
-
-	label_value_offense = _make_label(Vector2(493, 161), Vector2(108, 41), font_stylish)
-	label_value_offense.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	label_value_offense.text = "- - -"
-	add_child(label_value_offense)
-
-	label_value_type = _make_label(Vector2(493, 209), Vector2(108, 41), font_stylish)
-	label_value_type.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	label_value_type.text = "---"
-	add_child(label_value_type)
-
-	label_value_pdef = _make_label(Vector2(493, 257), Vector2(108, 41), font_stylish)
-	label_value_pdef.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	label_value_pdef.text = "- - -"
-	add_child(label_value_pdef)
-
-	label_value_mdef = _make_label(Vector2(493, 304), Vector2(108, 41), font_stylish)
-	label_value_mdef.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	label_value_mdef.text = "- - -"
-	add_child(label_value_mdef)
+	stat_panel = CardStatPanel.make(Vector2(242, 232))
+	stat_panel.position = Vector2(361, 118)
+	add_child(stat_panel)
 
 	busy_indicator = BusySpinner.new()
 	busy_indicator.position = Vector2(912, 496)
@@ -1051,12 +1005,7 @@ func _update_play_button() -> void:
 
 func _update_card_info(cstats: Card, sel: int) -> void:
 	next_sel = sel
-	var def: CardManager.CardDef = CardManager.defs[cstats.def_id]
-	label_info_name.text = def.name
-	label_value_pdef.text = str(cstats.physical_defense)
-	label_value_mdef.text = str(cstats.magical_defense)
-	label_value_offense.text = str(cstats.attack_power)
-	label_value_type.text = CardManager.attack_type_to_string(cstats.attack_type)
+	stat_panel.show_card(cstats)
 
 func _update_selection_outline() -> void:
 	if game_state != GameState.WAITING_INPUT:

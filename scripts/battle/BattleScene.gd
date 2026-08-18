@@ -179,11 +179,7 @@ var turn_cursor: TextureRect
 var name_labels: Array = []
 var score_value_labels: Array = []
 
-var info_name: Label
-var info_attack_val: Label
-var info_type_val: Label
-var info_pdef_val: Label
-var info_mdef_val: Label
+var stat_panel: CardStatPanel
 
 var chain_label: Label
 var battle_value_labels: Array = []  # 2 Labels
@@ -201,11 +197,7 @@ var end_banner: TextureRect
 var panel_owned: Control
 var owned_label: Label
 var panel_info: Control
-var end_info_name: Label
-var end_info_offense_val: Label
-var end_info_type_val: Label
-var end_info_pdef_val: Label
-var end_info_mdef_val: Label
+var end_stat_panel: CardStatPanel
 var label_central_msg: Label
 var button_done: Button
 var label_coin_reward: RichTextLabel
@@ -786,44 +778,13 @@ const INFO_LEFT := 24.0
 const INFO_RIGHT := 252.0
 const INFO_TOP := 292.0
 const INFO_BOTTOM := 528.0
-## Five lines (card name plus four stats) share the panel. This readout used
-## 24 while Shop's equivalent has always been at 36, in the screen the player
-## stares at longest - it now matches Shop. Captions and values are fitted to
-## their own boxes, so a long card name or a long translation shrinks itself
-## instead of running off the panel.
-const INFO_FONT_SIZE := 36
-const INFO_MIN_FONT_SIZE := 16
-const INFO_ROW_STEP := 46.0
-const INFO_ROW_HEIGHT := 46.0
-## Column widths shared with the end-of-match readout, so the same card reads
-## identically in both: same caption, same spelled-out attack type, and the
-## same amount of room to fit them in - a value that has to shrink shrinks by
-## the same amount on both screens.
-const STAT_CAPTION_WIDTH := 80.0
-const STAT_VALUE_WIDTH := 136.0
-const INFO_CAPTION_WIDTH := STAT_CAPTION_WIDTH
-const INFO_VALUE_WIDTH := STAT_VALUE_WIDTH
-
-## Both battle panels use the abbreviated captions. Shop and Collection have
-## room for the full words and keep them; here the full German or Russian form
-## would have to shrink to a third of the size of the number beside it.
-const STAT_CAPTION_IDS := [
-	StringTable.ID_CARD_ATTACK_SHORT, StringTable.ID_CARD_TYPE_SHORT,
-	StringTable.ID_CARD_PDEF_SHORT, StringTable.ID_CARD_MDEF_SHORT,
-]
-
-# End-of-match card readout, inside panel_info's own 228x224 box. Same font
-# size as the in-match panel; the box is smaller, so the rows are tighter.
-# The attack type is spelled out in full here (not the single letter the
-# in-match panel uses), which is why the value column is the wider of the two.
+# The two card readouts are CardStatPanel, the same component Shop,
+# DeckSelect and Collection use - only the box differs. Everything about how
+# they are laid out and sized lives there. These are just where they sit: the
+# in-match one against the marble slab (INFO_LEFT..INFO_BOTTOM above), the
+# end-of-match one inside panel_info's own 228x224 box.
 const END_INFO_LEFT := 6.0
 const END_INFO_WIDTH := 216.0
-const END_INFO_ROWS_TOP := 52.0
-const END_INFO_ROW_STEP := 41.0
-const END_INFO_ROW_HEIGHT := 44.0
-const END_INFO_FONT_SIZE := INFO_FONT_SIZE
-const END_INFO_CAPTION_WIDTH := STAT_CAPTION_WIDTH
-const END_INFO_VALUE_WIDTH := STAT_VALUE_WIDTH
 
 ## Coins won, top right of the end screen.
 const COIN_LABEL_SIZE := Vector2(228, 50)
@@ -842,67 +803,9 @@ const END_MESSAGE_FONT_SIZE := 34
 func _build_card_info_panel() -> void:
 	var black := Color(0, 0, 0)
 
-	info_name = Label.new()
-	info_name.position = Vector2(INFO_LEFT, INFO_TOP)
-	info_name.size = Vector2(INFO_RIGHT - INFO_LEFT, INFO_ROW_HEIGHT)
-	info_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	info_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	info_name.clip_text = true
-	info_name.add_theme_font_override("font", font_stylish)
-	info_name.add_theme_font_size_override("font_size", INFO_FONT_SIZE)
-	info_name.add_theme_color_override("font_color", black)
-	add_child(info_name)
-
-	# The four stat rows start below the name and step down to the bottom of
-	# the panel: 292 + 44 + 3*46 + 42 = 516, inside INFO_BOTTOM.
-	var rows_top := INFO_TOP + 44.0
-	# Was the hardcoded English ["Attack", "Type", "P.Def", "M.Def"] - the only
-	# untranslated text left on this screen.
-	var captions := STAT_CAPTION_IDS.map(func(id: int) -> String:
-		return StringTable.get_string(id))
-	var value_labels := []
-	for i in captions.size():
-		var y := rows_top + i * INFO_ROW_STEP
-
-		var caption := Label.new()
-		caption.position = Vector2(INFO_LEFT, y)
-		caption.size = Vector2(INFO_CAPTION_WIDTH, INFO_ROW_HEIGHT)
-		caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		caption.clip_text = true
-		caption.add_theme_font_override("font", font_stylish)
-		caption.add_theme_color_override("font_color", black)
-		_fit_info_label(caption, captions[i], INFO_CAPTION_WIDTH)
-		add_child(caption)
-
-		# Right-aligned against the slab's inner edge, so single- and
-		# triple-digit values line up in one column instead of drifting.
-		var value := Label.new()
-		value.position = Vector2(INFO_RIGHT - INFO_VALUE_WIDTH, y)
-		value.size = Vector2(INFO_VALUE_WIDTH, INFO_ROW_HEIGHT)
-		value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		value.clip_text = true
-		value.add_theme_font_override("font", font_stylish)
-		value.add_theme_font_size_override("font_size", INFO_FONT_SIZE)
-		value.add_theme_color_override("font_color", black)
-		add_child(value)
-		value_labels.append(value)
-
-	info_attack_val = value_labels[0]
-	info_type_val = value_labels[1]
-	info_pdef_val = value_labels[2]
-	info_mdef_val = value_labels[3]
-
-## Sets a stat-panel label and picks the largest size at which it fits
-## `width`, never below INFO_MIN_FONT_SIZE. Everything in these panels needs
-## it: card names run from "Slime" to "Goblin Sciaman", captions and attack
-## types swing wildly by language, and even a stat is one to three digits.
-func _fit_info_label(label: Label, text: String, width: float) -> void:
-	label.text = text
-	# The row height counts too: a line needs about 1.4x its font size, so
-	# 36 in a 42px row overflows and gets clipped top and bottom.
-	label.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_box(
-		text, font_stylish, Vector2(width, label.size.y), INFO_FONT_SIZE, INFO_MIN_FONT_SIZE))
+	stat_panel = CardStatPanel.make(Vector2(INFO_RIGHT - INFO_LEFT, INFO_BOTTOM - INFO_TOP))
+	stat_panel.position = Vector2(INFO_LEFT, INFO_TOP)
+	add_child(stat_panel)
 
 func _board_cell_pos(row: int, col: int) -> Vector2:
 	return BOARD_POS + Vector2(col * (CARD_W + BOARD_GAP), row * (CARD_H + BOARD_GAP))
@@ -1138,37 +1041,11 @@ func _build_battle_end_ui() -> void:
 	var info_bkg := UIPanel.make(Vector2(228, 224))
 	panel_info.add_child(info_bkg)
 
-	# Same readout as the in-match panel above, so it is built the same way and
-	# at the same size (END_INFO_FONT_SIZE == INFO_FONT_SIZE): this is the
-	# screen where the player decides which card to take, and it was the
-	# smallest text of the three stat panels in the game.
-	end_info_name = _make_end_label(Vector2(END_INFO_LEFT, 8), Vector2(END_INFO_WIDTH, END_INFO_ROW_HEIGHT), END_INFO_FONT_SIZE)
-	end_info_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	end_info_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	panel_info.add_child(end_info_name)
-
-	var end_captions := STAT_CAPTION_IDS.map(func(id: int) -> String:
-		return StringTable.get_string(id))
-	var end_values := []
-	for i in end_captions.size():
-		var y := END_INFO_ROWS_TOP + i * END_INFO_ROW_STEP
-
-		var caption := _make_end_label(Vector2(END_INFO_LEFT, y), Vector2(END_INFO_CAPTION_WIDTH, END_INFO_ROW_HEIGHT), END_INFO_FONT_SIZE)
-		caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		caption.text = end_captions[i]
-		panel_info.add_child(caption)
-		UIButtonStyle.fit_button_text(caption)
-
-		var value := _make_end_label(Vector2(END_INFO_LEFT + END_INFO_WIDTH - END_INFO_VALUE_WIDTH, y), Vector2(END_INFO_VALUE_WIDTH, END_INFO_ROW_HEIGHT), END_INFO_FONT_SIZE)
-		value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		panel_info.add_child(value)
-		end_values.append(value)
-
-	end_info_offense_val = end_values[0]
-	end_info_type_val = end_values[1]
-	end_info_pdef_val = end_values[2]
-	end_info_mdef_val = end_values[3]
+	# Same readout as the in-match panel, same component, so the same card
+	# reads identically on both screens.
+	end_stat_panel = CardStatPanel.make(Vector2(END_INFO_WIDTH, 208))
+	end_stat_panel.position = Vector2(END_INFO_LEFT, 8)
+	panel_info.add_child(end_stat_panel)
 
 	# The line telling the player what to do next on the end screen ("choose a
 	# card as your prize", "the opponent will now choose", the draw notice).
@@ -1380,24 +1257,7 @@ func _clear_card_info() -> void:
 	_set_card_info(null)
 
 func _set_card_info(card: Card) -> void:
-	if card == null:
-		_fit_info_label(info_name, StringTable.get_string(StringTable.ID_CARD_STATS), INFO_RIGHT - INFO_LEFT)
-		info_attack_val.text = ""
-		info_type_val.text = ""
-		info_pdef_val.text = ""
-		info_mdef_val.text = ""
-		return
-	var def: CardManager.CardDef = CardManager.defs[card.def_id]
-	# Card names vary from "Slime" to "Goblin Sciaman", so the heading is
-	# re-fitted every time rather than sized once for the shortest one.
-	_fit_info_label(info_name, def.name, INFO_RIGHT - INFO_LEFT)
-	_fit_info_label(info_attack_val, str(card.attack_power), INFO_VALUE_WIDTH)
-	# The attack type spelled out, as the end-of-match readout has always had
-	# it. A bare "P" said nothing to a player who hadn't memorised the letters,
-	# and the two screens describing the same card differently was worse still.
-	_fit_info_label(info_type_val, CardManager.attack_type_to_string(card.attack_type), INFO_VALUE_WIDTH)
-	_fit_info_label(info_pdef_val, str(card.physical_defense), INFO_VALUE_WIDTH)
-	_fit_info_label(info_mdef_val, str(card.magical_defense), INFO_VALUE_WIDTH)
+	stat_panel.show_card(card)
 
 # --------------------------------------------------------------- coin toss
 
@@ -2469,12 +2329,7 @@ func _show_end_card_info(card: Card) -> void:
 	# Same fitting as the in-match panel. These were plain assignments at a
 	# fixed 36, which a spelled-out attack type ("Flessibile") overruns in a
 	# 114px column - the label clips and the player reads half a word.
-	var def: CardManager.CardDef = CardManager.defs[card.def_id]
-	_fit_info_label(end_info_name, def.name, END_INFO_WIDTH)
-	_fit_info_label(end_info_offense_val, str(card.attack_power), END_INFO_VALUE_WIDTH)
-	_fit_info_label(end_info_type_val, CardManager.attack_type_to_string(card.attack_type), END_INFO_VALUE_WIDTH)
-	_fit_info_label(end_info_pdef_val, str(card.physical_defense), END_INFO_VALUE_WIDTH)
-	_fit_info_label(end_info_mdef_val, str(card.magical_defense), END_INFO_VALUE_WIDTH)
+	end_stat_panel.show_card(card)
 
 const OWNED_PANEL_GAP := 6.0
 
@@ -2619,7 +2474,7 @@ func gsEndPlayerPick_Set(result: BattleResult) -> void:
 	# player sees what they earned while picking their card, not after the
 	# screen is already gone. Both read _coin_reward(), which depends on
 	# ai.defeated still being false at this point.
-	label_coin_reward.text = "[right]+%d [img=28x28]res://assets/coins_icon.png[/img][/right]" % _coin_reward()
+	label_coin_reward.text = "[right]+%d [img=40x40]res://assets/coins_icon.png[/img][/right]" % _coin_reward()
 	label_coin_reward.visible = not Game.online_mode
 
 	if result == BattleResult.PLAYER_PERFECT:

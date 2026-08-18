@@ -119,7 +119,8 @@ func _build_ui() -> void:
 	add_child(title)
 	UIButtonStyle.fit_button_text(title)
 
-	label_desc = _make_label(Vector2(231, 473), Vector2(498, 36), font_stylish)
+	label_desc = _make_label(Vector2(231, 463), Vector2(498, 56), font_stylish)
+	label_desc.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	add_child(label_desc)
 
 	back_button = _make_text_button(StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56), font_stylish)

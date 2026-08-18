@@ -23,13 +23,13 @@ func _consts(path: String) -> Dictionary:
 func _ready() -> void:
 	var font: Font = Game.font_stylish
 	var battle := _consts("res://scripts/battle/BattleScene.gd")
-	var collection := _consts("res://scripts/menu/Collection.gd")
 
+	# The card-stat rows (battle, end-of-match, collection, shop, deck select)
+	# are all CardStatPanel now, and test_card_info_panels already checks
+	# those boxes in every language against every string that can land in
+	# them - no need to duplicate that here.
 	# [what, box height, size it would like]
 	var boxes := [
-		["battle stat row", battle["INFO_ROW_HEIGHT"], battle["INFO_FONT_SIZE"]],
-		["end-of-match stat row", battle["END_INFO_ROW_HEIGHT"], battle["END_INFO_FONT_SIZE"]],
-		["collection stat row", collection["INFO_ROW_HEIGHT"], collection["INFO_FONT_SIZE"]],
 		["scoreboard line", load("res://scripts/battle/BattleScene.gd").new().scoreboard_row_height(),
 			battle["NAME_FONT_SIZE"]],
 		["online clock", battle["ONLINE_TIMER_HEIGHT"], 34],

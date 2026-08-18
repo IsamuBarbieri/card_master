@@ -42,16 +42,10 @@ const CARD_GRID_ART := Vector2(44, 59)
 
 # Card-stats readout, laid out from the info panel's own box (236,375 299x158)
 # rather than per-row hand-tuned positions.
-const INFO_ROWS_TOP := 384.0
-const INFO_ROW_STEP := 35.0
-const INFO_ROW_HEIGHT := 38.0
-const INFO_FONT_SIZE := 30
 ## Rebalanced when the captions went short: the abbreviations need far less
 ## room than "P. Defense" did, and the value column carries the long strings
 ## here (the attack type is spelled out in full) - "Физический" needs every
 ## pixel of it.
-const INFO_CAPTION_WIDTH := 110.0
-const INFO_VALUE_WIDTH := 169.0
 
 var card_matrix := CardMatrix.new()
 var sel_type_index := 0
@@ -71,10 +65,7 @@ var type_scroll: ScrollContainer
 var card_scroll: ScrollContainer
 
 var big_card_view: CardView
-var label_value_offense: Label
-var label_value_type: Label
-var label_value_pdef: Label
-var label_value_mdef: Label
+var stat_panel: CardStatPanel
 
 var sfx_back: AudioStreamPlayer
 var back_button: Button
@@ -173,46 +164,12 @@ func _build_ui() -> void:
 	info_bkg.position = Vector2(236, 375)
 	add_child(info_bkg)
 
-	# Four evenly-spaced rows filling the panel instead of the hand-placed
-	# 31/36/37/34-tall rows that used to leave a 10px strip idle at the bottom.
-	# 375 + 9 + 3*35 + 35 = 524, inside the panel's own 533 bottom edge.
-	# The font went 25 -> 30 with the reclaimed space: this readout is the only
-	# place a card's real numbers are legible at a glance, and at 25 it was
-	# noticeably smaller than Shop's equivalent panel (36).
-	# The abbreviated captions, the same ones the battle panels use. The full
-	# words fitted while the body face was narrower; Noto Sans is wider, and
-	# "Phys. Verteidigung" now has to drop to 18px to make it into a 163px
-	# column - smaller than the number beside it and under the readable floor.
-	var captions := [
-		StringTable.get_string(StringTable.ID_CARD_ATTACK_SHORT),
-		StringTable.get_string(StringTable.ID_CARD_TYPE_SHORT),
-		StringTable.get_string(StringTable.ID_CARD_PDEF_SHORT),
-		StringTable.get_string(StringTable.ID_CARD_MDEF_SHORT),
-	]
-	var values := []
-	for i in captions.size():
-		var y := INFO_ROWS_TOP + i * INFO_ROW_STEP
-
-		var caption := _make_label(Vector2(246, y), Vector2(INFO_CAPTION_WIDTH, INFO_ROW_HEIGHT), font_stylish, INFO_FONT_SIZE)
-		caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		caption.text = captions[i]
-		add_child(caption)
-		# Caption lengths swing wildly by language ("Type" vs "Phys.
-		# Verteidigung"), so each one shrinks to its own box rather than the
-		# whole panel dropping to the size the longest translation needs.
-		UIButtonStyle.fit_button_text(caption)
-
-		var value := _make_label(Vector2(246 + INFO_CAPTION_WIDTH, y), Vector2(INFO_VALUE_WIDTH, INFO_ROW_HEIGHT), font_stylish, INFO_FONT_SIZE)
-		value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		value.text = "- - -"
-		add_child(value)
-		values.append(value)
-
-	label_value_offense = values[0]
-	label_value_type = values[1]
-	label_value_pdef = values[2]
-	label_value_mdef = values[3]
+	# 146 tall (6px margin top and bottom inside the 158px background panel) is
+	# the shortest this box can be and still clear the 22px readable floor in
+	# every language - Russian's captions are the tightest fit.
+	stat_panel = CardStatPanel.make(Vector2(279, 146))
+	stat_panel.position = Vector2(246, 381)
+	add_child(stat_panel)
 
 	sfx_back = AudioStreamPlayer.new()
 	sfx_back.stream = load(ASSETS + "sfx/button_back_sound.wav")
@@ -415,18 +372,7 @@ func _select_card(index: int) -> void:
 
 	big_card_view.setup(card, false, true)
 
-	_set_stat_value(label_value_pdef, str(card.physical_defense))
-	_set_stat_value(label_value_mdef, str(card.magical_defense))
-	_set_stat_value(label_value_offense, str(card.attack_power))
-	_set_stat_value(label_value_type, CardManager.attack_type_to_string(card.attack_type))
-
-## Sets a stat value and picks the largest size that fits its box in BOTH
-## directions. Set flat, a spelled-out attack type overruns the column and a
-## 36px line overruns a 41px row - clipped either way.
-func _set_stat_value(label: Label, text: String) -> void:
-	label.text = text
-	label.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_box(
-		text, Game.font_stylish, label.size, INFO_FONT_SIZE))
+	stat_panel.show_card(card)
 
 # Shared by both lists (bound with their own ScrollContainer, row-count
 # getter, and select callback): press-and-hold-still is a tap (selects the

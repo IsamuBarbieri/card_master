@@ -64,11 +64,6 @@ const SHOP_CARD_PANEL_POS := [
 ## column shrank and the value column grew when the captions went
 ## abbreviated: the values now carry the long strings (the attack type is
 ## spelled out) and "Физический" needs the room more than "Atk" does.
-const SHOP_INFO_CAPTION_X := 373.0
-const SHOP_INFO_CAPTION_WIDTH := 92.0
-const SHOP_INFO_VALUE_X := 471.0
-const SHOP_INFO_VALUE_WIDTH := 144.0
-const SHOP_INFO_FONT_SIZE := 60
 
 const SHOP_CARD_PANEL_SIZE := Vector2(306, 43)
 const SHOP_CARD_IMAGE_POS := Vector2(4, 1)
@@ -101,11 +96,7 @@ var busy_spinner: BusySpinner
 var selection_outline: SelectionOutline
 var drag_ghost: CardView
 
-var label_info_name: Label
-var label_value_offense: Label
-var label_value_type: Label
-var label_value_pdef: Label
-var label_value_mdef: Label
+var stat_panel: CardStatPanel
 
 # One entry per GEN_TABLE slot, all filled by the build loop in _build_ui().
 var shop_card_panels: Array = []        # Control
@@ -437,47 +428,9 @@ func _build_ui() -> void:
 	info_bkg.position = Vector2(364, 117)
 	add_child(info_bkg)
 
-	label_info_name = _make_label(Vector2(373, 129), Vector2(242, 41), font_stylish, 36)
-	label_info_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label_info_name.text = StringTable.get_string(StringTable.ID_CARD_STATS)
-	add_child(label_info_name)
-	UIButtonStyle.fit_button_text(label_info_name)
-
-	var info_offense_lbl := _make_label(Vector2(SHOP_INFO_CAPTION_X, 172), Vector2(SHOP_INFO_CAPTION_WIDTH, 41), font_stylish, SHOP_INFO_FONT_SIZE)
-	info_offense_lbl.text = StringTable.get_string(StringTable.ID_CARD_ATTACK_SHORT)
-	add_child(info_offense_lbl)
-	UIButtonStyle.fit_button_text(info_offense_lbl)
-	label_value_offense = _make_label(Vector2(SHOP_INFO_VALUE_X, 172), Vector2(SHOP_INFO_VALUE_WIDTH, 41), font_stylish, SHOP_INFO_FONT_SIZE)
-	label_value_offense.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	label_value_offense.text = "- - -"
-	add_child(label_value_offense)
-
-	var info_type_lbl := _make_label(Vector2(SHOP_INFO_CAPTION_X, 220), Vector2(SHOP_INFO_CAPTION_WIDTH, 41), font_stylish, SHOP_INFO_FONT_SIZE)
-	info_type_lbl.text = StringTable.get_string(StringTable.ID_CARD_TYPE_SHORT)
-	add_child(info_type_lbl)
-	UIButtonStyle.fit_button_text(info_type_lbl)
-	label_value_type = _make_label(Vector2(SHOP_INFO_VALUE_X, 220), Vector2(SHOP_INFO_VALUE_WIDTH, 41), font_stylish, SHOP_INFO_FONT_SIZE)
-	label_value_type.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	label_value_type.text = "---"
-	add_child(label_value_type)
-
-	var info_pdef_lbl := _make_label(Vector2(SHOP_INFO_CAPTION_X, 268), Vector2(SHOP_INFO_CAPTION_WIDTH, 41), font_stylish, SHOP_INFO_FONT_SIZE)
-	info_pdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_PDEF_SHORT)
-	add_child(info_pdef_lbl)
-	UIButtonStyle.fit_button_text(info_pdef_lbl)
-	label_value_pdef = _make_label(Vector2(SHOP_INFO_VALUE_X, 268), Vector2(SHOP_INFO_VALUE_WIDTH, 41), font_stylish, SHOP_INFO_FONT_SIZE)
-	label_value_pdef.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	label_value_pdef.text = "- - -"
-	add_child(label_value_pdef)
-
-	var info_mdef_lbl := _make_label(Vector2(SHOP_INFO_CAPTION_X, 315), Vector2(SHOP_INFO_CAPTION_WIDTH, 41), font_stylish, SHOP_INFO_FONT_SIZE)
-	info_mdef_lbl.text = StringTable.get_string(StringTable.ID_CARD_MDEF_SHORT)
-	add_child(info_mdef_lbl)
-	UIButtonStyle.fit_button_text(info_mdef_lbl)
-	label_value_mdef = _make_label(Vector2(SHOP_INFO_VALUE_X, 315), Vector2(SHOP_INFO_VALUE_WIDTH, 41), font_stylish, SHOP_INFO_FONT_SIZE)
-	label_value_mdef.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	label_value_mdef.text = "- - -"
-	add_child(label_value_mdef)
+	stat_panel = CardStatPanel.make(Vector2(242, 232))
+	stat_panel.position = Vector2(373, 129)
+	add_child(stat_panel)
 
 	button_sell = _make_button(StringTable.get_string(StringTable.ID_SELL_PRICE), Vector2(309, 417), Vector2(119, 54), font_stylish)
 	button_sell.disabled = true
@@ -1149,31 +1102,7 @@ func _set_buy_card(cstats: Card) -> void:
 
 func _update_card_info(cstats: Card, is_player_card: bool, sel: int) -> void:
 	next_sel = sel
-	label_info_name.add_theme_color_override("font_color", Color.BLACK)
-
-	if cstats != null:
-		var def: CardManager.CardDef = CardManager.defs[cstats.def_id]
-		label_info_name.text = def.name
-		_set_stat_value(label_value_pdef, str(cstats.physical_defense))
-		_set_stat_value(label_value_mdef, str(cstats.magical_defense))
-		_set_stat_value(label_value_offense, str(cstats.attack_power))
-		_set_stat_value(label_value_type, CardManager.attack_type_to_string(cstats.attack_type))
-		if is_player_card:
-			label_info_name.add_theme_color_override("font_color", Color(0.0, 130.0 / 255.0, 1.0))
-	else:
-		label_info_name.text = StringTable.get_string(StringTable.ID_CARD_STATS)
-		_set_stat_value(label_value_pdef, "---")
-		_set_stat_value(label_value_mdef, "---")
-		_set_stat_value(label_value_offense, "---")
-		_set_stat_value(label_value_type, "---")
-
-## Sets a stat value and picks the largest size that fits its box in BOTH
-## directions. Set flat, a spelled-out attack type overruns the column and a
-## 36px line overruns a 41px row - clipped either way.
-func _set_stat_value(label: Label, text: String) -> void:
-	label.text = text
-	label.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_box(
-		text, Game.font_stylish, label.size, SHOP_INFO_FONT_SIZE))
+	stat_panel.show_card(cstats, cstats != null and is_player_card)
 
 func _update_selection_outline() -> void:
 	if game_state != GameState.WAITING_INPUT:
