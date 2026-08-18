@@ -401,6 +401,8 @@ func _build_ui() -> void:
 
 	label_coins = _make_label(Vector2(711, 477), Vector2(156, 46), font_stylish, 36)
 	label_coins.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	# Same gold as the battle-end coin reward, so a coin count reads the same everywhere.
+	label_coins.add_theme_color_override("font_color", Color(1, 0.85, 0.1))
 	add_child(label_coins)
 
 	label_buy_value = _make_label(Vector2(530, 473), Vector2(123, 46), font_stylish, 46)

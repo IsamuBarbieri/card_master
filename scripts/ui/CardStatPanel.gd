@@ -50,9 +50,7 @@ const MAX_FONT_SIZE := 40
 ## shrink past. Matches BattleScene.MIN_READABLE_FONT_SIZE's reasoning.
 const MIN_FONT_SIZE := 18
 
-## Selected cards the player already owns are called out in blue, as Shop did.
 const NAME_COLOR := Color.BLACK
-const OWNED_NAME_COLOR := Color(0.0, 130.0 / 255.0, 1.0)
 const TEXT_COLOR := Color.BLACK
 ## A one-pixel soft drop shadow. The readouts sit on a pale panel and read
 ## flat without it; this is the same offset the menu labels already use.
@@ -178,7 +176,7 @@ func show_card(card: Card, owned: bool = false) -> void:
 		clear()
 		return
 	name_label.text = CardManager.defs[card.def_id].name
-	name_label.add_theme_color_override("font_color", OWNED_NAME_COLOR if owned else NAME_COLOR)
+	name_label.add_theme_color_override("font_color", NAME_COLOR)
 	_fit_name()
 	value_labels[0].text = str(card.attack_power)
 	value_labels[1].text = CardManager.attack_type_to_string(card.attack_type)

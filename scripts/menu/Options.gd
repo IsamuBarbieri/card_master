@@ -40,7 +40,7 @@ func _ready() -> void:
 	var font_stylish: Font = Game.font_stylish
 
 	var bg := TextureRect.new()
-	bg.texture = load(ASSETS + "common_bkg_dark_clean.png")
+	bg.texture = load(ASSETS + "common_bkg_clean.png")
 	bg.stretch_mode = TextureRect.STRETCH_SCALE
 	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bg.size = Vector2(SCREEN_W, SCREEN_H)
