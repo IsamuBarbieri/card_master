@@ -16,8 +16,8 @@ func _ready() -> void:
 		["main1 battle", StringTable.ID_HELP_MAIN1, Vector2(300, 95)],
 		["main2 shop", StringTable.ID_HELP_MAIN2, Vector2(300, 95)],
 		["main3 collection", StringTable.ID_HELP_MAIN3, Vector2(300, 95)],
-		["main_online", StringTable.ID_HELP_MAIN_ONLINE, Vector2(340, 90)],
-		["main4 options", StringTable.ID_HELP_MAIN4, Vector2(340, 90)],
+		["main_online", StringTable.ID_HELP_MAIN_ONLINE, Vector2(206, 113)],
+		["main4 options", StringTable.ID_HELP_MAIN4, Vector2(334, 90)],
 	]
 	for item in items:
 		var label: String = item[0]

@@ -36,11 +36,17 @@ func _ready() -> void:
 
 	# Let layout/fonts/theme settle (font fitting runs across a couple frames
 	# for some panels) before the pixels are read back. Battle also plays a
-	# ~2s coin-toss animation on entry - wait it out so the coin isn't
-	# mid-spin (or still visible at all) in the screenshot.
-	var settle_frames := 200 if page == "battle" else 10
-	for i in settle_frames:
-		await get_tree().process_frame
+	# ~2s coin-toss animation on entry - its tweens run on real elapsed time,
+	# not frame count, so an uncapped/high fps run can blow through a fixed
+	# frame budget in well under 2s and still catch the coin mid-flight. Wait
+	# on the clock instead.
+	if page == "battle":
+		# Coin toss (~2s) plus enough slack for one AI move to finish landing
+		# if it goes first, so nothing is caught mid-animation.
+		await get_tree().create_timer(5.0).timeout
+	else:
+		for i in 10:
+			await get_tree().process_frame
 	await RenderingServer.frame_post_draw
 
 	var img := get_viewport().get_texture().get_image()

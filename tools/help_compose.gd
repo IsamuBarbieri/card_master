@@ -58,7 +58,11 @@ const PAGES := {
 			Rect2(710, 55, 220, 425),   # player hand column
 		],
 		"arrows": [
-			{"from": Vector2(540, 240), "to": Vector2(695, 220)},
+			# You drag FROM your hand INTO the grid, not the other way round -
+			# points from the hand column toward an open board cell, routed
+			# below the "drag the cards..." caption box (which ends y=260)
+			# instead of starting from underneath it.
+			{"from": Vector2(742, 270), "to": Vector2(430, 270)},
 		],
 	},
 }

@@ -178,15 +178,16 @@ func _build_cards_page() -> Control:
 
 func _build_main_page() -> Control:
 	var page := _make_page("help/help_main_menu.png")
-	# The 4 corner buttons sit at y26-97, y236-307 (x2) and y442-513; the
-	# central Online button is taller than that middle row, spanning y199-345.
-	# Boxes are kept inside the two gaps that leaves - y97-199 above the
-	# middle row and y345-442 below it - so nothing sits on a button.
+	# The 4 corner buttons sit at y26-97, y236-307 (x2) and y442-513; Battle/
+	# Shop/Collection get the gap above the middle row (y97-199, clear of
+	# everything). Online and Options have no such clear gap of their own, so
+	# their captions sit directly on their own buttons instead, like the
+	# stat-panel captions elsewhere in Help already do.
 	_add_label(page, Vector2(330, 100), Vector2(300, 95), StringTable.ID_HELP_MAIN1, true)
 	_add_label(page, Vector2(16, 100), Vector2(300, 95), StringTable.ID_HELP_MAIN2, true)
 	_add_label(page, Vector2(644, 100), Vector2(300, 95), StringTable.ID_HELP_MAIN3, true)
-	_add_label(page, Vector2(120, 350), Vector2(340, 90), StringTable.ID_HELP_MAIN_ONLINE, true)
-	_add_label(page, Vector2(500, 350), Vector2(340, 90), StringTable.ID_HELP_MAIN4, true)
+	_add_label(page, Vector2(377, 216), Vector2(206, 113), StringTable.ID_HELP_MAIN_ONLINE, true)
+	_add_label(page, Vector2(313, 442), Vector2(334, 90), StringTable.ID_HELP_MAIN4, true)
 	return page
 
 func _build_deckselect_page() -> Control:
