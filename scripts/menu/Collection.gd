@@ -122,8 +122,9 @@ func _build_ui() -> void:
 	# Label first, icon on top - same "icon has a transparent gap the label
 	# shows through" trick as MainMenu's buttons (button_collection.png is
 	# the same asset used there).
-	var label_collection := _make_label(Vector2(119, 16), Vector2(264, 47), Game.font_title, 46)
+	var label_collection := _make_label(Vector2(119, 6), Vector2(264, 60), Game.font_title, 46)
 	label_collection.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label_collection.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label_collection.text = StringTable.get_string(StringTable.ID_COLLECTION)
 	add_child(label_collection)
 	UIButtonStyle.fit_button_text(label_collection)

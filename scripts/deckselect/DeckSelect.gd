@@ -499,20 +499,23 @@ func _build_ui() -> void:
 	info_bkg.position = Vector2(352, 106)
 	add_child(info_bkg)
 
-	var label_select5 := _make_label(Vector2(313, 10), Vector2(333, 43), Game.font_title)
+	var label_select5 := _make_label(Vector2(313, 10), Vector2(333, 62), Game.font_title)
 	label_select5.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label_select5.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label_select5.text = StringTable.get_string(StringTable.ID_DECK_SELECT_CARDS)
 	add_child(label_select5)
 	UIButtonStyle.fit_button_text(label_select5)
 
-	var label_your_deck := _make_label(Vector2(67, 32), Vector2(214, 36), Game.font_title)
+	var label_your_deck := _make_label(Vector2(67, 12), Vector2(214, 60), Game.font_title)
 	label_your_deck.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label_your_deck.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label_your_deck.text = StringTable.get_string(StringTable.ID_CARDS)
 	add_child(label_your_deck)
 	UIButtonStyle.fit_button_text(label_your_deck)
 
-	var label_your_prefs := _make_label(Vector2(679, 32), Vector2(214, 36), Game.font_title)
+	var label_your_prefs := _make_label(Vector2(679, 12), Vector2(214, 60), Game.font_title)
 	label_your_prefs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label_your_prefs.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label_your_prefs.text = StringTable.get_string(StringTable.ID_FAVORITE_CARDS)
 	add_child(label_your_prefs)
 	UIButtonStyle.fit_button_text(label_your_prefs)

@@ -112,8 +112,9 @@ func _build_ui() -> void:
 	desc_panel.position = Vector2(207, 463)
 	add_child(desc_panel)
 
-	var title := _make_label(Vector2(300, 9), Vector2(359, 36), Game.font_title)
+	var title := _make_label(Vector2(300, 2), Vector2(359, 46), Game.font_title)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title.text = StringTable.get_string(StringTable.ID_OPPONENT_SELECT)
 	add_child(title)
 	UIButtonStyle.fit_button_text(title)

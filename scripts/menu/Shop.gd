@@ -68,7 +68,7 @@ const SHOP_INFO_CAPTION_X := 373.0
 const SHOP_INFO_CAPTION_WIDTH := 92.0
 const SHOP_INFO_VALUE_X := 471.0
 const SHOP_INFO_VALUE_WIDTH := 144.0
-const SHOP_INFO_FONT_SIZE := 36
+const SHOP_INFO_FONT_SIZE := 60
 
 const SHOP_CARD_PANEL_SIZE := Vector2(306, 43)
 const SHOP_CARD_IMAGE_POS := Vector2(4, 1)
@@ -379,20 +379,23 @@ func _build_ui() -> void:
 	back_button = _make_button(StringTable.get_string(StringTable.ID_BACK), Vector2(42, 463), Vector2(115, 56), font_stylish, 36)
 	back_button.pressed.connect(_on_back_pressed)
 
-	var label_shop := _make_label(Vector2(348, 21), Vector2(264, 47), Game.font_title, 46)
+	var label_shop := _make_label(Vector2(348, 14), Vector2(264, 60), Game.font_title, 46)
 	label_shop.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label_shop.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label_shop.text = StringTable.get_string(StringTable.ID_SHOP)
 	add_child(label_shop)
 	UIButtonStyle.fit_menu_button_text(label_shop, TITLE_ICON_GAP_WIDTH)
 
-	var label_sell := _make_label(Vector2(67, 32), Vector2(214, 36), Game.font_title, 36)
+	var label_sell := _make_label(Vector2(67, 16), Vector2(214, 62), Game.font_title, 36)
 	label_sell.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label_sell.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label_sell.text = StringTable.get_string(StringTable.ID_SELL)
 	add_child(label_sell)
 	UIButtonStyle.fit_button_text(label_sell)
 
-	var label_buy := _make_label(Vector2(679, 32), Vector2(214, 36), Game.font_title, 36)
+	var label_buy := _make_label(Vector2(679, 16), Vector2(214, 62), Game.font_title, 36)
 	label_buy.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label_buy.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label_buy.text = StringTable.get_string(StringTable.ID_BUY)
 	add_child(label_buy)
 	UIButtonStyle.fit_button_text(label_buy)

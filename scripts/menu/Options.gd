@@ -54,7 +54,7 @@ func _ready() -> void:
 	icon.size = Vector2(265, 68)
 	add_child(icon)
 
-	title = _make_label(Vector2(348, 20), Vector2(264, 47), Game.font_title, 46)
+	title = _make_label(Vector2(348, 13), Vector2(264, 60), Game.font_title, 46)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(title)
 
