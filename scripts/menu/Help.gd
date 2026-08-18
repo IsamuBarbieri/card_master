@@ -126,7 +126,25 @@ func _make_page(bg_path: String) -> Control:
 
 	return page
 
+## Both the diagrams and the panels they sit over vary from dark battle grid
+## to pale card-stat parchment, so white text alone reads fine on one and
+## vanishes on the other. A translucent backing plate (plus a black outline
+## on the glyphs themselves) keeps every label legible regardless of what the
+## background under it happens to be.
 func _add_label(page: Control, pos: Vector2, size: Vector2, string_id: int, center := false) -> void:
+	var backing := Panel.new()
+	backing.position = pos
+	backing.size = size
+	var backing_sb := StyleBoxFlat.new()
+	backing_sb.bg_color = Color(0, 0, 0, 0.55)
+	backing_sb.corner_radius_top_left = 8
+	backing_sb.corner_radius_top_right = 8
+	backing_sb.corner_radius_bottom_left = 8
+	backing_sb.corner_radius_bottom_right = 8
+	backing.add_theme_stylebox_override("panel", backing_sb)
+	backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	page.add_child(backing)
+
 	var font_stylish: Font = Game.font_stylish
 	var label := FixedSizeLabel.new()
 	label.position = pos
@@ -136,6 +154,8 @@ func _add_label(page: Control, pos: Vector2, size: Vector2, string_id: int, cent
 	label.add_theme_font_override("font", font_stylish)
 	label.add_theme_font_size_override("font_size", FONT_SIZE)
 	label.add_theme_color_override("font_color", Color.WHITE)
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 3)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.text = StringTable.get_string(string_id)
 	page.add_child(label)
@@ -158,16 +178,24 @@ func _build_cards_page() -> Control:
 
 func _build_main_page() -> Control:
 	var page := _make_page("help/help_main_menu.png")
-	_add_label(page, Vector2(338, 79), Vector2(273, 125), StringTable.ID_HELP_MAIN1, true)
-	_add_label(page, Vector2(16, 138), Vector2(273, 125), StringTable.ID_HELP_MAIN2, true)
-	_add_label(page, Vector2(680, 138), Vector2(273, 125), StringTable.ID_HELP_MAIN3, true)
-	_add_label(page, Vector2(304, 337), Vector2(351, 125), StringTable.ID_HELP_MAIN4, true)
+	# The 4 corner buttons sit at y26-97, y236-307 (x2) and y442-513; the
+	# central Online button is taller than that middle row, spanning y199-345.
+	# Boxes are kept inside the two gaps that leaves - y97-199 above the
+	# middle row and y345-442 below it - so nothing sits on a button.
+	_add_label(page, Vector2(330, 100), Vector2(300, 95), StringTable.ID_HELP_MAIN1, true)
+	_add_label(page, Vector2(16, 100), Vector2(300, 95), StringTable.ID_HELP_MAIN2, true)
+	_add_label(page, Vector2(644, 100), Vector2(300, 95), StringTable.ID_HELP_MAIN3, true)
+	_add_label(page, Vector2(120, 350), Vector2(340, 90), StringTable.ID_HELP_MAIN_ONLINE, true)
+	_add_label(page, Vector2(500, 350), Vector2(340, 90), StringTable.ID_HELP_MAIN4, true)
 	return page
 
 func _build_deckselect_page() -> Control:
 	var page := _make_page("help/help_deck_select.png")
 	_add_label(page, Vector2(0, 0), Vector2(960, 50), StringTable.ID_HELP_DECKSELECT1, true)
-	_add_label(page, Vector2(353, 76), Vector2(253, 125), StringTable.ID_HELP_DECKSELECT2, true)
+	# Tall enough to cover the stats panel it sits over end to end - a partial
+	# overlap let the panel's own text half-show through the translucent
+	# backing, doubling as a ghost image instead of just being covered.
+	_add_label(page, Vector2(353, 76), Vector2(253, 274), StringTable.ID_HELP_DECKSELECT2, true)
 	_add_label(page, Vector2(46, 141), Vector2(253, 125), StringTable.ID_HELP_DECKSELECT3, true)
 	_add_label(page, Vector2(283, 399), Vector2(393, 125), StringTable.ID_HELP_DECKSELECT4, true)
 	return page
@@ -176,7 +204,10 @@ func _build_battle_page() -> Control:
 	var page := _make_page("help/help_battle.png")
 	_add_label(page, Vector2(472, 135), Vector2(239, 125), StringTable.ID_HELP_BATTLE1, true)
 	_add_label(page, Vector2(320, 10), Vector2(222, 125), StringTable.ID_HELP_BATTLE2, true)
-	_add_label(page, Vector2(17, 241), Vector2(252, 125), StringTable.ID_HELP_BATTLE3, true)
+	# Kept clear of the stats panel just below it (starts y=292) - dipping into
+	# it left the panel's own "Card Stats" heading half-dimmed by the backing,
+	# reading as a ghost duplicate instead of one clean label.
+	_add_label(page, Vector2(17, 200), Vector2(252, 80), StringTable.ID_HELP_BATTLE3, true)
 	_add_label(page, Vector2(47, 100), Vector2(177, 35), StringTable.ID_HELP_BATTLE4, true)
 	_add_label(page, Vector2(66, 340), Vector2(151, 46), StringTable.ID_HELP_BATTLE5, true)
 	return page
@@ -184,7 +215,7 @@ func _build_battle_page() -> Control:
 func _build_shop_page() -> Control:
 	var page := _make_page("help/help_shop.png")
 	_add_label(page, Vector2(280, 267), Vector2(253, 125), StringTable.ID_HELP_SHOP1, true)
-	_add_label(page, Vector2(644, 426), Vector2(253, 125), StringTable.ID_HELP_SHOP2, true)
+	_add_label(page, Vector2(644, 388), Vector2(253, 110), StringTable.ID_HELP_SHOP2, true)
 	_add_label(page, Vector2(651, 110), Vector2(280, 268), StringTable.ID_HELP_SHOP3, true)
 	return page
 

@@ -61,6 +61,10 @@ enum {
 	ID_MATCH_STARTS_IN,
 	## "%d cards were taken from you" - carries a count, so it keeps its %d.
 	ID_CARDS_LOST,
+	## Main menu help page: the central Online button, added after the other
+	## 4 button captions - appended here rather than inserted among them so
+	## every earlier id keeps its TABLE index.
+	ID_HELP_MAIN_ONLINE,
 }
 
 const TABLE := [
@@ -94,7 +98,7 @@ const TABLE := [
 		"Betrachte deine ganze Sammlung in voller Auflösung",
 		"Ändere die Spielsprache und stelle die Lautstärke ein. Vergiss nicht, dir die Credits anzusehen ^^",
 		"Card Master ist ein Sammelkartenspiel, bei dem zwei Gegner gegeneinander antreten, indem sie Karten auf einem 4x4-Raster platzieren. Jeder Spieler wählt 5 Karten aus seinem Deck. Das Spiel endet, wenn alle Karten platziert sind. Sieger ist, wer am Ende mehr Karten seiner Farbe besitzt. Der Sieger darf sich eine der eroberten gegnerischen Karten stehlen.",
-		"Karten haben 4 Werte: Angriff (AT), Typ (T), Physische Verteidigung (PD) und Magische Verteidigung (MD). AT, PD und MD reichen von 0 bis 255, unterteilt in 16 Klassen von 0 bis F. Je höher der Wert, desto höher die Klasse. Eine Karte kann einen von 4 Typen haben: Physisch (P), Magisch (M), Exploit (X) oder Ansturm (A). Jeder Typ bestimmt, wie die Karte gegen andere kämpft. P greift PD an, M greift MD an, X greift den niedrigeren Wert von PD und MD an, A nutzt den höchsten eigenen Wert, um den niedrigsten Wert der gegnerischen Karte anzugreifen, egal welcher das ist. Jede Karte kann bis zu 8 Pfeile haben, die in die 8 Himmelsrichtungen zeigen. Diese Pfeile werden benutzt, um gegnerische Karten zu erobern oder anzugreifen. Zeigt der Pfeil einer Karte auf eine Karte ohne Gegenpfeil, wird diese automatisch erobert; zeigt er auf einen entgegengesetzten Pfeil, beginnt der Kampf. Die Farbe der Werte, von Grün bis Rot, zeigt den Entwicklungsstand. Rot bedeutet, der Wert ist maximal.",
+		"Karten haben 4 Werte: Angriff, Typ, physische und magische Verteidigung. Die Werte reichen von 0 bis 255 und werden als Klasse von 0 bis F angezeigt - höherer Wert, höhere Klasse. Der Kartentyp ist Physisch, Magisch, Flexibel oder Ansturm: Physisch greift die physische Verteidigung an, Magisch die magische, Flexibel den niedrigeren der beiden Werte, und Ansturm nutzt deinen höchsten Wert gegen den niedrigsten des Gegners. Karten haben bis zu 8 Pfeile: einer auf eine ungeschützte Karte erobert sie sofort, auf einen gegnerischen Pfeil beginnt der Kampf. Die Farbe der Werte (grün bis rot) zeigt die Stufe - rot heißt maximal.",
 		"Gegner", "Zum Starten tippen", "Zum Starten klicken", "Titel",
 		"Siege", "Zuletzt gespeichert", "Besitz", "Seite",
 		"Pause", "Fortsetzen", "Aufgeben", "Knopf drücken zum Starten",
@@ -115,6 +119,7 @@ const TABLE := [
 		"Bereits geöffnet",
 		"Das Duell beginnt in",
 		"%d Karte(n) an Gegner verloren",
+		"Spiele online gegen echte Gegner",
 	],
 	# English
 	[
@@ -146,7 +151,7 @@ const TABLE := [
 		"Watch all your collected cards in full resolution",
 		"Change game language and set audio volumes. Don't forget to check out the Credits ^^",
 		"Card Master is a collectible cards game, where two opponents fight each other by placing cards in to a 4x4 grid. Every player choose 5 cards of his deck to use. The game end when all the cards are played. The winner is the one that at the end have more cards of his color. The winner player steal one of the captured opponent card.",
-		"Cards have 4 stats. Attack (AT), Type (T), Phisical Defense (PD) and Magical Defense (MD). AT, PD and MD value are from 0 to 255, and are subdivided in 16 class from 0 to F. Higher the stats are, higher will be the class. A card can be of 4 Types, Phisical (P), Magical (M), Exploit (X) or Assault (A). Every type define how the card fight againts the other. P attack PD, M attack MD, X attack lowest stats between PD and MD, A use the highest stats of the card to attack the lowest stats of the opponents card, whatever they are. Every crads can have up to 8 arrows, facing the 8 cardinal points. This arrow are used by cards for capture or attack the opponents cards. If a card's arrow face a card without a facing back arrow, the card is automatically captured, but if a card's arrow face a card with a opposite facing back arrow, the fight begin. Stats color, from greens to red, indicate the evolution state of the stats. Red mean the stat is maxed out.",
+		"Cards have 4 stats: Attack, Type, Physical and Magical Defense. Stats range from 0 to 255, shown as a class from 0 to F - higher stat, higher class. A card's Type is Physical, Magical, Flexible or Assault: Physical targets Physical Defense, Magical targets Magical Defense, Flexible targets whichever is lower, and Assault uses your highest stat against the opponent's lowest. Cards have up to 8 arrows: one facing an undefended card captures it instantly, facing an opposing arrow starts a fight. Stat color (green to red) shows its level - red means maxed.",
 		"Opponent", "Tap to Start", "Click to Start", "Title",
 		"Wins", "Last Saved", "Owned", "Page",
 		"Pause", "Resume", "Forfeit", "Press a Button to Start",
@@ -167,6 +172,7 @@ const TABLE := [
 		"Already open",
 		"The challenge begins in",
 		"%d card(s) taken by opponents",
+		"Play online against real opponents",
 	],
 	# Español
 	[
@@ -198,7 +204,7 @@ const TABLE := [
 		"Contempla toda tu colección de cartas en alta resolución",
 		"Cambia el idioma del juego y ajusta el volumen. ¡No olvides echar un vistazo a los Créditos! ^^",
 		"Card Master es un juego de cartas coleccionables, donde dos jugadores se enfrentan colocando cartas en una cuadrícula de 4x4. Cada jugador elige 5 cartas de su mazo para usar. La partida termina cuando se han colocado todas las cartas. El ganador es quien al final tiene más cartas de su color. El jugador ganador roba una de las cartas capturadas al oponente.",
-		"Las cartas tienen 4 estadísticas: Ataque (AT), Tipo (T), Defensa Física (DF) y Defensa Mágica (DM). Los valores de AT, DF y DM van de 0 a 255, divididos en 16 clases de 0 a F. Cuanto más alta la estadística, más alta será la clase. Una carta puede ser de 4 tipos: Física (P), Mágica (M), Exploit (X) o Asalto (A). Cada tipo define cómo lucha la carta contra las demás. P ataca DF, M ataca DM, X ataca la estadística más baja entre DF y DM, A usa la estadística más alta de la carta para atacar la más baja de la carta rival, sea cual sea. Cada carta puede tener hasta 8 flechas, orientadas hacia los 8 puntos cardinales. Estas flechas se usan para capturar o atacar cartas rivales. Si la flecha de una carta apunta a una carta sin flecha de vuelta, la carta es capturada automáticamente, pero si apunta a una carta con flecha opuesta, comienza el combate. El color de las estadísticas, de verde a rojo, indica su nivel de evolución. El rojo significa que la estadística está al máximo.",
+		"Las cartas tienen 4 estadísticas: Ataque, Tipo, Defensa Física y Mágica. Los valores van de 0 a 255 y se muestran como una clase de 0 a F - a mayor valor, mayor clase. El Tipo puede ser Física, Mágica, Flexible o Asalto: Física ataca la Defensa Física, Mágica la Mágica, Flexible la más baja de las dos, y Asalto usa tu valor más alto contra el más bajo del rival. Las cartas tienen hasta 8 flechas: una que apunta a una carta sin flecha opuesta la captura al instante, y si apunta a una flecha opuesta comienza el combate. El color del valor (verde a rojo) indica su nivel - rojo es el máximo.",
 		"Rival", "Toca para empezar", "Haz clic para empezar", "Título",
 		"Victorias", "Último guardado", "Poseídas", "Página",
 		"Pausa", "Reanudar", "Rendirse", "Pulsa un botón para empezar",
@@ -219,6 +225,7 @@ const TABLE := [
 		"Ya está abierto",
 		"El desafío empieza en",
 		"%d carta(s) ganada(s) por rivales",
+		"Juega online contra rivales reales",
 	],
 	# Français
 	[
@@ -251,7 +258,7 @@ const TABLE := [
 		"Admirez toute votre collection de cartes en haute résolution",
 		"Changez la langue du jeu et réglez le volume. N'oubliez pas de consulter les crédits ^^",
 		"Card Master est un jeu de cartes à collectionner, où deux adversaires s'affrontent en plaçant des cartes sur une grille 4x4. Chaque joueur choisit 5 cartes de son deck à utiliser. La partie se termine quand toutes les cartes sont placées. Le vainqueur est celui qui possède le plus de cartes de sa couleur à la fin. Le joueur vainqueur vole une des cartes capturées à l'adversaire.",
-		"Les cartes ont 4 statistiques : Attaque (AT), Type (T), Défense Physique (DP) et Défense Magique (DM). Les valeurs d'AT, DP et DM vont de 0 à 255, réparties en 16 classes de 0 à F. Plus la statistique est élevée, plus la classe l'est aussi. Une carte peut être de 4 types : Physique (P), Magique (M), Exploit (X) ou Assaut (A). Chaque type définit comment la carte combat les autres. P attaque DP, M attaque DM, X attaque la statistique la plus faible entre DP et DM, A utilise la statistique la plus élevée de la carte pour attaquer la plus faible de la carte adverse, quelle qu'elle soit. Chaque carte peut avoir jusqu'à 8 flèches, orientées vers les 8 points cardinaux. Ces flèches servent à capturer ou attaquer les cartes adverses. Si la flèche d'une carte pointe vers une carte sans flèche opposée, la carte est automatiquement capturée ; mais si elle pointe vers une flèche opposée, le combat commence. La couleur des statistiques, du vert au rouge, indique leur niveau d'évolution. Le rouge signifie que la statistique est au maximum.",
+		"Les cartes ont 4 statistiques : Attaque, Type, Défense physique et magique. Les valeurs vont de 0 à 255 et s'affichent en classe de 0 à F - plus la valeur est haute, plus la classe l'est aussi. Le Type est Physique, Magique, Flexible ou Assaut : Physique attaque la Défense physique, Magique la magique, Flexible la plus basse des deux, et Assaut utilise votre valeur la plus haute contre la plus basse de l'adversaire. Les cartes ont jusqu'à 8 flèches : une flèche vers une carte sans flèche opposée la capture aussitôt, vers une flèche opposée le combat commence. La couleur de la statistique (du vert au rouge) indique son niveau - rouge signifie maximum.",
 		"Adversaire", "Touchez pour commencer", "Cliquez pour commencer", "Titre",
 		"Victoires", "Dernière sauvegarde", "Possédées", "Page",
 		"Pause", "Reprendre", "Abandonner", "Appuyez sur un bouton pour commencer",
@@ -272,6 +279,7 @@ const TABLE := [
 		"Déjà ouvert",
 		"Le défi commence dans",
 		"%d carte(s) prise(s) par des adversaires",
+		"Jouez en ligne contre de vrais adversaires",
 	],
 	# Italiano
 	[
@@ -304,7 +312,7 @@ const TABLE := [
 		"Ammira la tua collezione di carte in alta risoluzione",
 		"Cambia la lingua di gioco e modifica i volumi audio. Non dimenticarti di guadare i Crediti ^^",
 		"Card Master é un gioco di carte collezionabili, dove 2 avversari si sfidano posizionando delle carte su una griglia 4x4. Ogni giocatore sceglie 5 carte tra tutte quelle possedute. Il gioco termina quando tutte le carte di entrambi i giocatori vengono posizionate. Il vincitore é colui che a fine partita possiede piú carte del suo colore. Il giocatore vincente puó sottrarre all'avversario una carta catturata durante la partita.",
-		"Le carte hanno 4 valori. Attacco (AT), Tipo (T), Difesa Fisica (DF) e Difesa Magica (DM). AT, DF e DM hanno valori che vanno tra 0 e 255, suddivisi in 16 classi da 0 a F. Piú il valore é alto, piú la classe sará elevata. Una carta puó essere di 4 tipi, Fisica (P), Magica (M), Exploit (X) e Assalto (A). P attacca DF, M attacca DM, X attacca il valore piú basso tra DF e DM e A usa il valore piú alto della carta per attaccare quello piú basso di quella avversaria. Ogni carta puó avere fino a 8 frecce posizionate sui punti cardinali. Queste frecce vengono utilizzate per catturare o attaccare le carte avversarie. Se la freccia di una carta punta una carta che non ha a sua volta una freccia nella direzione opposta, essa viene automaticamente catturata, altrimenti se c'é una freccia opposta, ha inizio il combattimento. Il colore delle statistiche indica il livello di evoluzione delle stesse. Il colore rosso indica una statistica che ha raggiunto il suo massimo per quel tipo di carta.",
+		"Le carte hanno 4 valori: Attacco, Tipo, Difesa Fisica e Magica. I valori vanno da 0 a 255 e sono mostrati come classe da 0 a F - più alto il valore, più alta la classe. Il Tipo può essere Fisico, Magico, Flessibile o Assalto: Fisico attacca la Difesa Fisica, Magico quella Magica, Flessibile la più bassa delle due, e Assalto usa il tuo valore più alto contro quello più basso dell'avversario. Le carte hanno fino a 8 frecce: una freccia verso una carta senza freccia opposta la cattura subito, verso una freccia opposta inizia il combattimento. Il colore del valore (dal verde al rosso) indica il livello - rosso significa al massimo.",
 		"Avversario", "Tocca per iniziare", "Clicca per iniziare", "Titolo",
 		"Vittorie", "Ultimo salvataggio", "Possedute", "Pagina",
 		"Pausa", "Riprendi", "Abbandona", "Premi un tasto per iniziare",
@@ -325,6 +333,7 @@ const TABLE := [
 		"Già aperto",
 		"La sfida inizierà tra",
 		"%d carta/e vinta/e dagli avversari",
+		"Gioca online contro avversari veri",
 	],
 	# Português (Brasil)
 	[
@@ -356,7 +365,7 @@ const TABLE := [
 		"Admire toda a sua coleção de cartas em alta resolução",
 		"Mude o idioma do jogo e ajuste o volume. Não esqueça de conferir os Créditos ^^",
 		"Card Master é um jogo de cartas colecionáveis, onde dois adversários se enfrentam colocando cartas em uma grade 4x4. Cada jogador escolhe 5 cartas do seu deck para usar. O jogo termina quando todas as cartas forem colocadas. O vencedor é quem tiver mais cartas da sua cor ao final. O jogador vencedor rouba uma das cartas capturadas do adversário.",
-		"As cartas têm 4 estatísticas: Ataque (AT), Tipo (T), Defesa Física (DF) e Defesa Mágica (DM). Os valores de AT, DF e DM vão de 0 a 255, divididos em 16 classes de 0 a F. Quanto maior a estatística, maior a classe. Uma carta pode ser de 4 tipos: Física (P), Mágica (M), Exploit (X) ou Investida (A). Cada tipo define como a carta luta contra as outras. P ataca DF, M ataca DM, X ataca o menor valor entre DF e DM, A usa o maior valor da carta para atacar o menor valor da carta adversária, seja qual for. Cada carta pode ter até 8 setas, apontando para os 8 pontos cardeais. Essas setas são usadas para capturar ou atacar cartas adversárias. Se a seta de uma carta aponta para uma carta sem seta de volta, a carta é capturada automaticamente; mas se aponta para uma seta oposta, a batalha começa. A cor das estatísticas, do verde ao vermelho, indica o nível de evolução. Vermelho significa que a estatística está no máximo.",
+		"As cartas têm 4 estatísticas: Ataque, Tipo, Defesa Física e Mágica. Os valores vão de 0 a 255 e aparecem como uma classe de 0 a F - quanto maior o valor, maior a classe. O Tipo pode ser Física, Mágica, Flexível ou Investida: Física ataca a Defesa Física, Mágica a Mágica, Flexível a mais baixa das duas, e Investida usa seu valor mais alto contra o mais baixo do adversário. As cartas têm até 8 setas: uma seta apontando para uma carta sem seta oposta a captura na hora, apontando para uma seta oposta começa a luta. A cor da estatística (verde a vermelho) mostra o nível - vermelho é o máximo.",
 		"Adversário", "Toque para começar", "Clique para começar", "Título",
 		"Vitórias", "Último salvamento", "Possuídas", "Página",
 		"Pausa", "Continuar", "Desistir", "Pressione um botão para começar",
@@ -377,6 +386,7 @@ const TABLE := [
 		"Já está aberto",
 		"O desafio começa em",
 		"%d carta(s) levada(s) por adversários",
+		"Jogue online contra adversários reais",
 	],
 	# Русский
 	[
@@ -408,7 +418,7 @@ const TABLE := [
 		"Просмотрите всю свою коллекцию карт в полном разрешении",
 		"Смените язык игры и настройте громкость звука. Не забудьте заглянуть в титры ^^",
 		"Card Master — это игра в коллекционные карты, где два игрока сражаются, размещая карты на сетке 4x4. Каждый игрок выбирает 5 карт из своей колоды. Игра заканчивается, когда все карты выставлены. Победителем становится тот, у кого в итоге больше карт своего цвета. Победитель забирает одну из захваченных карт соперника.",
-		"У карт есть 4 характеристики: Атака (AT), Тип (T), Физическая защита (PD) и Магическая защита (MD). Значения AT, PD и MD варьируются от 0 до 255 и делятся на 16 классов от 0 до F. Чем выше значение, тем выше класс. Карта может быть одного из 4 типов: Физический (P), Магический (M), Эксплойт (X) или Штурм (A). Каждый тип определяет, как карта сражается с другими. P атакует PD, M атакует MD, X атакует более низкое значение из PD и MD, A использует самое высокое значение карты, чтобы атаковать самое низкое значение карты противника, каким бы оно ни было. У каждой карты может быть до 8 стрелок, направленных по 8 сторонам света. Эти стрелки используются для захвата или атаки карт противника. Если стрелка карты направлена на карту без ответной стрелки, карта захватывается автоматически, а если стрелка направлена на противоположную стрелку — начинается бой. Цвет характеристик, от зелёного до красного, показывает уровень их развития. Красный означает, что характеристика достигла максимума.",
+		"У карт есть 4 характеристики: Атака, Тип, Физическая и Магическая защита. Значения от 0 до 255, показаны как класс от 0 до F - чем выше значение, тем выше класс. Тип карты - Физический, Магический, Гибкий или Штурм: Физический бьёт по физической защите, Магический - по магической, Гибкий - по меньшей из двух, Штурм - вашим макс. значением по мин. у соперника. У карт до 8 стрелок: без встречной стрелки карта захватывается сразу, со встречной - начинается бой. Цвет (зелёный - красный) показывает уровень: красный значит максимум.",
 		"Соперник", "Коснитесь, чтобы начать", "Нажмите, чтобы начать", "Заставка",
 		"Победы", "Последнее сохранение", "В наличии", "Страница",
 		"Пауза", "Продолжить", "Сдаться", "Нажмите любую кнопку, чтобы начать",
@@ -429,6 +439,7 @@ const TABLE := [
 		"Уже открыт",
 		"Матч начнётся через",
 		"Соперники забрали карт: %d",
+		"Играйте онлайн против реальных соперников",
 	],
 	# 日本語 - full retranslation from English (the reference table was mostly
 	# blank placeholders).
@@ -460,7 +471,7 @@ const TABLE := [
 		"集めたカードを高解像度で鑑賞できます",
 		"ゲームの言語変更や音量設定ができます。クレジットも忘れずにチェックしてね^^",
 		"「カードマスター」は、2人のプレイヤーが4x4のグリッドにカードを置いて戦うカード収集ゲームです。各プレイヤーはデッキから使用する5枚のカードを選びます。全てのカードが置かれるとゲームは終了します。最終的に自分の色のカードを多く持っている方が勝利です。勝者は捕獲した相手のカードを1枚奪うことができます。",
-		"カードには4つのステータスがあります。攻撃力(AT)、タイプ(T)、物理防御力(PD)、魔法防御力(MD)です。AT、PD、MDの値は0〜255で、0〜Fの16段階に分けられます。数値が高いほどクラスも高くなります。カードには物理(P)、魔法(M)、万能(X)、強襲(A)の4つのタイプがあり、タイプによって戦い方が決まります。Pの攻撃はPDを、Mの攻撃はMDを狙います。XはPDとMDのうち低い方を狙い、Aはカードの最も高いステータスで相手の最も低いステータスを攻撃します。カードには8方向に矢印を最大8個まで持てます。この矢印は相手のカードを捕獲したり攻撃したりするために使われます。矢印が反対方向の矢印を持たないカードを指している場合、そのカードは自動的に捕獲されます。逆に反対方向に矢印があると戦闘が始まります。ステータスの色は緑から赤へと進化状態を示し、赤は最大値に達したことを意味します。",
+		"カードには4つのステータスがあります:攻撃、タイプ、物理防御、魔法防御。数値は0〜255で、0〜Fのクラスで表示されます。数値が高いほどクラスも高くなります。タイプは物理、魔法、柔軟、強襲のいずれかです:物理は物理防御を、魔法は魔法防御を狙い、柔軟は低い方を、強襲は自分の最高値で相手の最低値を攻撃します。カードには最大8本の矢印があり、相手の矢印がない方向を指すと即座に捕獲し、相手の矢印と向き合うと戦闘になります。ステータスの色(緑から赤)はレベルを示し、赤は最大です。",
 		"対戦相手", "タップしてスタート", "クリックしてスタート", "タイトル",
 		"勝利数", "最終セーブ", "所持数", "ページ",
 		"ポーズ", "再開", "棄権", "ボタンを押してスタート",
@@ -481,6 +492,7 @@ const TABLE := [
 		"使用中",
 		"対戦開始まで",
 		"相手に奪われたカード: %d枚",
+		"オンラインで本物の対戦相手と戦おう",
 	],
 	# 简体中文
 	[
@@ -507,7 +519,7 @@ const TABLE := [
 		"以全分辨率欣赏你收藏的所有卡牌",
 		"更改游戏语言并设置音量。别忘了看看制作人员名单哦 ^^",
 		"《卡牌大师》是一款集换式卡牌游戏,两名玩家通过在4x4的格子上放置卡牌来对战。每位玩家从自己的牌组中选择5张卡牌使用。当所有卡牌都放置完毕时游戏结束。最终拥有更多自己颜色卡牌的一方获胜。获胜的玩家可以夺走一张被俘获的对手卡牌。",
-		"卡牌有4项属性:攻击(AT)、类型(T)、物理防御(PD)和魔法防御(MD)。AT、PD和MD的数值范围是0到255,分为从0到F的16个等级。数值越高,等级越高。卡牌有4种类型:物理(P)、魔法(M)、万能(X)或突袭(A)。每种类型决定了卡牌如何与其他卡牌对战。P攻击PD,M攻击MD,X攻击PD和MD中较低的一项,A使用卡牌中最高的属性攻击对方卡牌中最低的属性,无论那是哪一项。每张卡牌最多可以有8个箭头,分别指向8个方位。这些箭头用于俘获或攻击对手的卡牌。如果一张卡牌的箭头指向一张没有对应反向箭头的卡牌,该卡牌会被自动俘获;但如果指向的是有相对箭头的卡牌,则会触发战斗。属性的颜色从绿到红表示其进化程度,红色表示该属性已达到最大值。",
+		"卡牌有4项属性:攻击、类型、物理防御和魔法防御。数值范围是0到255,以0到F的等级显示,数值越高等级越高。卡牌类型分为物理、魔法、灵活或突袭:物理攻击物理防御,魔法攻击魔法防御,灵活攻击两者中较低的一项,突袭用己方最高属性攻击对方最低属性。卡牌最多有8个箭头:指向没有反向箭头的卡牌会立即俘获它,指向有反向箭头的卡牌则触发战斗。属性颜色(从绿到红)表示等级,红色代表已满级。",
 		"对手", "轻触开始", "点击开始", "标题",
 		"胜场", "最后保存", "拥有", "页",
 		"暂停", "继续", "认输", "按任意键开始",
@@ -528,6 +540,7 @@ const TABLE := [
 		"已在使用",
 		"对战开始还有",
 		"被对手夺走的卡牌: %d 张",
+		"与真实玩家进行线上对战",
 	],
 ]
 
