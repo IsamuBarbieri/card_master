@@ -186,22 +186,22 @@ var coin_blue_tex: Texture2D
 var coin_red_tex: Texture2D
 var rage_quit_banner: TextureRect  # (RAGEQUIT)
 
-var end_panel: Control
-var end_bkg: TextureRect
+@onready var end_panel: Control = $EndPanel
+@onready var end_bkg: TextureRect = $EndPanel/EndBg
 var end_banner: TextureRect
 
 # UIBattleEnd-equivalent widgets (built in _build_battle_end_ui()).
-var panel_owned: Control
-var owned_label: Label
-var panel_info: Control
+@onready var panel_owned: Control = $EndPanel/PanelOwned
+@onready var owned_label: Label = $EndPanel/PanelOwned/OwnedLabel
+@onready var panel_info: Control = $EndPanel/PanelInfo
 var end_stat_panel: CardStatPanel
-var label_central_msg: Label
-var button_done: Button
-var label_coin_reward: RichTextLabel
-var button_takeall: Button
+@onready var label_central_msg: Label = $EndPanel/CentralMsgLabel
+@onready var button_done: Button = $EndPanel/DoneButton
+@onready var label_coin_reward: RichTextLabel = $EndPanel/CoinRewardLabel
+@onready var button_takeall: Button = $EndPanel/TakeallButton
 var image_arrow: TextureRect
-var help_arrow: TextureRect
-var busy_spinner: BusySpinner
+@onready var help_arrow: TextureRect = $EndPanel/HelpArrow
+@onready var busy_spinner: BusySpinner = $EndPanel/BusySpinner
 
 # End-of-match flow state (gsEndLevelUp/EndPlayerPick/EndCPUPick/EndNonePick).
 enum EndFlow { NONE, PLAYER_PICK, CPU_PICK, DRAW }
@@ -621,16 +621,6 @@ func start_new_game() -> void:
 # ---------------------------------------------------------------- UI build
 
 func _build_ui() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
-
-	var bg := TextureRect.new()
-	bg.texture = load(ASSETS + "battle/battle_screen.png")
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg.position = Vector2.ZERO
-	bg.size = Vector2(SCREEN_W, SCREEN_H)
-	add_child(bg)
-
 	var pergamena := TextureRect.new()
 	pergamena.texture = load(ASSETS + "battle/battle_pergamena.png")
 	pergamena.stretch_mode = TextureRect.STRETCH_SCALE
@@ -638,15 +628,6 @@ func _build_ui() -> void:
 	pergamena.position = PERGAMENA_POS
 	pergamena.size = pergamena_size()
 	add_child(pergamena)
-
-	# Was battle_marmo.png, a marble slab unique to this screen. Swapped for
-	# the translucent box every other menu's info panel uses (Shop, Collection,
-	# the end-of-match readout right below) so the card-stats readout looks the
-	# same wherever the player meets it. Its frame is thinner than the marble's
-	# too, which is where the extra room for the larger text came from.
-	var info_bkg := UIPanel.make(UIConstants.BATTLE_INFO_PANEL_SIZE)
-	info_bkg.position = UIConstants.BATTLE_INFO_BKG_POS
-	add_child(info_bkg)
 
 	turn_cursor = TextureRect.new()
 	turn_cursor.texture = load(ASSETS + "battle/battle_cursor.png")
@@ -978,19 +959,6 @@ func _make_vfx(path: String) -> AnimatedSprite2D:
 	return sprite
 
 func _build_end_panel() -> void:
-	end_panel = Control.new()
-	end_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	end_panel.visible = false
-	add_child(end_panel)
-
-	end_bkg = TextureRect.new()
-	end_bkg.texture = load(ASSETS + "common_bkg_clean.png")
-	end_bkg.stretch_mode = TextureRect.STRETCH_SCALE
-	end_bkg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	end_bkg.size = Vector2(SCREEN_W, SCREEN_H)
-	end_bkg.position = Vector2(0, -SCREEN_H)
-	end_panel.add_child(end_bkg)
-
 	end_banner = TextureRect.new()
 	end_banner.stretch_mode = TextureRect.STRETCH_SCALE
 	end_banner.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -999,44 +967,18 @@ func _build_end_panel() -> void:
 
 	_build_battle_end_ui()
 
-## Port of UIBattleEnd.composer.cs (default/horizontal orientation). All of
-## this sits on top of end_panel (which already has end_bkg behind it), and
-## is driven by gsEndLevelUp/EndPlayerPick/EndCPUPick/EndNonePick below.
+## Port of UIBattleEnd.composer.cs (default/horizontal orientation). Static
+## chrome (panel backgrounds, fixed-position labels/buttons) lives in
+## BattleScene.tscn now (EndPanel and its children) - this just wires text/
+## fonts/connections and builds the still-genuinely-dynamic pieces (the stat
+## panel, whose layout is parametric).
 func _build_battle_end_ui() -> void:
-	# As wide as the card it's pinned under (CARD_W) - _update_owned_panel_pos
-	# centers it exactly on the card using this same width - and tall enough
-	# for a readable font on a phone screen instead of the original's tiny
-	# single-purpose tooltip size.
-	panel_owned = Control.new()
-	panel_owned.size = Vector2(CARD_W, 64)
-	panel_owned.clip_contents = true
-	panel_owned.visible = false
-	# z_index 60 matches the "always above a card" tier used elsewhere in this
-	# file (e.g. the floating chain-count label) - a selected/dragged card
-	# gets z_index 50 (_end_player_pick_click) to float above other cards,
-	# which was also outranking this panel and panel_info whenever the drag
-	# passed over them, hiding the stats entirely.
-	panel_owned.z_index = 60
-	end_panel.add_child(panel_owned)
-
-	var owned_bkg := UIPanel.make(panel_owned.size)
-	panel_owned.add_child(owned_bkg)
-
-	owned_label = _make_end_label(Vector2(0, 0), panel_owned.size, MIN_READABLE_FONT_SIZE)
-	owned_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	owned_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	panel_owned.add_child(owned_label)
-
-	panel_info = Control.new()
-	panel_info.position = UIConstants.BATTLE_END_PANEL_INFO_POS
-	panel_info.size = UIConstants.BATTLE_END_INFO_PANEL_SIZE
-	panel_info.clip_contents = true
-	panel_info.visible = false
-	panel_info.z_index = 60  # see panel_owned's comment above
-	end_panel.add_child(panel_info)
-
-	var info_bkg := UIPanel.make(UIConstants.BATTLE_END_INFO_PANEL_SIZE)
-	panel_info.add_child(info_bkg)
+	owned_label.add_theme_font_override("font", font_stylish)
+	owned_label.add_theme_font_size_override("font_size", MIN_READABLE_FONT_SIZE)
+	owned_label.add_theme_color_override("font_color", Color.BLACK)
+	owned_label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
+	owned_label.add_theme_constant_override("shadow_offset_x", 1)
+	owned_label.add_theme_constant_override("shadow_offset_y", 1)
 
 	# Same readout as the in-match panel, same component, so the same card
 	# reads identically on both screens.
@@ -1048,45 +990,18 @@ func _build_battle_end_ui() -> void:
 	# card as your prize", "the opponent will now choose", the draw notice).
 	# It was 25 - the smallest running text in the game, on the one screen
 	# where the player has to act on what it says.
-	label_central_msg = _make_end_label(UIConstants.BATTLE_END_CENTRAL_MSG_POS, UIConstants.BATTLE_CENTRAL_MSG_SIZE, END_MESSAGE_FONT_SIZE)
-	label_central_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	label_central_msg.autowrap_mode = TextServer.AUTOWRAP_WORD
-	label_central_msg.visible = false
-	end_panel.add_child(label_central_msg)
+	label_central_msg.add_theme_font_override("font", font_stylish)
+	label_central_msg.add_theme_font_size_override("font_size", END_MESSAGE_FONT_SIZE)
+	label_central_msg.add_theme_color_override("font_color", Color.BLACK)
+	label_central_msg.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
+	label_central_msg.add_theme_constant_override("shadow_offset_x", 1)
+	label_central_msg.add_theme_constant_override("shadow_offset_y", 1)
 
-	# Coin payout readout, filled in by gsEndPlayerPick_Set on a win. A
-	# RichTextLabel with an inline [img] rather than a Label + TextureRect
-	# pair - same trick CardView uses for the shop price tags, and it needs
-	# no StringTable entry since the whole thing is a number and an icon.
-	# Left column, in the gap between panel_owned (y174-238 when pinned to a
-	# top-row card) and panel_info (y311-535) - x=8 matches panel_info's own
-	# left edge, text itself centered within that box.
-	label_coin_reward = RichTextLabel.new()
-	label_coin_reward.bbcode_enabled = true
-	label_coin_reward.scroll_active = false
-	# Top right of the end screen, inset from both edges. It used to sit on
-	# label_central_msg's row down the left, where the prize competed with the
-	# instruction telling the player what to do next.
-	label_coin_reward.position = Vector2(SCREEN_W - COIN_LABEL_SIZE.x - COIN_LABEL_MARGIN, COIN_LABEL_MARGIN)
-	label_coin_reward.size = COIN_LABEL_SIZE
-	label_coin_reward.add_theme_font_override("normal_font", font_stylish)
-	label_coin_reward.add_theme_font_size_override("normal_font_size", UIConstants.BATTLE_COIN_REWARD_FONT_SIZE)
-	label_coin_reward.add_theme_color_override("default_color", UIConstants.COLOR_GOLD)
-	label_coin_reward.add_theme_constant_override("outline_size", 4)
-	label_coin_reward.add_theme_color_override("font_outline_color", Color.BLACK)
-	label_coin_reward.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label_coin_reward.visible = false
-	end_panel.add_child(label_coin_reward)
-
-	button_done = _make_end_button(StringTable.get_string(StringTable.ID_DONE), UIConstants.BATTLE_END_DONE_BUTTON_POS, UIConstants.BATTLE_DONE_BUTTON_SIZE)
-	button_done.visible = false
+	_style_end_button(button_done, StringTable.get_string(StringTable.ID_DONE))
 	button_done.pressed.connect(_on_end_done_pressed)
-	end_panel.add_child(button_done)
 
-	button_takeall = _make_end_button(StringTable.get_string(StringTable.ID_TAKE_ALL), UIConstants.BATTLE_TAKEALL_BUTTON_POS, UIConstants.BATTLE_TAKEALL_BUTTON_SIZE)
-	button_takeall.visible = false
+	_style_end_button(button_takeall, StringTable.get_string(StringTable.ID_TAKE_ALL))
 	button_takeall.pressed.connect(_on_end_takeall_pressed)
-	end_panel.add_child(button_takeall)
 
 	image_arrow = TextureRect.new()
 	image_arrow.texture = load(ASSETS + "cursor.png")
@@ -1097,41 +1012,9 @@ func _build_battle_end_ui() -> void:
 	image_arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	end_panel.add_child(image_arrow)
 
-	help_arrow = TextureRect.new()
-	help_arrow.texture = load(ASSETS + "help_arrow.png")
-	help_arrow.stretch_mode = TextureRect.STRETCH_SCALE
-	help_arrow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	help_arrow.position = UIConstants.BATTLE_HELP_ARROW_POS
-	help_arrow.size = UIConstants.BATTLE_HELP_ARROW_SIZE
-	help_arrow.visible = false
-	help_arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	end_panel.add_child(help_arrow)
-
-	busy_spinner = BusySpinner.new()
-	busy_spinner.position = UIConstants.BUSY_SPINNER_POS
-	busy_spinner.size = UIConstants.BUSY_SPINNER_SIZE
-	busy_spinner.pivot_offset = UIConstants.BUSY_SPINNER_PIVOT
-	busy_spinner.visible = false
-	end_panel.add_child(busy_spinner)
-
-func _make_end_label(pos: Vector2, label_size: Vector2, font_size: int) -> Label:
-	var label := FixedSizeLabel.new()
-	label.position = pos
-	label.size = label_size
-	label.add_theme_font_override("font", font_stylish)
-	label.add_theme_font_size_override("font_size", font_size)
-	label.add_theme_color_override("font_color", Color.BLACK)
-	label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-	label.add_theme_constant_override("shadow_offset_x", 1)
-	label.add_theme_constant_override("shadow_offset_y", 1)
-	return label
-
-func _make_end_button(text: String, pos: Vector2, btn_size: Vector2) -> Button:
-	var btn := FixedSizeButton.new()
+func _style_end_button(btn: Button, text: String) -> void:
 	UIButtonStyle.apply(btn)
 	btn.text = text
-	btn.position = pos
-	btn.size = btn_size
 	btn.add_theme_font_override("font", font_stylish)
 	btn.add_theme_font_size_override("font_size", UIConstants.BATTLE_END_BUTTON_FONT_SIZE)
 	btn.add_theme_color_override("font_color", Color.BLACK)
@@ -1139,7 +1022,6 @@ func _make_end_button(text: String, pos: Vector2, btn_size: Vector2) -> Button:
 	btn.add_theme_constant_override("shadow_offset_x", 2)
 	btn.add_theme_constant_override("shadow_offset_y", 1)
 	UIButtonStyle.fit_button_text(btn)
-	return btn
 
 func _build_audio() -> void:
 	sfx_button = _make_sfx("sfx/button_sound.wav")
