@@ -199,11 +199,6 @@ const HELP_SHOP3_LABEL_POS := Vector2(651, 110)
 const MAIN_MENU_BUTTON_FONT_SIZE := 46
 const MAIN_MENU_ONLINE_BUTTON_FONT_SIZE := 36
 const MAIN_MENU_CAT_POS := Vector2(850, 416)
-const MAIN_MENU_BATTLE_BUTTON_POS := Vector2(343, 26)
-const MAIN_MENU_SHOP_BUTTON_POS := Vector2(131, 236)
-const MAIN_MENU_COLLECTION_BUTTON_POS := Vector2(556, 236)
-const MAIN_MENU_OPTIONS_BUTTON_POS := Vector2(343, 442)
-const MAIN_MENU_ONLINE_BUTTON_POS := Vector2(407, 199)
 
 # --------------------------------------------------------------- Options
 

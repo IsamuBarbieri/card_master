@@ -1,6 +1,12 @@
-[gd_scene load_steps=2 format=3 uid="uid://dqk3n9p5wx2ct"]
+[gd_scene load_steps=8 format=3 uid="uid://dqk3n9p5wx2ct"]
 
 [ext_resource type="Script" path="res://scripts/menu/MainMenu.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/common_bkg_dark_clean.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/button_battle.png" id="3"]
+[ext_resource type="Texture2D" path="res://assets/button_shop.png" id="4"]
+[ext_resource type="Texture2D" path="res://assets/button_collection.png" id="5"]
+[ext_resource type="Texture2D" path="res://assets/button_option.png" id="6"]
+[ext_resource type="Texture2D" path="res://assets/button_online_round.png" id="7"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -10,3 +16,95 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
+
+[node name="Bg" type="TextureRect" parent="."]
+layout_mode = 0
+offset_right = 960.0
+offset_bottom = 544.0
+texture = ExtResource("2")
+expand_mode = 1
+
+[node name="BattleButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 343.0
+offset_top = 26.0
+offset_right = 617.0
+offset_bottom = 97.0
+
+[node name="BattleIcon" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 343.0
+offset_top = 26.0
+offset_right = 617.0
+offset_bottom = 97.0
+mouse_filter = 2
+texture = ExtResource("3")
+expand_mode = 1
+
+[node name="ShopButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 131.0
+offset_top = 236.0
+offset_right = 405.0
+offset_bottom = 307.0
+
+[node name="ShopIcon" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 131.0
+offset_top = 236.0
+offset_right = 405.0
+offset_bottom = 307.0
+mouse_filter = 2
+texture = ExtResource("4")
+expand_mode = 1
+
+[node name="CollectionButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 556.0
+offset_top = 236.0
+offset_right = 830.0
+offset_bottom = 307.0
+
+[node name="CollectionIcon" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 556.0
+offset_top = 236.0
+offset_right = 830.0
+offset_bottom = 307.0
+mouse_filter = 2
+texture = ExtResource("5")
+expand_mode = 1
+
+[node name="OptionsButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 343.0
+offset_top = 442.0
+offset_right = 617.0
+offset_bottom = 513.0
+
+[node name="OptionsIcon" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 343.0
+offset_top = 442.0
+offset_right = 617.0
+offset_bottom = 513.0
+mouse_filter = 2
+texture = ExtResource("6")
+expand_mode = 1
+
+[node name="OnlineEmblem" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 407.0
+offset_top = 199.0
+offset_right = 553.0
+offset_bottom = 345.0
+mouse_filter = 2
+texture = ExtResource("7")
+expand_mode = 1
+
+[node name="OnlineButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 407.0
+offset_top = 199.0
+offset_right = 553.0
+offset_bottom = 345.0

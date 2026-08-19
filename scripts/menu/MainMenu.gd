@@ -10,9 +10,20 @@ extends Control
 ## Cat easter egg (InitCat/OnUpdate in UIMainMenu.cs): idle-loops its 28
 ## frame animation then pauses for a random 2-6s before looping again; tap
 ## goes to Help.
+##
+## Static layout (background, the four button/icon pairs' shared rects, the
+## online emblem+button rect) lives in MainMenu.tscn now. Each button's icon
+## is a separate sibling node at the SAME rect (the transparent-gap overlay
+## trick) - move them together if you ever reposition one in the editor.
+## Everything else stays script: font_title swaps per language, button skin
+## comes from UIButtonStyle.apply(), and menu button font_size is refit
+## live per translation (fit_menu_button_text) so it can't be a fixed value.
+## The cat button/sprite pair also stays fully script-built and NOT in the
+## scene - its position must track UIConstants.MAIN_MENU_CAT_POS exactly
+## (the sprite's frames are themselves generated at runtime and can't be
+## baked), so keeping both script-driven is what keeps them from drifting
+## apart.
 
-const SCREEN_W := 960
-const SCREEN_H := 544
 const ASSETS := "res://assets/"
 
 const CAT_FRAME_SIZE := Vector2(160, 138)
@@ -24,11 +35,17 @@ const CAT_FPS := 10.0
 # in on-screen px - narrower than the button's own 274px width, so this is
 # the real safe zone for translated text (see UIButtonStyle.fit_menu_button_text).
 const MENU_BUTTON_GAP_WIDTHS := {
-	"button_battle.png": 163.0,
-	"button_shop.png": 177.0,
-	"button_collection.png": 158.0,
-	"button_option.png": 142.0,
+	"BattleButton": 163.0,
+	"ShopButton": 177.0,
+	"CollectionButton": 158.0,
+	"OptionsButton": 142.0,
 }
+
+@onready var battle_button: Button = $BattleButton
+@onready var shop_button: Button = $ShopButton
+@onready var collection_button: Button = $CollectionButton
+@onready var options_button: Button = $OptionsButton
+@onready var online_button: Button = $OnlineButton
 
 var cat_sprite: AnimatedSprite2D
 var cat_button: Button
@@ -42,20 +59,11 @@ var nav: FocusNav
 static var _last_focus_meta := 0
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
-
-	var bg := TextureRect.new()
-	bg.texture = load(ASSETS + "common_bkg_dark_clean.png")
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg.size = Vector2(SCREEN_W, SCREEN_H)
-	add_child(bg)
-
-	var btn_battle := _make_menu_button(StringTable.get_string(StringTable.ID_BATTLE), "button_battle.png", UIConstants.MAIN_MENU_BATTLE_BUTTON_POS, Vector2(274, 71), _on_battle_pressed)
-	var btn_shop := _make_menu_button(StringTable.get_string(StringTable.ID_SHOP), "button_shop.png", UIConstants.MAIN_MENU_SHOP_BUTTON_POS, Vector2(274, 71), _on_shop_pressed)
-	var btn_collection := _make_menu_button(StringTable.get_string(StringTable.ID_COLLECTION), "button_collection.png", UIConstants.MAIN_MENU_COLLECTION_BUTTON_POS, Vector2(274, 71), _on_collection_pressed)
-	var btn_options := _make_menu_button(StringTable.get_string(StringTable.ID_OPTIONS), "button_option.png", UIConstants.MAIN_MENU_OPTIONS_BUTTON_POS, Vector2(274, 71), _on_options_pressed)
-	var btn_online := _make_online_button()
+	_setup_menu_button(battle_button, StringTable.get_string(StringTable.ID_BATTLE), _on_battle_pressed)
+	_setup_menu_button(shop_button, StringTable.get_string(StringTable.ID_SHOP), _on_shop_pressed)
+	_setup_menu_button(collection_button, StringTable.get_string(StringTable.ID_COLLECTION), _on_collection_pressed)
+	_setup_menu_button(options_button, StringTable.get_string(StringTable.ID_OPTIONS), _on_options_pressed)
+	_setup_online_button()
 
 	# No-op if a menu track is already playing (e.g. coming back from
 	# Opponents, which never touches the music itself) - keeps whatever's
@@ -67,7 +75,7 @@ func _ready() -> void:
 
 	# Online goes last so the stored focus meta of the four original buttons
 	# keeps pointing at the same button it always did.
-	_setup_nav([btn_battle, btn_shop, btn_collection, btn_options, btn_online])
+	_setup_nav([battle_button, shop_button, collection_button, options_button, online_button])
 
 ## The cat hotspot is registered too so the Help screen is reachable without
 ## a pointer - it's the only way in.
@@ -118,6 +126,7 @@ func _build_cat() -> void:
 	add_child(cat_sprite)
 
 	cat_button = Button.new()
+	cat_button.name = "CatButton"
 	cat_button.flat = true
 	cat_button.position = UIConstants.MAIN_MENU_CAT_POS
 	cat_button.size = CAT_FRAME_SIZE
@@ -136,13 +145,10 @@ func _process(delta: float) -> void:
 			cat_sprite.frame = 0
 			cat_sprite.play("idle")
 
-func _make_menu_button(label: String, texture_name: String, pos: Vector2, size: Vector2, on_pressed: Callable) -> Button:
+func _setup_menu_button(btn: Button, label: String, on_pressed: Callable) -> void:
 	var font_stylish: Font = Game.font_title
-	var btn := Button.new()
 	UIButtonStyle.apply(btn)
 	btn.text = label
-	btn.position = pos
-	btn.size = size
 	btn.add_theme_font_override("font", font_stylish)
 	btn.add_theme_font_size_override("font_size", UIConstants.MAIN_MENU_BUTTON_FONT_SIZE)
 	btn.add_theme_color_override("font_color", Color.BLACK)
@@ -150,18 +156,7 @@ func _make_menu_button(label: String, texture_name: String, pos: Vector2, size: 
 	btn.add_theme_constant_override("shadow_offset_x", 1)
 	btn.add_theme_constant_override("shadow_offset_y", 1)
 	btn.pressed.connect(on_pressed)
-	add_child(btn)
-	UIButtonStyle.fit_menu_button_text(btn, MENU_BUTTON_GAP_WIDTHS[texture_name])
-
-	var icon := TextureRect.new()
-	icon.texture = load(ASSETS + texture_name)
-	icon.stretch_mode = TextureRect.STRETCH_SCALE
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.position = pos
-	icon.size = size
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(icon)
-	return btn
+	UIButtonStyle.fit_menu_button_text(btn, MENU_BUTTON_GAP_WIDTHS[btn.name])
 
 ## The four composer buttons sit around the edges of a diamond (y 26 / 236 /
 ## 442); Online fills the hole in the middle. It stays round because that is
@@ -185,21 +180,10 @@ const ONLINE_OUTLINE_SIZE := 2
 func _set_online_outline(btn: Button, size: int) -> void:
 	btn.add_theme_constant_override("outline_size", size)
 
-func _make_online_button() -> Button:
-	var emblem := TextureRect.new()
-	emblem.texture = load(ASSETS + "button_online_round.png")
-	emblem.stretch_mode = TextureRect.STRETCH_SCALE
-	emblem.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	emblem.position = UIConstants.MAIN_MENU_ONLINE_BUTTON_POS
-	emblem.size = Vector2(ONLINE_BUTTON_SIZE, ONLINE_BUTTON_SIZE)
-	emblem.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(emblem)
-
-	var btn := Button.new()
+func _setup_online_button() -> void:
+	var btn := online_button
 	btn.flat = true
 	btn.text = StringTable.get_string(StringTable.ID_ONLINE)
-	btn.position = UIConstants.MAIN_MENU_ONLINE_BUTTON_POS
-	btn.size = Vector2(ONLINE_BUTTON_SIZE, ONLINE_BUTTON_SIZE)
 	btn.add_theme_font_override("font", Game.font_title)
 	btn.add_theme_font_size_override("font_size", UIConstants.MAIN_MENU_ONLINE_BUTTON_FONT_SIZE)
 	btn.add_theme_color_override("font_color", ONLINE_TEXT_COLOR)
@@ -218,7 +202,6 @@ func _make_online_button() -> Button:
 	btn.focus_entered.connect(_set_online_outline.bind(btn, 0))
 	btn.focus_exited.connect(_set_online_outline.bind(btn, ONLINE_OUTLINE_SIZE))
 	btn.pressed.connect(_on_online_pressed)
-	add_child(btn)
 	# Fitted by hand rather than through fit_menu_button_text: that one is
 	# built for the four two-halves icons and CLEARS the outline overrides
 	# whenever the label fits between them (see UIButtonStyle), which quietly
@@ -226,7 +209,6 @@ func _make_online_button() -> Button:
 	# inscribed in the circle, not the button's full 146.
 	btn.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_width(
 		btn.text, Game.font_stylish, ONLINE_BUTTON_SIZE * 0.70, 36, UIButtonStyle.MIN_FONT_SIZE))
-	return btn
 
 func _on_online_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
