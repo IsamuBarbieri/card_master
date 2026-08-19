@@ -2520,6 +2520,13 @@ func _end_player_pick_unclick(_pos: Vector2) -> void:
 	end_sel_view = null
 
 	if move_up:
+		# Same swap as the pad's own &"pick" handler: dragging a different
+		# card up while one is already staged has to send the old one back
+		# down first, not just add a second card to end_up_cards alongside
+		# it - a non-perfect win only ever has room for the one pick
+		# end_remaining tracks.
+		if _current_pick_view != null and _current_pick_view != view:
+			await _end_uncommit_pick(_current_pick_view)
 		await _end_commit_pick(view)
 		# Kept in sync with the pad's own tracking (_current_pick_view) so
 		# mixing mouse and pad in the same session doesn't leave the pad's
