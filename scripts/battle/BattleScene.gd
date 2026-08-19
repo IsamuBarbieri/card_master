@@ -1718,12 +1718,15 @@ func gsBattle_End(card0: Card, card1: Card, result: Dictionary, depth: int, tied
 		return
 
 	# card0 won: `loser` becomes the new epicenter, one link deeper in the
-	# chain. Design doc: "la Fase 2 si ripete da capo prendendo come
-	# riferimento quest'ultima carta" - card0 does NOT go on to try any
-	# other candidates it might have had; the moment it wins, focus shifts
-	# entirely to what it just captured.
+	# chain - "la Fase 2 si ripete da capo prendendo come riferimento
+	# quest'ultima carta". Once that whole cascade from `loser` bottoms out,
+	# card0 itself is still standing and may have other adjacent enemies
+	# left over from when it had to pick a target among several - same
+	# `tied` treatment as the draw/chain-loss branch above, so it goes on to
+	# challenge them too instead of stopping the instant its first pick wins.
 	var new_depth := depth + 1
 	await gsResolveCardTurn_Set(loser, new_depth)
+	await gsBattleChainBattle_Set(card0, depth, tied + [card1])
 
 # --------------------------------------------------------------- captures
 
