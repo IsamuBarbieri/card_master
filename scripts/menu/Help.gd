@@ -14,11 +14,16 @@ extends Control
 ## chunky default "System" font the original used) - bumped up, then eased
 ## back down slightly so the Cards page (the longest text) still fits its
 ## box without clipping.
+##
+## The 6 pages (background, backing plates, label boxes) live in Help.tscn
+## now - positions/sizes are real scene data, editable in the Godot editor.
+## Only the text (StringTable-sourced) and the per-language font-fit stay
+## script-assigned, via _fill_page below. The page dots and gamepad prompt
+## bar stay fully script-built (dot count/state and prompt visibility are
+## runtime-computed, not fixed content).
 
 const SCREEN_W := 960
-const SCREEN_H := 544
 const ASSETS := "res://assets/"
-const FONT_SIZE := 24
 const PAGE_COUNT := 6
 ## Gallery-style swipe: a small flick in either direction commits to the
 ## next/prev page immediately, instead of needing to drag past half the
@@ -29,40 +34,48 @@ const DOT_SIZE := 6.0
 const DOT_GAP := 14.0
 const DOT_Y := 534.0
 
-var scroll: ScrollContainer
+@onready var scroll: ScrollContainer = $Scroll
+@onready var close_button: Button = $CloseButton
 var _dragging := false
 var _drag_start_scroll := 0
 var _drag_start_x := 0.0
 var _current_page := 0
 var _dots: Array = []  # ColorRect per page
 var _page_stick_locked := false
-var close_button: Button
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
-
-	scroll = ScrollContainer.new()
-	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.gui_input.connect(_on_scroll_gui_input)
-	add_child(scroll)
 
-	var pages := HBoxContainer.new()
-	pages.add_theme_constant_override("separation", 0)
-	pages.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	scroll.add_child(pages)
+	_fill_page("PresentationPage", {"Label1": StringTable.ID_HELP_PRESENTATION})
+	_fill_page("CardsPage", {"Label1": StringTable.ID_HELP_CARDS})
+	_fill_page("MainPage", {
+		"Label1": StringTable.ID_HELP_MAIN1,
+		"Label2": StringTable.ID_HELP_MAIN2,
+		"Label3": StringTable.ID_HELP_MAIN3,
+		"LabelOnline": StringTable.ID_HELP_MAIN_ONLINE,
+		"Label4": StringTable.ID_HELP_MAIN4,
+	})
+	_fill_page("DeckSelectPage", {
+		"Label1": StringTable.ID_HELP_DECKSELECT1,
+		"Label2": StringTable.ID_HELP_DECKSELECT2,
+		"Label3": StringTable.ID_HELP_DECKSELECT3,
+		"Label4": StringTable.ID_HELP_DECKSELECT4,
+	})
+	_fill_page("BattlePage", {
+		"Label1": StringTable.ID_HELP_BATTLE1,
+		"Label2": StringTable.ID_HELP_BATTLE2,
+		"Label3": StringTable.ID_HELP_BATTLE3,
+		"Label4": StringTable.ID_HELP_BATTLE4,
+		"Label5": StringTable.ID_HELP_BATTLE5,
+	})
+	_fill_page("ShopPage", {
+		"Label1": StringTable.ID_HELP_SHOP1,
+		"Label2": StringTable.ID_HELP_SHOP2,
+		"Label3": StringTable.ID_HELP_SHOP3,
+	})
 
-	# Help_Panel.AddPage order from UIHelp.composer.cs.
-	pages.add_child(_build_presentation_page())
-	pages.add_child(_build_cards_page())
-	pages.add_child(_build_main_page())
-	pages.add_child(_build_deckselect_page())
-	pages.add_child(_build_battle_page())
-	pages.add_child(_build_shop_page())
-
-	close_button = _make_close_button()
+	_style_close_button()
 	close_button.pressed.connect(_on_close_pressed)
-	add_child(close_button)
 
 	_build_page_dots()
 
@@ -72,10 +85,6 @@ func _ready() -> void:
 	# hints share now (ControllerUI.PROMPT_BAR_Y): mouse/touch keeps the real
 	# X button there, gamepad mode swaps in a B+Indietro hint at the exact
 	# same rect instead of two separate close controls in two corners.
-	# x=42 matches Options' B (Back) - the general left-alignment reference
-	# every screen's left-side hint now shares.
-	close_button.position = Vector2(42, ControllerUI.PROMPT_BAR_Y)
-	close_button.size = Vector2(42, ControllerUI.HINT_ROW_HEIGHT)
 	ControllerUI.hide_hand()
 	ControllerUI.hide_in_gamepad(close_button)
 	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), close_button.position, Vector2(140, ControllerUI.HINT_ROW_HEIGHT)))
@@ -104,138 +113,30 @@ func _unhandled_input(event: InputEvent) -> void:
 		_on_close_pressed()
 		get_viewport().set_input_as_handled()
 
-func _make_page(bg_path: String) -> Control:
-	var page := Control.new()
-	page.custom_minimum_size = Vector2(SCREEN_W, SCREEN_H)
-	page.clip_contents = true
-	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
+## Sets each named label's text (StringTable) and re-fits its font to the
+## box the scene already gives it - some translations (e.g. Russian on the
+## Cards page) wrap to more lines than the authored box allows, clipping the
+## end of the text since pages set clip_contents = true.
+func _fill_page(page_name: String, labels: Dictionary) -> void:
+	var page: Control = scroll.get_node("Pages/" + page_name)
+	for label_name in labels:
+		var label: Label = page.get_node(label_name)
+		label.text = StringTable.get_string(labels[label_name])
+		UIButtonStyle.fit_paragraph_to_box(label, label.size)
 
-	var bg_color := ColorRect.new()
-	bg_color.color = UIConstants.HELP_BG_COLOR
-	bg_color.size = Vector2(SCREEN_W, SCREEN_H)
-	bg_color.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	page.add_child(bg_color)
-
-	var bg := TextureRect.new()
-	bg.texture = load(ASSETS + bg_path)
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg.size = Vector2(SCREEN_W, SCREEN_H)
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	page.add_child(bg)
-
-	return page
-
-## Both the diagrams and the panels they sit over vary from dark battle grid
-## to pale card-stat parchment, so white text alone reads fine on one and
-## vanishes on the other. A translucent backing plate (plus a black outline
-## on the glyphs themselves) keeps every label legible regardless of what the
-## background under it happens to be.
-func _add_label(page: Control, pos: Vector2, size: Vector2, string_id: int, center := false) -> void:
-	var backing := Panel.new()
-	backing.position = pos
-	backing.size = size
-	var backing_sb := StyleBoxFlat.new()
-	backing_sb.bg_color = UIConstants.HELP_BACKING_COLOR
-	backing_sb.corner_radius_top_left = 8
-	backing_sb.corner_radius_top_right = 8
-	backing_sb.corner_radius_bottom_left = 8
-	backing_sb.corner_radius_bottom_right = 8
-	backing.add_theme_stylebox_override("panel", backing_sb)
-	backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	page.add_child(backing)
-
-	var font_stylish: Font = Game.font_stylish
-	var label := FixedSizeLabel.new()
-	label.position = pos
-	label.size = size
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if center else HORIZONTAL_ALIGNMENT_LEFT
-	label.add_theme_font_override("font", font_stylish)
-	label.add_theme_font_size_override("font_size", FONT_SIZE)
-	label.add_theme_color_override("font_color", Color.WHITE)
-	label.add_theme_color_override("font_outline_color", Color.BLACK)
-	label.add_theme_constant_override("outline_size", 3)
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.text = StringTable.get_string(string_id)
-	page.add_child(label)
-	# New QoL addition (not in the reference, which never localized past its
-	# fixed English/Italian text): shrinks the font until the wrapped
-	# paragraph fits the box vertically - some translations (e.g. Russian on
-	# the Cards page) wrap to more lines than FONT_SIZE's box allows,
-	# clipping the end of the text since pages set clip_contents = true.
-	UIButtonStyle.fit_paragraph_to_box(label, size)
-
-func _build_presentation_page() -> Control:
-	var page := _make_page("help/help_presentation.png")
-	_add_label(page, UIConstants.HELP_PRESENTATION_LABEL_POS, Vector2(880, 305), StringTable.ID_HELP_PRESENTATION)
-	return page
-
-func _build_cards_page() -> Control:
-	var page := _make_page("help/help_card.png")
-	_add_label(page, UIConstants.HELP_CARDS_LABEL_POS, Vector2(600, 386), StringTable.ID_HELP_CARDS)
-	return page
-
-func _build_main_page() -> Control:
-	var page := _make_page("help/help_main_menu.png")
-	# The 4 corner buttons sit at y26-97, y236-307 (x2) and y442-513; Battle/
-	# Shop/Collection get the gap above the middle row (y97-199, clear of
-	# everything). Online and Options have no such clear gap of their own, so
-	# their captions sit directly on their own buttons instead, like the
-	# stat-panel captions elsewhere in Help already do.
-	_add_label(page, UIConstants.HELP_MAIN1_LABEL_POS, Vector2(300, 95), StringTable.ID_HELP_MAIN1, true)
-	_add_label(page, UIConstants.HELP_MAIN2_LABEL_POS, Vector2(300, 95), StringTable.ID_HELP_MAIN2, true)
-	_add_label(page, UIConstants.HELP_MAIN3_LABEL_POS, Vector2(300, 95), StringTable.ID_HELP_MAIN3, true)
-	_add_label(page, UIConstants.HELP_MAIN_ONLINE_LABEL_POS, Vector2(206, 113), StringTable.ID_HELP_MAIN_ONLINE, true)
-	_add_label(page, UIConstants.HELP_MAIN4_LABEL_POS, Vector2(334, 90), StringTable.ID_HELP_MAIN4, true)
-	return page
-
-func _build_deckselect_page() -> Control:
-	var page := _make_page("help/help_deck_select.png")
-	_add_label(page, UIConstants.HELP_DECKSELECT1_LABEL_POS, Vector2(960, 50), StringTable.ID_HELP_DECKSELECT1, true)
-	# Tall enough to cover the stats panel it sits over end to end - a partial
-	# overlap let the panel's own text half-show through the translucent
-	# backing, doubling as a ghost image instead of just being covered.
-	_add_label(page, UIConstants.HELP_DECKSELECT2_LABEL_POS, Vector2(253, 274), StringTable.ID_HELP_DECKSELECT2, true)
-	_add_label(page, UIConstants.HELP_DECKSELECT3_LABEL_POS, Vector2(253, 125), StringTable.ID_HELP_DECKSELECT3, true)
-	_add_label(page, UIConstants.HELP_DECKSELECT4_LABEL_POS, Vector2(393, 125), StringTable.ID_HELP_DECKSELECT4, true)
-	return page
-
-func _build_battle_page() -> Control:
-	var page := _make_page("help/help_battle.png")
-	_add_label(page, UIConstants.HELP_BATTLE1_LABEL_POS, Vector2(239, 125), StringTable.ID_HELP_BATTLE1, true)
-	_add_label(page, UIConstants.HELP_BATTLE2_LABEL_POS, Vector2(222, 125), StringTable.ID_HELP_BATTLE2, true)
-	# Kept clear of the stats panel just below it (starts y=292) - dipping into
-	# it left the panel's own "Card Stats" heading half-dimmed by the backing,
-	# reading as a ghost duplicate instead of one clean label.
-	_add_label(page, UIConstants.HELP_BATTLE3_LABEL_POS, Vector2(252, 80), StringTable.ID_HELP_BATTLE3, true)
-	_add_label(page, UIConstants.HELP_BATTLE4_LABEL_POS, Vector2(177, 35), StringTable.ID_HELP_BATTLE4, true)
-	_add_label(page, UIConstants.HELP_BATTLE5_LABEL_POS, Vector2(151, 46), StringTable.ID_HELP_BATTLE5, true)
-	return page
-
-func _build_shop_page() -> Control:
-	var page := _make_page("help/help_shop.png")
-	_add_label(page, UIConstants.HELP_SHOP1_LABEL_POS, Vector2(253, 125), StringTable.ID_HELP_SHOP1, true)
-	_add_label(page, UIConstants.HELP_SHOP2_LABEL_POS, Vector2(253, 110), StringTable.ID_HELP_SHOP2, true)
-	_add_label(page, UIConstants.HELP_SHOP3_LABEL_POS, Vector2(280, 268), StringTable.ID_HELP_SHOP3, true)
-	return page
-
-func _make_close_button() -> Button:
-	var btn := Button.new()
-	btn.position = UIConstants.HELP_CLOSE_BUTTON_POS
-	btn.size = Vector2(42, 42)
+func _style_close_button() -> void:
 	# A font glyph instead of button_delete_save.png's raster X: same X at any
 	# scale reads crisp (the PNG was low-res and blurred/blocked when the
 	# canvas stretched to a real screen size), and colors as plain text
 	# theme overrides instead of needing a separately-authored asset.
-	btn.text = "X"
-	btn.add_theme_font_override("font", Game.font_stylish)
-	btn.add_theme_font_size_override("font_size", UIConstants.HELP_CLOSE_BUTTON_FONT_SIZE)
-	btn.add_theme_color_override("font_color", UIConstants.COLOR_DANGER)
-	btn.add_theme_color_override("font_hover_color", UIConstants.COLOR_DANGER_HOVER)
-	btn.add_theme_color_override("font_pressed_color", UIConstants.COLOR_DANGER_PRESSED)
-	btn.add_theme_color_override("font_outline_color", Color.BLACK)
-	btn.add_theme_constant_override("outline_size", 2)
+	close_button.text = "X"
+	close_button.add_theme_font_override("font", Game.font_stylish)
+	close_button.add_theme_font_size_override("font_size", UIConstants.HELP_CLOSE_BUTTON_FONT_SIZE)
+	close_button.add_theme_color_override("font_color", UIConstants.COLOR_DANGER)
+	close_button.add_theme_color_override("font_hover_color", UIConstants.COLOR_DANGER_HOVER)
+	close_button.add_theme_color_override("font_pressed_color", UIConstants.COLOR_DANGER_PRESSED)
+	close_button.add_theme_color_override("font_outline_color", Color.BLACK)
+	close_button.add_theme_constant_override("outline_size", 2)
 
 	var normal := StyleBoxTexture.new()
 	normal.texture = load(ASSETS + "button_9patch_normal.png")
@@ -250,7 +151,7 @@ func _make_close_button() -> Button:
 	normal.content_margin_right = 4
 	normal.content_margin_top = 4
 	normal.content_margin_bottom = 4
-	btn.add_theme_stylebox_override("normal", normal)
+	close_button.add_theme_stylebox_override("normal", normal)
 
 	var pressed := StyleBoxTexture.new()
 	pressed.texture = load(ASSETS + "button_9patch_press.png")
@@ -262,10 +163,8 @@ func _make_close_button() -> Button:
 	pressed.content_margin_right = 4
 	pressed.content_margin_top = 4
 	pressed.content_margin_bottom = 4
-	btn.add_theme_stylebox_override("pressed", pressed)
-	btn.add_theme_stylebox_override("hover", normal)
-
-	return btn
+	close_button.add_theme_stylebox_override("pressed", pressed)
+	close_button.add_theme_stylebox_override("hover", normal)
 
 func _build_page_dots() -> void:
 	var total_w := PAGE_COUNT * DOT_SIZE + (PAGE_COUNT - 1) * DOT_GAP
