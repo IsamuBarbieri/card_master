@@ -1,8 +1,9 @@
 extends Node
 ## Verifies:
 ##  1. ai_table.csv's sliding window: each opponent's card pool never reaches
-##     past its own species (Image ID), and reaches at most 2 species below
-##     it - the fix for "an opponent also has the next opponent's card".
+##     past its own species (Image ID). First Set is a 2-wide window ending
+##     at its own species; Other Set is a 3-wide window ending at its own
+##     species too (unlike First Set, it no longer excludes it).
 ##  2. Lich/Odin/Dragon (gen_table.csv species 16-18, previously nobody's
 ##     signature opponent) are now real opponents between Kraken Queen and
 ##     The Void, and The Void/Rage Quit shifted to ids 19/20.
@@ -21,17 +22,18 @@ func _ready() -> void:
 		if i == AIManager.rage_quit_index():
 			continue
 		var ai: AIManager.AIData = AIManager.get_ai(i)
-		assert(ai.gen_first_max == ai.image_id, "opponent %d (%s) reaches past its own species: gen_first_max=%d image_id=%d" % [i, ai.ai_name, ai.gen_first_max, ai.image_id])
-		var expected_min: int = maxi(0, ai.image_id - 2)
-		assert(ai.gen_first_min == expected_min, "opponent %d (%s) window should start at %d, got %d" % [i, ai.ai_name, expected_min, ai.gen_first_min])
-		assert(ai.gen_other_max == maxi(0, ai.image_id - 1), "opponent %d (%s) Other Set should exclude its own species" % [i, ai.ai_name])
-		assert(ai.gen_other_min == expected_min, "opponent %d (%s) Other Set should share the window's low end" % [i, ai.ai_name])
+		assert(ai.gen_first_max == ai.image_id, "opponent %d (%s) First Set reaches past its own species: gen_first_max=%d image_id=%d" % [i, ai.ai_name, ai.gen_first_max, ai.image_id])
+		var expected_first_min: int = maxi(0, ai.image_id - 1)
+		assert(ai.gen_first_min == expected_first_min, "opponent %d (%s) First Set window should start at %d, got %d" % [i, ai.ai_name, expected_first_min, ai.gen_first_min])
+		assert(ai.gen_other_max == ai.image_id, "opponent %d (%s) Other Set reaches past its own species: gen_other_max=%d image_id=%d" % [i, ai.ai_name, ai.gen_other_max, ai.image_id])
+		var expected_other_min: int = maxi(0, ai.image_id - 2)
+		assert(ai.gen_other_min == expected_other_min, "opponent %d (%s) Other Set window should start at %d, got %d" % [i, ai.ai_name, expected_other_min, ai.gen_other_min])
 
 	# The exact example used to pin down the rule: Lamia (id 14).
 	var lamia: AIManager.AIData = AIManager.get_ai(14)
 	assert(lamia.ai_name == "Lamia")
-	assert(lamia.gen_first_min == 12 and lamia.gen_first_max == 14, "Lamia First Set should be (12-14)")
-	assert(lamia.gen_other_min == 12 and lamia.gen_other_max == 13, "Lamia Other Set should be (12-13)")
+	assert(lamia.gen_first_min == 13 and lamia.gen_first_max == 14, "Lamia First Set should be (13-14)")
+	assert(lamia.gen_other_min == 12 and lamia.gen_other_max == 14, "Lamia Other Set should be (12-14)")
 
 	# Lich/Odin/Dragon are now real opponents, The Void/Rage Quit shifted.
 	var lich: AIManager.AIData = AIManager.get_ai(16)
