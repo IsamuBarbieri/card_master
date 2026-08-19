@@ -141,25 +141,39 @@ func add_state_label(label: Label) -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_THEME_CHANGED and is_instance_valid(_label):
-		if has_theme_font_override("font"):
-			_label.add_theme_font_override("font", get_theme_font("font"))
-		if has_theme_font_size_override("font_size"):
-			_label.add_theme_font_size_override("font_size", get_theme_font_size("font_size"))
-		for key in _COLOR_KEYS:
-			if has_theme_color_override(key):
-				_label.add_theme_color_override(key, get_theme_color(key))
-			else:
-				_label.remove_theme_color_override(key)
-		for key in _CONSTANT_KEYS:
-			if has_theme_constant_override(key):
-				_label.add_theme_constant_override(key, get_theme_constant(key))
-			else:
-				_label.remove_theme_constant_override(key)
+		_sync_label_theme()
 		# Run last: the loop above has just written the resting font_color, and
 		# if the pointer is already over the button that is the wrong one.
 		_refresh_label_color()
 
+## Copies self's theme overrides onto _label right away. Split out of
+## _notification because NOTIFICATION_THEME_CHANGED does not fire
+## synchronously with add_theme_*_override - confirmed empirically:
+## UIButtonStyle.fit_button_text() shrinks font_size then immediately calls
+## lock_size(), and _sync_label_rect() (called from there) was still seeing
+## _label's OLD, larger font size when it computed _label's minimum size for
+## the smaller target box, clamping _label wider than the button and
+## breaking centering. Calling this directly, synchronously, right before
+## the resize in _sync_label_rect() closes that race - _label's minimum
+## size is already correct by the time its size is assigned.
+func _sync_label_theme() -> void:
+	if has_theme_font_override("font"):
+		_label.add_theme_font_override("font", get_theme_font("font"))
+	if has_theme_font_size_override("font_size"):
+		_label.add_theme_font_size_override("font_size", get_theme_font_size("font_size"))
+	for key in _COLOR_KEYS:
+		if has_theme_color_override(key):
+			_label.add_theme_color_override(key, get_theme_color(key))
+		else:
+			_label.remove_theme_color_override(key)
+	for key in _CONSTANT_KEYS:
+		if has_theme_constant_override(key):
+			_label.add_theme_constant_override(key, get_theme_constant(key))
+		else:
+			_label.remove_theme_constant_override(key)
+
 func _sync_label_rect() -> void:
+	_sync_label_theme()
 	_label.position = Vector2.ZERO
 	_label.size = size
 
@@ -181,6 +195,11 @@ func _set(property: StringName, value) -> bool:
 		# text to the top-left instead of wherever horizontal/vertical
 		# alignment says it should be). Sync immediately here too; return
 		# false so the real .size assignment still goes through normally.
+		# Theme synced first too - lock_size() (UIButtonStyle._pin_size) runs
+		# right after a font_size shrink, and without this _label's minimum
+		# size was still computed from the OLD, larger font, clamping it
+		# wider than the button being locked to and breaking centering.
+		_sync_label_theme()
 		_label.position = Vector2.ZERO
 		_label.size = value
 	return false
@@ -201,6 +220,18 @@ func lock_size(target_size: Vector2) -> void:
 	_locked_size = target_size
 	_locked = true
 	size = target_size
+	# Explicit, not left to the "size" _set() branch or the resized signal:
+	# when target_size equals the button's current size (the common case -
+	# UIButtonStyle shrinks the font, not the box), Godot never calls this
+	# script's _set("size", ...) override at all for a scene-loaded button -
+	# confirmed empirically. Its size was never assigned through a script
+	# property-set in the first place (the scene deserializer computes it
+	# from offset_left/top/right/bottom directly), so re-assigning the same
+	# value here doesn't route through the script hook the way it does for a
+	# code-built instance. resized wouldn't fire either, for the same
+	# unchanged-value reason. Calling this directly is the only path
+	# guaranteed to run regardless.
+	_sync_label_rect()
 
 func _process(_delta: float) -> void:
 	if _locked and not size.is_equal_approx(_locked_size):

@@ -59,22 +59,36 @@ func _ready() -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_THEME_CHANGED and is_instance_valid(_child):
-		if has_theme_font_override("font"):
-			_child.add_theme_font_override("font", get_theme_font("font"))
-		if has_theme_font_size_override("font_size"):
-			_child.add_theme_font_size_override("font_size", get_theme_font_size("font_size"))
-		for key in _COLOR_KEYS:
-			if has_theme_color_override(key):
-				_child.add_theme_color_override(key, get_theme_color(key))
-			else:
-				_child.remove_theme_color_override(key)
-		for key in _CONSTANT_KEYS:
-			if has_theme_constant_override(key):
-				_child.add_theme_constant_override(key, get_theme_constant(key))
-			else:
-				_child.remove_theme_constant_override(key)
+		_sync_child_theme()
+
+## Copies self's theme overrides onto _child right away. Split out of
+## _notification because NOTIFICATION_THEME_CHANGED does not fire
+## synchronously with add_theme_*_override - confirmed empirically on the
+## Button side (see FixedSizeButton's matching _sync_label_theme): a font
+## shrink immediately followed by a resize saw the CHILD still carrying the
+## old, larger font when its minimum size was computed for the smaller
+## target box, clamping it wider than intended and breaking centering.
+## Calling this directly, synchronously, right before a resize closes that
+## race - _child's minimum size is already correct by the time its size is
+## assigned.
+func _sync_child_theme() -> void:
+	if has_theme_font_override("font"):
+		_child.add_theme_font_override("font", get_theme_font("font"))
+	if has_theme_font_size_override("font_size"):
+		_child.add_theme_font_size_override("font_size", get_theme_font_size("font_size"))
+	for key in _COLOR_KEYS:
+		if has_theme_color_override(key):
+			_child.add_theme_color_override(key, get_theme_color(key))
+		else:
+			_child.remove_theme_color_override(key)
+	for key in _CONSTANT_KEYS:
+		if has_theme_constant_override(key):
+			_child.add_theme_constant_override(key, get_theme_constant(key))
+		else:
+			_child.remove_theme_constant_override(key)
 
 func _sync_child_rect() -> void:
+	_sync_child_theme()
 	_child.position = Vector2.ZERO
 	_child.size = size
 
@@ -97,6 +111,7 @@ func _set(property: StringName, value) -> bool:
 			# tiny content-based size instead of filling the label,
 			# misaligning every label's text to the top-left instead of
 			# wherever horizontal/vertical alignment says it should be).
+			_sync_child_theme()
 			_child.position = Vector2.ZERO
 			_child.size = value
 	return false
@@ -115,6 +130,11 @@ func lock_size(target_size: Vector2) -> void:
 	_locked_size = target_size
 	_locked = true
 	size = target_size
+	# Explicit, not left to the "size" _set() branch or the resized signal -
+	# see FixedSizeButton's matching lock_size() for why: when target_size
+	# equals the current size, neither of those fires for a scene-loaded
+	# instance, confirmed empirically there.
+	_sync_child_rect()
 
 func _process(_delta: float) -> void:
 	if _locked and not size.is_equal_approx(_locked_size):
