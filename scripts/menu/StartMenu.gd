@@ -24,28 +24,17 @@ const ASSETS := "res://assets/"
 ## Spyro-remake-style save select: 3 tall vertical slot cards side by side
 ## (layout/functionality idea only - our own panel art, fonts and colors),
 ## each numbered and showing name + stats, instead of the reference's thin
-## name-only bar. Sized as large as the 960x544 canvas allows (not the
-## original StartMenu's small name-only bar) since "canvas_items" stretch
-## scales this canvas up to fill the real screen - on a phone, small design-
-## canvas text reads as genuinely tiny, so every label below is sized to the
-## biggest font that still fits its box rather than an arbitrary pick.
-const SLOT_POSITIONS := UIConstants.STARTMENU_SLOT_POSITIONS
-const SLOT_SIZE := Vector2(280, 460)
-const DELETE_SIZE := Vector2(48, 48)
-const DELETE_MARGIN := 6.0  # gap from the card's top-right corner, both axes
+## name-only bar. Positions/sizes now live in StartMenu.tscn - every label is
+## sized to the biggest font that still fits its box rather than an
+## arbitrary pick.
 
 ## Collection icon grid: gen_table.csv has exactly 21 card types, so a 7x3
 ## grid (21 cells) covers the whole collection with no overflow/"+N" needed
-## - icon size/gap are picked to fill COLLECTION_BOX_SIZE exactly at 7x3, so
-## a full collection tiles the box precisely with no leftover slack. Sized up
-## from the original 33x44/256x140 now that dropping the "Collection:" text
-## label (redundant once the row below it is obviously a card grid) freed
-## enough vertical room to grow the icons within the same 7-wide layout the
-## slot's width was already tuned for.
+## - icon size/gap are picked to fill the box exactly at 7x3, so a full
+## collection tiles it precisely with no leftover slack.
 const COLLECTION_ICON_SIZE := Vector2(35, 47)
 const COLLECTION_ICON_GAP := 4.0
 const COLLECTION_COLUMNS := 7
-const COLLECTION_BOX_SIZE := Vector2(269, 149)
 
 var slot_buttons: Array = []        # Button x3
 var slot_number_labels: Array = []  # Label x3 ("1"/"2"/"3"), always visible
@@ -100,44 +89,24 @@ var nav: FocusNav
 var keyboard: OnScreenKeyboard = null
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
-
-	var bg := TextureRect.new()
-	bg.texture = load(ASSETS + "common_bkg_dark_clean.png")
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg.size = Vector2(SCREEN_W, SCREEN_H)
-	add_child(bg)
-
 	var font_stylish: Font = Game.font_stylish
 	for i in 3:
-		var slot := FixedSizeButton.new()
+		var slot: FixedSizeButton = get_node("Slot%d" % (i + 1))
 		UIButtonStyle.apply(slot)
-		slot.position = SLOT_POSITIONS[i]
-		slot.size = SLOT_SIZE
 		slot.pressed.connect(_on_slot_pressed.bind(i))
-		add_child(slot)
 		slot_buttons.append(slot)
 
-		var number_label := _make_dialog_label(UIConstants.STARTMENU_SLOT_NUMBER_LABEL_POS, Vector2(SLOT_SIZE.x, 46), font_stylish)
-		number_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		number_label.add_theme_font_size_override("font_size", UIConstants.STARTMENU_SLOT_NUMBER_FONT_SIZE)
-		number_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var number_label: Label = slot.get_node("NumberLabel")
+		number_label.add_theme_font_override("font", font_stylish)
 		number_label.text = str(i + 1)
-		slot.add_child(number_label)
 		slot_number_labels.append(number_label)
 
-		var name_label := _make_dialog_label(UIConstants.STARTMENU_SLOT_NAME_LABEL_POS, Vector2(SLOT_SIZE.x - 24, 40), font_stylish)
-		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		name_label.add_theme_font_size_override("font_size", UIConstants.STARTMENU_SLOT_NAME_FONT_SIZE)
-		name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		slot.add_child(name_label)
+		var name_label: Label = slot.get_node("NameLabel")
+		name_label.add_theme_font_override("font", font_stylish)
 		slot_name_labels.append(name_label)
 
-		var stat_label := _make_dialog_label(UIConstants.STARTMENU_SLOT_STAT_LABEL_POS, Vector2(SLOT_SIZE.x - 24, 62), font_stylish)
-		stat_label.add_theme_font_size_override("font_size", UIConstants.STARTMENU_SLOT_STAT_FONT_SIZE)
-		stat_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		slot.add_child(stat_label)
+		var stat_label: Label = slot.get_node("StatLabel")
+		stat_label.add_theme_font_override("font", font_stylish)
 		slot_stat_labels.append(stat_label)
 
 		# A slot's content is these labels, not the button's own text, so the
@@ -147,48 +116,26 @@ func _ready() -> void:
 		for label in [number_label, name_label, stat_label]:
 			slot.add_state_label(label)
 
-		# No "Collection:" caption above the grid - a row of card portraits
-		# reads as a collection on its own, and dropping the label frees the
-		# room COLLECTION_ICON_SIZE above grew into.
-		var collection_box := Control.new()
-		collection_box.position = UIConstants.STARTMENU_COLLECTION_BOX_POS
-		collection_box.size = COLLECTION_BOX_SIZE
-		collection_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		slot.add_child(collection_box)
+		var collection_box: Control = slot.get_node("CollectionBox")
 		slot_collection_boxes.append(collection_box)
 
 		# Coin total, icon + number the same way the battle end screen and
 		# the shop show it (CardManager.card_price's "[center]N [img]..."
-		# pattern) rather than a text label. Bottom of the card - grown into
-		# the strip the last-saved date used to occupy below it.
-		var coins_label := RichTextLabel.new()
-		coins_label.bbcode_enabled = true
-		coins_label.scroll_active = false
-		coins_label.position = Vector2(12, SLOT_SIZE.y - 60)
-		coins_label.size = Vector2(SLOT_SIZE.x - 24, 48)
+		# pattern) rather than a text label.
+		var coins_label: RichTextLabel = slot.get_node("CoinsLabel")
 		coins_label.add_theme_font_override("normal_font", font_stylish)
-		coins_label.add_theme_font_size_override("normal_font_size", UIConstants.STARTMENU_COINS_FONT_SIZE)
-		coins_label.add_theme_color_override("default_color", UIConstants.COLOR_GOLD)
-		coins_label.add_theme_constant_override("outline_size", 3)
-		coins_label.add_theme_color_override("font_outline_color", Color.BLACK)
-		coins_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		slot.add_child(coins_label)
 		slot_coins_labels.append(coins_label)
 
-		var empty_label := _make_dialog_label(UIConstants.STARTMENU_EMPTY_LABEL_POS, Vector2(SLOT_SIZE.x, SLOT_SIZE.y - 52), font_stylish)
-		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		empty_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		empty_label.add_theme_font_size_override("font_size", UIConstants.STARTMENU_EMPTY_SLOT_FONT_SIZE)
-		empty_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		slot.add_child(empty_label)
+		var empty_label: Label = slot.get_node("EmptyLabel")
+		empty_label.add_theme_font_override("font", font_stylish)
 		slot_empty_labels.append(empty_label)
 		# "New" is what an empty slot shows, so it lights up with the pointer
 		# like the filled slots' own labels do.
 		slot.add_state_label(empty_label)
 
-		var del := _make_delete_button(SLOT_POSITIONS[i] + Vector2(SLOT_SIZE.x - DELETE_SIZE.x - DELETE_MARGIN, DELETE_MARGIN))
+		var del: Button = get_node("DeleteButton%d" % (i + 1))
+		_style_delete_button(del)
 		del.pressed.connect(_on_delete_pressed.bind(i))
-		add_child(del)
 		delete_buttons.append(del)
 
 	# Back at the slot list, this copy is holding no save - drop the lock so
@@ -279,10 +226,7 @@ func _on_keyboard_cancelled() -> void:
 	_close_keyboard()
 	_on_name_cancel_pressed()
 
-func _make_delete_button(pos: Vector2) -> Button:
-	var btn := Button.new()
-	btn.position = pos
-	btn.size = DELETE_SIZE
+func _style_delete_button(btn: Button) -> void:
 	# A font glyph instead of button_delete_save.png's raster X: same X at any
 	# scale reads crisp (the PNG was low-res and blurred/blocked when the
 	# canvas stretched to a real screen size), and colors as plain text
@@ -304,8 +248,6 @@ func _make_delete_button(pos: Vector2) -> Button:
 	btn.add_theme_stylebox_override("hover", empty)
 	btn.add_theme_stylebox_override("pressed", empty)
 	btn.add_theme_stylebox_override("focus", empty)
-
-	return btn
 
 func _refresh_slots() -> void:
 	for i in 3:
@@ -361,110 +303,35 @@ func _rebuild_collection_icons(box: Control, card_defs: Array) -> void:
 
 # --------------------------------------------------------------- dialogs
 
-func _build_dialog_shell(panel_size: Vector2, top_y: float = -1.0) -> Control:
-	var overlay := Control.new()
-	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	overlay.visible = false
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-
-	var dim := ColorRect.new()
-	dim.color = UIConstants.STARTMENU_DIM_COLOR
-	dim.size = Vector2(SCREEN_W, SCREEN_H)
-	dim.mouse_filter = Control.MOUSE_FILTER_STOP
-	overlay.add_child(dim)
-
-	var panel := Control.new()
-	# `top_y` pins a dialog near the top of the screen instead of centring it.
-	# Android's on-screen keyboard covers the bottom half, and a centred
-	# name-entry box put the field and its OK button right under it.
-	panel.position = Vector2(
-		(SCREEN_W - panel_size.x) / 2.0,
-		top_y if top_y >= 0.0 else (SCREEN_H - panel_size.y) / 2.0)
-	panel.size = panel_size
-	overlay.add_child(panel)
-
-	var panel_bg := UIPanel.make(panel_size)
-	panel.add_child(panel_bg)
-
-	add_child(overlay)
-	overlay.set_meta("panel", panel)
-	return overlay
-
-func _make_dialog_label(pos: Vector2, label_size: Vector2, font: Font) -> Label:
-	var label := FixedSizeLabel.new()
-	label.position = pos
-	label.size = label_size
-	label.add_theme_font_override("font", font)
-	label.add_theme_font_size_override("font_size", UIConstants.STARTMENU_DIALOG_LABEL_FONT_SIZE)
-	label.add_theme_color_override("font_color", Color.BLACK)
-	label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	label.add_theme_constant_override("shadow_offset_x", 1)
-	label.add_theme_constant_override("shadow_offset_y", 1)
-	return label
-
-func _make_dialog_button(text: String, pos: Vector2, btn_size: Vector2, font: Font) -> Button:
-	var btn := FixedSizeButton.new()
-	UIButtonStyle.apply(btn)
-	btn.text = text
-	btn.position = pos
-	btn.size = btn_size
-	btn.add_theme_font_override("font", font)
-	btn.add_theme_font_size_override("font_size", UIConstants.STARTMENU_DIALOG_BUTTON_FONT_SIZE)
-	btn.add_theme_color_override("font_color", Color.BLACK)
-	btn.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	btn.add_theme_constant_override("shadow_offset_x", 1)
-	btn.add_theme_constant_override("shadow_offset_y", 1)
-	UIButtonStyle.fit_button_text(btn)
-	return btn
-
 ## Name entry is the one dialog a phone player has to read and type into, so
 ## it is the widest and the highest on the screen: Android's keyboard eats the
 ## bottom half, and everything here has to stay above it.
 const NAME_DIALOG_SIZE := Vector2(760, 268)
-const NAME_DIALOG_TOP := 16.0
 
 func _build_name_dialog() -> void:
 	var font_stylish: Font = Game.font_stylish
-	name_dialog = _build_dialog_shell(NAME_DIALOG_SIZE, NAME_DIALOG_TOP)
-	var panel: Control = name_dialog.get_meta("panel")
+	name_dialog = $NameDialog
+	var panel: Control = $NameDialog/Panel
 
-	var label := _make_dialog_label(UIConstants.STARTMENU_NAME_LABEL_POS, Vector2(NAME_DIALOG_SIZE.x - 60, 48), font_stylish)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", UIConstants.STARTMENU_NAME_DIALOG_FONT_SIZE)
+	var label: Label = panel.get_node("PromptLabel")
+	label.add_theme_font_override("font", font_stylish)
 	label.text = StringTable.get_string(StringTable.ID_ENTER_NAME)
-	panel.add_child(label)
 	UIButtonStyle.fit_button_text(label)
 
-	name_edit = LineEdit.new()
-	name_edit.position = UIConstants.STARTMENU_NAME_EDIT_POS
-	name_edit.size = Vector2(NAME_DIALOG_SIZE.x - 60 - NAME_DOT_SIZE - 16.0, 66)
-	name_edit.max_length = 20
+	name_edit = panel.get_node("NameEdit")
 	name_edit.add_theme_font_override("font", font_stylish)
-	name_edit.add_theme_font_size_override("font_size", UIConstants.STARTMENU_NAME_DIALOG_FONT_SIZE)
-	name_edit.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_edit.text_changed.connect(_on_name_typed)
-	panel.add_child(name_edit)
 
 	# A filled dot rather than a tick or a cross: at this size a glyph is a few
 	# dark pixels either way and the two read alike at a glance, while colour
 	# and a solid shape carry across the room. Drawn as a rounded StyleBox so
 	# it doesn't depend on a font having the character at all - font_stylish
 	# has neither, which is why this was on the default font before.
-	name_check_dot = Panel.new()
-	name_check_dot.position = Vector2(name_edit.position.x + name_edit.size.x + 16.0, 74 + (66 - NAME_DOT_SIZE) / 2.0)
-	name_check_dot.size = Vector2(NAME_DOT_SIZE, NAME_DOT_SIZE)
-	name_check_dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	name_check_dot.visible = false
-	panel.add_child(name_check_dot)
+	name_check_dot = panel.get_node("NameCheckDot")
 
 	# Why the dot is red, when it isn't "somebody has this name".
-	name_error_label = _make_dialog_label(UIConstants.STARTMENU_NAME_ERROR_LABEL_POS, Vector2(NAME_DIALOG_SIZE.x - 60, 40), font_stylish)
-	name_error_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_error_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	name_error_label.add_theme_font_size_override("font_size", UIConstants.STARTMENU_NAME_ERROR_FONT_SIZE)
-	name_error_label.add_theme_color_override("font_color", NAME_COLOR_TAKEN)
-	panel.add_child(name_error_label)
+	name_error_label = panel.get_node("ErrorLabel")
+	name_error_label.add_theme_font_override("font", font_stylish)
 
 	# Typing fires per keystroke; the server is asked once the player pauses.
 	name_check_timer = Timer.new()
@@ -475,45 +342,45 @@ func _build_name_dialog() -> void:
 
 	# Both buttons on the dialog's last row, inside its 268px height so the
 	# whole thing clears an Android keyboard.
-	var btn_w := (NAME_DIALOG_SIZE.x - 60 - 20) / 2.0
-	name_ok_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_OK),
-		UIConstants.STARTMENU_NAME_OK_BTN_POS, Vector2(btn_w, 56), font_stylish)
+	name_ok_btn = panel.get_node("OkButton")
+	UIButtonStyle.apply(name_ok_btn)
+	name_ok_btn.text = StringTable.get_string(StringTable.ID_OK)
+	name_ok_btn.add_theme_font_override("font", font_stylish)
 	name_ok_btn.pressed.connect(_on_name_ok_pressed)
-	panel.add_child(name_ok_btn)
+	UIButtonStyle.fit_button_text(name_ok_btn)
 
-	name_cancel_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_CANCEL),
-		Vector2(30 + btn_w + 20, 196), Vector2(btn_w, 56), font_stylish)
+	name_cancel_btn = panel.get_node("CancelButton")
+	UIButtonStyle.apply(name_cancel_btn)
+	name_cancel_btn.text = StringTable.get_string(StringTable.ID_CANCEL)
+	name_cancel_btn.add_theme_font_override("font", font_stylish)
 	name_cancel_btn.pressed.connect(_on_name_cancel_pressed)
-	panel.add_child(name_cancel_btn)
+	UIButtonStyle.fit_button_text(name_cancel_btn)
 
 func _build_confirm_dialog() -> void:
 	var font_stylish: Font = Game.font_stylish
-	# Wider than it was, because it now carries two warnings (the save, then
-	# the online account) and the answer to that was shrinking the text to
-	# 18px - the smallest in the game, in a box asking to delete something
-	# permanently. The room comes from the panel instead.
-	confirm_dialog = _build_dialog_shell(Vector2(600, 320))
-	var panel: Control = confirm_dialog.get_meta("panel")
+	confirm_dialog = $ConfirmDialog
+	var panel: Control = $ConfirmDialog/Panel
 
-	confirm_title_label = _make_dialog_label(UIConstants.STARTMENU_CONFIRM_TITLE_POS, Vector2(560, 66), font_stylish)
-	confirm_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	confirm_title_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-	panel.add_child(confirm_title_label)
+	confirm_title_label = panel.get_node("TitleLabel")
+	confirm_title_label.add_theme_font_override("font", font_stylish)
 
-	confirm_msg_label = _make_dialog_label(UIConstants.STARTMENU_CONFIRM_MSG_POS, Vector2(560, 140), font_stylish)
-	confirm_msg_label.add_theme_font_size_override("font_size", UIConstants.STARTMENU_CONFIRM_MSG_FONT_SIZE)
-	confirm_msg_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	confirm_msg_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	confirm_msg_label = panel.get_node("MsgLabel")
+	confirm_msg_label.add_theme_font_override("font", font_stylish)
 	confirm_msg_label.text = StringTable.get_string(StringTable.ID_DELETE_SLOT_MSG)
-	panel.add_child(confirm_msg_label)
 
-	confirm_ok_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_OK), UIConstants.STARTMENU_CONFIRM_OK_BTN_POS, Vector2(270, 56), font_stylish)
+	confirm_ok_btn = panel.get_node("OkButton")
+	UIButtonStyle.apply(confirm_ok_btn)
+	confirm_ok_btn.text = StringTable.get_string(StringTable.ID_OK)
+	confirm_ok_btn.add_theme_font_override("font", font_stylish)
 	confirm_ok_btn.pressed.connect(_on_confirm_delete_ok)
-	panel.add_child(confirm_ok_btn)
+	UIButtonStyle.fit_button_text(confirm_ok_btn)
 
-	confirm_cancel_btn = _make_dialog_button(StringTable.get_string(StringTable.ID_CANCEL), UIConstants.STARTMENU_CONFIRM_CANCEL_BTN_POS, Vector2(270, 56), font_stylish)
+	confirm_cancel_btn = panel.get_node("CancelButton")
+	UIButtonStyle.apply(confirm_cancel_btn)
+	confirm_cancel_btn.text = StringTable.get_string(StringTable.ID_CANCEL)
+	confirm_cancel_btn.add_theme_font_override("font", font_stylish)
 	confirm_cancel_btn.pressed.connect(_on_confirm_delete_cancel)
-	panel.add_child(confirm_cancel_btn)
+	UIButtonStyle.fit_button_text(confirm_cancel_btn)
 
 # --------------------------------------------------------------- handlers
 
