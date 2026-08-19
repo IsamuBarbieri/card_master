@@ -17,8 +17,6 @@ const ASSETS := "res://assets/"
 ## icon's 265px on-screen width that span is about 125px, which is what the
 ## heading has to fit inside.
 const TITLE_ICON_GAP_WIDTH := 125.0
-## Matches MainMenu's own button labels and Options' title.
-const TITLE_FONT_SIZE := 46
 
 @onready var title: Label = $Title
 @onready var play_button: Button = $PlayButton
@@ -31,8 +29,6 @@ const TITLE_FONT_SIZE := 46
 var nav: FocusNav
 
 func _ready() -> void:
-	var font_stylish: Font = Game.font_stylish
-
 	# Same treatment Options gives its own title: the button art laid behind
 	# the heading, with the text showing through the transparent gap between
 	# the two icon halves. White here rather than black - both halves of this
@@ -40,18 +36,17 @@ func _ready() -> void:
 	# Black at MainMenu's own button size (46), not this screen's smaller body
 	# size, so the heading matches "Shop"/"Options" wherever they appear.
 	title.add_theme_font_override("font", Game.font_title)
-	title.add_theme_font_size_override("font_size", TITLE_FONT_SIZE)
 	title.text = StringTable.get_string(StringTable.ID_ONLINE)
 	# Measured clear gap between the two globes at the icon's on-screen width.
 	UIButtonStyle.fit_menu_button_text(title, TITLE_ICON_GAP_WIDTH)
 
-	_setup_button(play_button, StringTable.get_string(StringTable.ID_CHALLENGE), font_stylish)
+	_setup_button(play_button, StringTable.get_string(StringTable.ID_CHALLENGE))
 	play_button.pressed.connect(_on_play_pressed)
 
-	_setup_button(leaderboard_button, StringTable.get_string(StringTable.ID_LEADERBOARD), font_stylish)
+	_setup_button(leaderboard_button, StringTable.get_string(StringTable.ID_LEADERBOARD))
 	leaderboard_button.pressed.connect(_on_leaderboard_pressed)
 
-	_setup_button(back_button, StringTable.get_string(StringTable.ID_BACK), font_stylish)
+	_setup_button(back_button, StringTable.get_string(StringTable.ID_BACK))
 	back_button.pressed.connect(_on_back_pressed)
 
 	# Online battles pay nothing on purpose (the AI ladder is where coins come
@@ -141,17 +136,9 @@ func _refresh_standing() -> void:
 
 # ------------------------------------------------------------------- widgets
 
-const LABEL_FONT_SIZE := 36
-
-func _setup_button(btn: Button, label: String, font: Font) -> void:
+func _setup_button(btn: Button, label: String) -> void:
 	UIButtonStyle.apply(btn)
 	btn.text = label
-	btn.add_theme_font_override("font", font)
-	btn.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
-	btn.add_theme_color_override("font_color", Color.BLACK)
-	btn.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	btn.add_theme_constant_override("shadow_offset_x", 1)
-	btn.add_theme_constant_override("shadow_offset_y", 1)
 	UIButtonStyle.fit_button_text(btn)
 
 ## B is wired through nav.cancelled, the same channel Options and Opponents

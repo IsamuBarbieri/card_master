@@ -34,6 +34,7 @@ texture = ExtResource("3")
 expand_mode = 1
 
 [node name="Title" type="Label" parent="."]
+theme_override_font_sizes/font_size = 46
 text = "Online"
 layout_mode = 0
 offset_left = 348.0
@@ -45,6 +46,12 @@ vertical_alignment = 1
 script = ExtResource("4")
 
 [node name="PlayButton" type="Button" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("6")
+theme_override_font_sizes/font_size = 36
 text = "Sfida"
 layout_mode = 0
 offset_left = 343.0
@@ -54,6 +61,12 @@ offset_bottom = 232.0
 script = ExtResource("5")
 
 [node name="LeaderboardButton" type="Button" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("6")
+theme_override_font_sizes/font_size = 36
 text = "Classifica"
 layout_mode = 0
 offset_left = 343.0
@@ -63,6 +76,12 @@ offset_bottom = 314.0
 script = ExtResource("5")
 
 [node name="BackButton" type="Button" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("6")
+theme_override_font_sizes/font_size = 36
 text = "Indietro"
 layout_mode = 0
 offset_left = 42.0
