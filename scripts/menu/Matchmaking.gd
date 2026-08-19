@@ -5,17 +5,21 @@ extends Control
 ## computes the matchmaking weight), then polls until an opponent of similar
 ## deck power turns up. Polling rather than a realtime socket: the wait is
 ## measured in seconds and a poll is a tenth of the code.
+##
+## Static layout (background, label positions/colors, cancel button
+## position) lives in Matchmaking.tscn. All text stays script-assigned - it's
+## either StringTable-sourced or live search/timer state.
 
-const SCREEN_W := 960
-const SCREEN_H := 544
 const ASSETS := "res://assets/"
 const POLL_SECONDS := 1.5
 ## Three dots cycling, at the same unhurried pace as the rest of the UI.
 const DOT_SECONDS := 0.4
 
-var status_label: Label
-var power_label: Label
-var elapsed_label: Label
+@onready var status_label: Label = $StatusLabel
+@onready var power_label: Label = $PowerLabel
+@onready var elapsed_label: Label = $ElapsedLabel
+@onready var cancel: FixedSizeButton = $CancelButton
+
 var deck: Array = []
 var searching := false
 var _elapsed := 0.0
@@ -23,32 +27,12 @@ var _dot_timer := 0.0
 var _dots := 0
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
-
-	var bg := TextureRect.new()
-	bg.texture = load(ASSETS + "common_bkg_clean.png")
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg.size = Vector2(SCREEN_W, SCREEN_H)
-	add_child(bg)
-
-	status_label = _make_label(UIConstants.MATCHMAKING_STATUS_LABEL_POS, 40, Color.BLACK)
-	power_label = _make_label(UIConstants.MATCHMAKING_POWER_LABEL_POS, 26, UIConstants.MATCHMAKING_POWER_LABEL_COLOR)
-	elapsed_label = _make_label(UIConstants.MATCHMAKING_ELAPSED_LABEL_POS, 22, UIConstants.MATCHMAKING_ELAPSED_LABEL_COLOR)
-
-	var cancel := FixedSizeButton.new()
 	UIButtonStyle.apply(cancel)
 	cancel.text = StringTable.get_string(StringTable.ID_CANCEL)
-	cancel.position = UIConstants.BACK_BUTTON_POS
-	cancel.size = Vector2(160, 56)
-	cancel.add_theme_font_override("font", Game.font_stylish)
-	cancel.add_theme_font_size_override("font_size", UIConstants.LABEL_FONT_SIZE_36)
-	cancel.add_theme_color_override("font_color", Color.BLACK)
 	cancel.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
 	cancel.add_theme_constant_override("shadow_offset_x", 1)
 	cancel.add_theme_constant_override("shadow_offset_y", 1)
 	cancel.pressed.connect(_on_cancel_pressed)
-	add_child(cancel)
 	UIButtonStyle.fit_button_text(cancel)
 
 	# Cancel sits where Back sits everywhere else and answers to B the same
@@ -168,18 +152,6 @@ func _process(delta: float) -> void:
 		_dots = (_dots + 1) % 4
 		status_label.text = StringTable.get_string(StringTable.ID_SEARCHING_OPPONENT).trim_suffix("...") \
 			+ ".".repeat(_dots)
-
-func _make_label(pos: Vector2, font_size: int, color: Color) -> Label:
-	var label := Label.new()
-	label.position = pos
-	label.size = Vector2(SCREEN_W, 48)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.add_theme_font_override("font", Game.font_stylish if font_size >= 40 else Game.font_info)
-	label.add_theme_font_size_override("font_size", font_size)
-	label.add_theme_color_override("font_color", color)
-	add_child(label)
-	return label
 
 func _on_cancel_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_back_sound.wav")

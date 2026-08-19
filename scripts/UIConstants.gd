@@ -163,13 +163,6 @@ const COLLECTION_CARD_SCROLL_POS := Vector2(270, 86)
 const COLLECTION_INFO_BKG_POS := Vector2(236, 375)
 const COLLECTION_STAT_PANEL_POS := Vector2(246, 381)
 
-# --------------------------------------------------------------- Matchmaking
-
-const MATCHMAKING_POWER_LABEL_COLOR := Color(0.20, 0.18, 0.14)
-const MATCHMAKING_ELAPSED_LABEL_COLOR := Color(0.35, 0.30, 0.25)
-const MATCHMAKING_STATUS_LABEL_POS := Vector2(0, 200)
-const MATCHMAKING_POWER_LABEL_POS := Vector2(0, 262)
-const MATCHMAKING_ELAPSED_LABEL_POS := Vector2(0, 300)
 
 # --------------------------------------------------------------- Help
 
