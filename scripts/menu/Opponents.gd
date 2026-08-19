@@ -97,31 +97,17 @@ func _setup_nav() -> void:
 	nav.focus_by_meta(selected_index)
 
 func _build_ui() -> void:
-	var font_stylish: Font = Game.font_stylish
-
 	title.add_theme_font_override("font", Game.font_title)
-	title.add_theme_font_size_override("font_size", UIConstants.LABEL_FONT_SIZE_36)
-	title.add_theme_color_override("font_color", Color.BLACK)
-	title.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	title.add_theme_constant_override("shadow_offset_x", 1)
-	title.add_theme_constant_override("shadow_offset_y", 1)
 	title.text = StringTable.get_string(StringTable.ID_OPPONENT_SELECT)
 	UIButtonStyle.fit_button_text(title)
 
-	label_desc.add_theme_font_override("font", font_stylish)
-	label_desc.add_theme_font_size_override("font_size", UIConstants.LABEL_FONT_SIZE_36)
-	label_desc.add_theme_color_override("font_color", Color.BLACK)
-	label_desc.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	label_desc.add_theme_constant_override("shadow_offset_x", 1)
-	label_desc.add_theme_constant_override("shadow_offset_y", 1)
-
-	_setup_text_button(back_button, StringTable.get_string(StringTable.ID_BACK), font_stylish)
+	_setup_text_button(back_button, StringTable.get_string(StringTable.ID_BACK))
 	back_button.pressed.connect(_on_back_pressed)
 
 	# ID_PLAY_BATTLE ("Play"/"Gioca") rather than ID_SELECT - the button
 	# commits to the currently-previewed opponent and launches deck select,
 	# "Play" says that more directly, in both mouse and gamepad mode.
-	_setup_text_button(select_button, StringTable.get_string(StringTable.ID_PLAY_BATTLE), font_stylish)
+	_setup_text_button(select_button, StringTable.get_string(StringTable.ID_PLAY_BATTLE))
 	select_button.pressed.connect(_on_select_pressed)
 
 	var grid := GridContainer.new()
@@ -151,15 +137,9 @@ func _build_ui() -> void:
 		item.add_child(outline)
 		item_outlines.append(outline)
 
-func _setup_text_button(btn: Button, label: String, font: Font) -> void:
+func _setup_text_button(btn: Button, label: String) -> void:
 	UIButtonStyle.apply(btn)
 	btn.text = label
-	btn.add_theme_font_override("font", font)
-	btn.add_theme_font_size_override("font_size", UIConstants.LABEL_FONT_SIZE_36)
-	btn.add_theme_color_override("font_color", Color.BLACK)
-	btn.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	btn.add_theme_constant_override("shadow_offset_x", 1)
-	btn.add_theme_constant_override("shadow_offset_y", 1)
 	UIButtonStyle.fit_button_text(btn)
 
 # Rebuilds one grid item's portrait/overlay: card_back+"???" if locked,

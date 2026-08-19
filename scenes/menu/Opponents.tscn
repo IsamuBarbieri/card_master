@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" path="res://assets/common_bkg_clean.png" id="2"]
 [ext_resource type="Script" path="res://scripts/FixedSizeLabel.gd" id="3"]
 [ext_resource type="Script" path="res://scripts/FixedSizeButton.gd" id="4"]
+[ext_resource type="FontFile" path="res://assets/fonts/FiraSans-Regular.ttf" id="5"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_outer"]
 bg_color = Color(0.96, 0.93, 0.85, 0.94)
@@ -69,6 +70,11 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
 
 [node name="Title" type="Label" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 36
 text = "Seleziona il Tuo Avversario"
 layout_mode = 0
 offset_left = 300.0
@@ -80,6 +86,12 @@ vertical_alignment = 1
 script = ExtResource("3")
 
 [node name="LabelDesc" type="Label" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("5")
+theme_override_font_sizes/font_size = 36
 text = "Avversario: Slime"
 layout_mode = 0
 offset_left = 231.0
@@ -90,6 +102,12 @@ vertical_alignment = 1
 script = ExtResource("3")
 
 [node name="BackButton" type="Button" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("5")
+theme_override_font_sizes/font_size = 36
 text = "Indietro"
 layout_mode = 0
 offset_left = 42.0
@@ -99,6 +117,12 @@ offset_bottom = 519.0
 script = ExtResource("4")
 
 [node name="SelectButton" type="Button" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("5")
+theme_override_font_sizes/font_size = 36
 text = "Gioca"
 layout_mode = 0
 offset_left = 805.0
