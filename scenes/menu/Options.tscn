@@ -32,6 +32,7 @@ texture = ExtResource("3")
 expand_mode = 1
 
 [node name="Title" type="Label" parent="."]
+text = "Opzioni"
 layout_mode = 0
 offset_left = 348.0
 offset_top = 13.0
@@ -41,6 +42,7 @@ horizontal_alignment = 1
 script = ExtResource("4")
 
 [node name="LabelMusic" type="Label" parent="."]
+text = "Musica:"
 layout_mode = 0
 offset_left = 64.0
 offset_top = 170.0
@@ -51,6 +53,7 @@ vertical_alignment = 1
 script = ExtResource("4")
 
 [node name="LabelSfx" type="Label" parent="."]
+text = "Effetti:"
 layout_mode = 0
 offset_left = 64.0
 offset_top = 243.0
@@ -61,6 +64,7 @@ vertical_alignment = 1
 script = ExtResource("4")
 
 [node name="LabelLang" type="Label" parent="."]
+text = "Lingua:"
 layout_mode = 0
 offset_left = 64.0
 offset_top = 326.0
@@ -89,6 +93,7 @@ max_value = 100.0
 step = 1.0
 
 [node name="LangPopup" type="OptionButton" parent="."]
+text = "Italiano"
 layout_mode = 0
 offset_left = 300.0
 offset_top = 328.0
@@ -96,6 +101,7 @@ offset_right = 660.0
 offset_bottom = 384.0
 
 [node name="BackButton" type="Button" parent="."]
+text = "Indietro"
 layout_mode = 0
 offset_left = 42.0
 offset_top = 463.0
@@ -104,6 +110,7 @@ offset_bottom = 519.0
 script = ExtResource("5")
 
 [node name="CreditsButton" type="Button" parent="."]
+text = "Crediti"
 layout_mode = 0
 offset_left = 412.0
 offset_top = 463.0
@@ -112,6 +119,7 @@ offset_bottom = 519.0
 script = ExtResource("5")
 
 [node name="TitleScreenButton" type="Button" parent="."]
+text = "Titolo"
 layout_mode = 0
 offset_left = 803.0
 offset_top = 463.0

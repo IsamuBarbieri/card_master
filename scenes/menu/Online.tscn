@@ -34,6 +34,7 @@ texture = ExtResource("3")
 expand_mode = 1
 
 [node name="Title" type="Label" parent="."]
+text = "Online"
 layout_mode = 0
 offset_left = 348.0
 offset_top = 13.0
@@ -44,6 +45,7 @@ vertical_alignment = 1
 script = ExtResource("4")
 
 [node name="PlayButton" type="Button" parent="."]
+text = "Sfida"
 layout_mode = 0
 offset_left = 343.0
 offset_top = 170.0
@@ -52,6 +54,7 @@ offset_bottom = 232.0
 script = ExtResource("5")
 
 [node name="LeaderboardButton" type="Button" parent="."]
+text = "Classifica"
 layout_mode = 0
 offset_left = 343.0
 offset_top = 252.0
@@ -60,6 +63,7 @@ offset_bottom = 314.0
 script = ExtResource("5")
 
 [node name="BackButton" type="Button" parent="."]
+text = "Indietro"
 layout_mode = 0
 offset_left = 42.0
 offset_top = 463.0
@@ -90,6 +94,7 @@ horizontal_alignment = 1
 clip_text = true
 
 [node name="StatusLabel" type="Label" parent="."]
+text = "..."
 layout_mode = 0
 offset_top = 404.0
 offset_right = 960.0
@@ -101,6 +106,7 @@ horizontal_alignment = 1
 clip_text = true
 
 [node name="NoteLabel" type="Label" parent="."]
+text = "Le sfide online non danno monete"
 layout_mode = 0
 offset_top = 506.0
 offset_right = 960.0

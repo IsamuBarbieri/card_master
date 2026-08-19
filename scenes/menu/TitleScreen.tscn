@@ -22,6 +22,7 @@ texture = ExtResource("2")
 expand_mode = 1
 
 [node name="PromptLabel" type="Label" parent="."]
+text = "Clicca per iniziare"
 layout_mode = 0
 offset_left = 155.0
 offset_top = 227.0

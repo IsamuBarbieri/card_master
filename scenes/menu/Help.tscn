@@ -193,8 +193,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_swbsk")
 
 [node name="Label1" type="Label" parent="Scroll/Pages/PresentationPage" unique_id=877892537]
+text = "Card Master é un gioco di carte collezionabili, dove 2 avversari si sfidano posizionando delle carte su una griglia 4x4. Ogni giocatore sceglie 5 carte tra tutte quelle possedute. Il gioco termina quando tutte le carte di entrambi i giocatori vengono posizionate. Il vincitore é colui che a fine partita possiede piú carte del suo colore. Il giocatore vincente puó sottrarre all'avversario una carta catturata durante la partita."
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(880.0, 305.0)
 offset_left = 47.0
 offset_top = 63.0
 offset_right = 927.0
@@ -238,8 +240,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_hwbgu")
 
 [node name="Label1" type="Label" parent="Scroll/Pages/CardsPage" unique_id=1304822684]
+text = "Le carte hanno 4 valori: Attacco, Tipo, Difesa Fisica e Magica. I valori vanno da 0 a 255 e sono mostrati come classe da 0 a F - più alto il valore, più alta la classe. Il Tipo può essere Fisico, Magico, Flessibile o Assalto: Fisico attacca la Difesa Fisica, Magico quella Magica, Flessibile la più bassa delle due, e Assalto usa il tuo valore più alto contro quello più basso dell'avversario. Le carte hanno fino a 8 frecce: una freccia verso una carta senza freccia opposta la cattura subito, verso una freccia opposta inizia il combattimento. Il colore del valore (dal verde al rosso) indica il livello - rosso significa al massimo."
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(600.0, 386.0)
 offset_left = 31.0
 offset_top = 36.0
 offset_right = 631.0
@@ -283,8 +287,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_exclg")
 
 [node name="Label1" type="Label" parent="Scroll/Pages/MainPage" unique_id=1757080882]
+text = "Combatti gli avversari per conquistare nuove carte, potenziarle e sbloccare nuovi sfidanti"
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(300.0, 95.0)
 offset_left = 330.0
 offset_top = 15.0
 offset_right = 630.0
@@ -308,8 +314,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_os11e")
 
 [node name="Label2" type="Label" parent="Scroll/Pages/MainPage" unique_id=544728075]
+text = "Vendi e compra nuove carte da usare in battaglia"
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(300.0, 95.0)
 offset_left = 30.0
 offset_top = 225.0
 offset_right = 330.0
@@ -333,8 +341,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_7gn6w")
 
 [node name="Label3" type="Label" parent="Scroll/Pages/MainPage" unique_id=277937000]
+text = "Ammira la tua collezione di carte in alta risoluzione"
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(300.0, 95.0)
 offset_left = 629.0
 offset_top = 225.0
 offset_right = 929.0
@@ -358,8 +368,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_48exy")
 
 [node name="LabelOnline" type="Label" parent="Scroll/Pages/MainPage" unique_id=1011696415]
+text = "Gioca online contro avversari veri"
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(206.0, 113.0)
 offset_left = 377.0
 offset_top = 216.0
 offset_right = 583.0
@@ -383,8 +395,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_7d6ru")
 
 [node name="Label4" type="Label" parent="Scroll/Pages/MainPage" unique_id=904815051]
+text = "Cambia la lingua di gioco e modifica i volumi audio. Non dimenticarti di guadare i Crediti ^^"
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(334.0, 90.0)
 offset_left = 313.0
 offset_top = 432.0
 offset_right = 647.0
@@ -428,8 +442,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_3qa0x")
 
 [node name="Label1" type="Label" parent="Scroll/Pages/DeckSelectPage" unique_id=1342058866]
+text = "Questo é il Deck Menu. Qui puoi scegliere quali carte usare per giocare."
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(960.0, 50.0)
 offset_top = 20.0
 offset_right = 960.0
 offset_bottom = 70.0
@@ -452,8 +468,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_ig1ew")
 
 [node name="Label2" type="Label" parent="Scroll/Pages/DeckSelectPage" unique_id=125317417]
+text = "Puoi spostare le carte dalla lista ai preferiti, e vice versa, trascinandole."
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(253.0, 274.0)
 offset_left = 353.0
 offset_top = 95.0
 offset_right = 606.0
@@ -477,8 +495,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_vk8oa")
 
 [node name="Label3" type="Label" parent="Scroll/Pages/DeckSelectPage" unique_id=1053493930]
+text = "Scorri verticalmente per cambiare il tipo di carta e orizzontalmente per scorrere le carte."
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(253.0, 125.0)
 offset_left = 46.0
 offset_top = 183.0
 offset_right = 299.0
@@ -502,8 +522,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_gmk8t")
 
 [node name="Label4" type="Label" parent="Scroll/Pages/DeckSelectPage" unique_id=1813822054]
+text = "Trascina le carte nel riquadro per selezionarle."
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(393.0, 125.0)
 offset_left = 283.0
 offset_top = 393.0
 offset_right = 676.0
@@ -548,8 +570,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_nhbci")
 
 [node name="Label1" type="Label" parent="Scroll/Pages/BattlePage" unique_id=497107120]
+text = "Trascina le carte nella griglia per giocarle"
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(239.0, 125.0)
 offset_left = 472.0
 offset_top = 135.0
 offset_right = 711.0
@@ -573,8 +597,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_l23ps")
 
 [node name="Label2" type="Label" parent="Scroll/Pages/BattlePage" unique_id=664200893]
+text = "Le carte non possono essere giocate sui blocchi"
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(222.0, 125.0)
 offset_left = 320.0
 offset_top = 10.0
 offset_right = 542.0
@@ -598,8 +624,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_0b30k")
 
 [node name="Label3" type="Label" parent="Scroll/Pages/BattlePage" unique_id=166728734]
+text = "Carte rimanenti dell'avversario"
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(252.0, 80.0)
 offset_left = 17.0
 offset_top = 200.0
 offset_right = 269.0
@@ -623,8 +651,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_d207i")
 
 [node name="Label4" type="Label" parent="Scroll/Pages/BattlePage" unique_id=110449484]
+text = "Punteggio"
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(177.0, 35.0)
 offset_left = 47.0
 offset_top = 100.0
 offset_right = 224.0
@@ -648,8 +678,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_cs6b8")
 
 [node name="Label5" type="Label" parent="Scroll/Pages/BattlePage" unique_id=1672709048]
+text = "Statistiche Carta"
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(151.0, 46.0)
 offset_left = 66.0
 offset_top = 340.0
 offset_right = 217.0
@@ -694,8 +726,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_x52g1")
 
 [node name="Label1" type="Label" parent="Scroll/Pages/ShopPage" unique_id=1894557452]
+text = "Posiziona la carta qui per venderla o comprarla"
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(253.0, 125.0)
 offset_left = 280.0
 offset_top = 267.0
 offset_right = 533.0
@@ -719,8 +753,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_g54y7")
 
 [node name="Label2" type="Label" parent="Scroll/Pages/ShopPage" unique_id=333460987]
+text = "Monete possedute"
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(253.0, 110.0)
 offset_left = 644.0
 offset_top = 388.0
 offset_right = 897.0
@@ -744,8 +780,10 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_774if")
 
 [node name="Label3" type="Label" parent="Scroll/Pages/ShopPage" unique_id=1414829280]
+text = "Questa é la lista delle carte acquistabili. Si sbloccano nuove carte sconfiggendo avversari piú forti"
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(280.0, 268.0)
 offset_left = 651.0
 offset_top = 110.0
 offset_right = 931.0
@@ -760,6 +798,7 @@ autowrap_mode = 2
 script = ExtResource("4_wrpev")
 
 [node name="CloseButton" type="Button" parent="." unique_id=1766580177]
+text = "X"
 layout_mode = 0
 offset_left = 42.0
 offset_top = 506.0

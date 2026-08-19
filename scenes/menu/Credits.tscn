@@ -29,6 +29,7 @@ stretch_mode = 0
 
 [node name="DesignLabel" type="Label" parent="."]
 layout_mode = 0
+custom_minimum_size = Vector2(320.0, 94.0)
 offset_left = 320.0
 offset_top = 36.0
 offset_right = 640.0
@@ -43,6 +44,7 @@ autowrap_mode = 2
 
 [node name="CardsLabel" type="Label" parent="."]
 layout_mode = 0
+custom_minimum_size = Vector2(432.0, 94.0)
 offset_left = 263.0
 offset_top = 170.0
 offset_right = 695.0
@@ -57,6 +59,7 @@ autowrap_mode = 2
 
 [node name="ThanksLabel" type="Label" parent="."]
 layout_mode = 0
+custom_minimum_size = Vector2(320.0, 94.0)
 offset_left = 320.0
 offset_top = 305.0
 offset_right = 640.0
@@ -71,6 +74,7 @@ autowrap_mode = 2
 
 [node name="MusicLabel" type="Label" parent="."]
 layout_mode = 0
+custom_minimum_size = Vector2(958.0, 79.0)
 offset_top = 448.0
 offset_right = 958.0
 offset_bottom = 527.0

@@ -25,6 +25,7 @@ texture = ExtResource("2")
 expand_mode = 1
 
 [node name="BattleButton" type="Button" parent="."]
+text = "Battaglia"
 layout_mode = 0
 offset_left = 343.0
 offset_top = 26.0
@@ -42,6 +43,7 @@ texture = ExtResource("3")
 expand_mode = 1
 
 [node name="ShopButton" type="Button" parent="."]
+text = "Negozio"
 layout_mode = 0
 offset_left = 131.0
 offset_top = 236.0
@@ -59,6 +61,7 @@ texture = ExtResource("4")
 expand_mode = 1
 
 [node name="CollectionButton" type="Button" parent="."]
+text = "Collezione"
 layout_mode = 0
 offset_left = 556.0
 offset_top = 236.0
@@ -76,6 +79,7 @@ texture = ExtResource("5")
 expand_mode = 1
 
 [node name="OptionsButton" type="Button" parent="."]
+text = "Opzioni"
 layout_mode = 0
 offset_left = 343.0
 offset_top = 442.0
@@ -103,6 +107,7 @@ texture = ExtResource("7")
 expand_mode = 1
 
 [node name="OnlineButton" type="Button" parent="."]
+text = "Online"
 layout_mode = 0
 offset_left = 407.0
 offset_top = 199.0

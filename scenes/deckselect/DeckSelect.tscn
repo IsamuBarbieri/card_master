@@ -177,6 +177,7 @@ mouse_filter = 2
 color = Color(0.6, 0.6, 0.6, 0.498039)
 
 [node name="PlayButton" type="Button" parent="."]
+text = "Gioca"
 layout_mode = 0
 offset_left = 798.0
 offset_top = 463.0
@@ -185,6 +186,7 @@ offset_bottom = 519.0
 script = ExtResource("5")
 
 [node name="BackButton" type="Button" parent="."]
+text = "Indietro"
 layout_mode = 0
 offset_left = 42.0
 offset_top = 463.0
@@ -211,6 +213,7 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
 
 [node name="Select5Label" type="Label" parent="."]
+text = "Seleziona Cinque Carte"
 layout_mode = 0
 offset_left = 313.0
 offset_top = 10.0
@@ -221,6 +224,7 @@ vertical_alignment = 1
 script = ExtResource("6")
 
 [node name="YourDeckLabel" type="Label" parent="."]
+text = "Carte"
 layout_mode = 0
 offset_left = 67.0
 offset_top = 12.0
@@ -231,6 +235,7 @@ vertical_alignment = 1
 script = ExtResource("6")
 
 [node name="YourPrefsLabel" type="Label" parent="."]
+text = "Carte Preferite"
 layout_mode = 0
 offset_left = 679.0
 offset_top = 12.0

@@ -406,6 +406,7 @@ theme_override_styles/focus = SubResource("StyleBoxTexture_swsgt")
 script = ExtResource("6_4whh0")
 
 [node name="NumberLabel" type="Label" parent="Slot1" unique_id=1270553614]
+text = "1"
 clip_contents = true
 layout_mode = 0
 offset_top = 6.0
@@ -421,6 +422,7 @@ horizontal_alignment = 1
 script = ExtResource("8_3yog8")
 
 [node name="NameLabel" type="Label" parent="Slot1" unique_id=1034799370]
+text = "Test"
 clip_contents = true
 layout_mode = 0
 offset_left = 12.0
@@ -437,6 +439,8 @@ horizontal_alignment = 1
 script = ExtResource("8_3yog8")
 
 [node name="StatLabel" type="Label" parent="Slot1" unique_id=422219349]
+text = "Carte: 5
+Vittorie: 3"
 clip_contents = true
 layout_mode = 0
 offset_left = 12.0
@@ -460,6 +464,7 @@ offset_bottom = 321.0
 mouse_filter = 2
 
 [node name="CoinsLabel" type="RichTextLabel" parent="Slot1" unique_id=1228977824]
+text = "[right]145 [img=34x34]res://assets/coins_icon.png[/img][/right]"
 layout_mode = 0
 offset_left = 12.0
 offset_top = 400.0
@@ -492,6 +497,7 @@ vertical_alignment = 1
 script = ExtResource("8_3yog8")
 
 [node name="DeleteButton1" type="Button" parent="." unique_id=1403045535]
+text = "X"
 layout_mode = 0
 offset_left = 266.0
 offset_top = 48.0
@@ -516,6 +522,7 @@ theme_override_styles/focus = SubResource("StyleBoxTexture_65ufa")
 script = ExtResource("6_4whh0")
 
 [node name="NumberLabel" type="Label" parent="Slot2" unique_id=1717108225]
+text = "2"
 clip_contents = true
 layout_mode = 0
 offset_top = 6.0
@@ -531,6 +538,7 @@ horizontal_alignment = 1
 script = ExtResource("8_3yog8")
 
 [node name="NameLabel" type="Label" parent="Slot2" unique_id=1376512115]
+text = "Pippollo"
 clip_contents = true
 layout_mode = 0
 offset_left = 12.0
@@ -547,6 +555,8 @@ horizontal_alignment = 1
 script = ExtResource("8_3yog8")
 
 [node name="StatLabel" type="Label" parent="Slot2" unique_id=312973402]
+text = "Carte: 6
+Vittorie: 1"
 clip_contents = true
 layout_mode = 0
 offset_left = 12.0
@@ -570,6 +580,7 @@ offset_bottom = 321.0
 mouse_filter = 2
 
 [node name="CoinsLabel" type="RichTextLabel" parent="Slot2" unique_id=759529410]
+text = "[right]0 [img=34x34]res://assets/coins_icon.png[/img][/right]"
 layout_mode = 0
 offset_left = 12.0
 offset_top = 400.0
@@ -602,6 +613,7 @@ vertical_alignment = 1
 script = ExtResource("8_3yog8")
 
 [node name="DeleteButton2" type="Button" parent="." unique_id=2078287543]
+text = "X"
 layout_mode = 0
 offset_left = 566.0
 offset_top = 48.0
@@ -626,6 +638,7 @@ theme_override_styles/focus = SubResource("StyleBoxTexture_i5l57")
 script = ExtResource("6_4whh0")
 
 [node name="NumberLabel" type="Label" parent="Slot3" unique_id=1140003512]
+text = "3"
 clip_contents = true
 layout_mode = 0
 offset_top = 6.0
@@ -699,6 +712,7 @@ bbcode_enabled = true
 scroll_active = false
 
 [node name="EmptyLabel" type="Label" parent="Slot3" unique_id=1581726307]
+text = "Nuovo"
 clip_contents = true
 layout_mode = 0
 offset_top = 52.0
@@ -715,6 +729,7 @@ vertical_alignment = 1
 script = ExtResource("8_3yog8")
 
 [node name="DeleteButton3" type="Button" parent="." unique_id=1943114380]
+text = "X"
 layout_mode = 0
 offset_left = 866.0
 offset_top = 48.0
@@ -757,6 +772,7 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_kdkei")
 
 [node name="PromptLabel" type="Label" parent="NameDialog/Panel" unique_id=804267640]
+text = "Inserisci il nome del giocatore"
 clip_contents = true
 layout_mode = 0
 offset_left = 30.0
@@ -811,6 +827,7 @@ vertical_alignment = 1
 script = ExtResource("8_3yog8")
 
 [node name="OkButton" type="Button" parent="NameDialog/Panel" unique_id=899084891]
+text = "OK"
 clip_contents = true
 layout_mode = 0
 offset_left = 30.0
@@ -832,6 +849,7 @@ theme_override_styles/focus = SubResource("StyleBoxTexture_8qatl")
 script = ExtResource("6_4whh0")
 
 [node name="CancelButton" type="Button" parent="NameDialog/Panel" unique_id=510987406]
+text = "Annulla"
 clip_contents = true
 layout_mode = 0
 offset_left = 390.0
@@ -891,6 +909,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_pt580")
 [node name="TitleLabel" type="Label" parent="ConfirmDialog/Panel" unique_id=1084528719]
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(560.0, 66.0)
 offset_left = 20.0
 offset_top = 16.0
 offset_right = 580.0
@@ -906,8 +925,11 @@ autowrap_mode = 2
 script = ExtResource("8_3yog8")
 
 [node name="MsgLabel" type="Label" parent="ConfirmDialog/Panel" unique_id=337596528]
+text = "Sei DAVVERO sicuro di voler cancellare
+TUTTI i dati relativi allo slot selezionato?"
 clip_contents = true
 layout_mode = 0
+custom_minimum_size = Vector2(560.0, 140.0)
 offset_left = 20.0
 offset_top = 90.0
 offset_right = 580.0
@@ -923,6 +945,7 @@ autowrap_mode = 2
 script = ExtResource("8_3yog8")
 
 [node name="OkButton" type="Button" parent="ConfirmDialog/Panel" unique_id=838022295]
+text = "OK"
 clip_contents = true
 layout_mode = 0
 offset_left = 20.0
@@ -944,6 +967,7 @@ theme_override_styles/focus = SubResource("StyleBoxTexture_3prjw")
 script = ExtResource("6_4whh0")
 
 [node name="CancelButton" type="Button" parent="ConfirmDialog/Panel" unique_id=755557727]
+text = "Annulla"
 clip_contents = true
 layout_mode = 0
 offset_left = 310.0

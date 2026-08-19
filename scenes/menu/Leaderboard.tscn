@@ -22,6 +22,7 @@ texture = ExtResource("2")
 expand_mode = 1
 
 [node name="Title" type="Label" parent="."]
+text = "Classifica"
 layout_mode = 0
 offset_left = 300.0
 offset_top = 9.0
@@ -42,6 +43,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="PrevButton" type="Button" parent="."]
+text = "<"
 layout_mode = 0
 offset_left = 302.0
 offset_top = 463.0
@@ -50,6 +52,7 @@ offset_bottom = 519.0
 script = ExtResource("4")
 
 [node name="NextButton" type="Button" parent="."]
+text = ">"
 layout_mode = 0
 offset_left = 602.0
 offset_top = 463.0
@@ -58,6 +61,7 @@ offset_bottom = 519.0
 script = ExtResource("4")
 
 [node name="StatusLabel" type="Label" parent="."]
+text = "..."
 layout_mode = 0
 offset_top = 246.0
 offset_right = 960.0
@@ -65,6 +69,7 @@ offset_bottom = 280.0
 horizontal_alignment = 1
 
 [node name="BackButton" type="Button" parent="."]
+text = "Indietro"
 layout_mode = 0
 offset_left = 42.0
 offset_top = 463.0

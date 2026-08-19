@@ -150,6 +150,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
 [node name="CentralMsgLabel" type="Label" parent="EndPanel"]
 visible = false
 layout_mode = 0
+custom_minimum_size = Vector2(742.0, 90.0)
 offset_left = 46.0
 offset_top = 226.0
 offset_right = 788.0
@@ -184,6 +185,7 @@ offset_bottom = 519.0
 script = ExtResource("6")
 
 [node name="TakeallButton" type="Button" parent="EndPanel"]
+text = "Prendi Tutte"
 visible = false
 layout_mode = 0
 offset_left = 795.0

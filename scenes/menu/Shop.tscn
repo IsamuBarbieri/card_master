@@ -98,6 +98,7 @@ texture = ExtResource("4")
 expand_mode = 1
 
 [node name="BuybackButton" type="Button" parent="."]
+text = "Ricompra!"
 visible = false
 layout_mode = 0
 offset_left = 744.0
@@ -107,6 +108,7 @@ offset_bottom = 445.0
 script = ExtResource("7")
 
 [node name="ShopHelpLabel" type="Label" parent="."]
+text = "Sposta le carte nel riquadro in basso per comprare o vendere."
 layout_mode = 0
 offset_top = 79.0
 offset_right = 959.0
@@ -115,6 +117,7 @@ horizontal_alignment = 1
 script = ExtResource("8")
 
 [node name="BackButton" type="Button" parent="."]
+text = "Indietro"
 layout_mode = 0
 offset_left = 42.0
 offset_top = 463.0
@@ -123,6 +126,7 @@ offset_bottom = 519.0
 script = ExtResource("7")
 
 [node name="ShopTitleLabel" type="Label" parent="."]
+text = "Negozio"
 layout_mode = 0
 offset_left = 348.0
 offset_top = 14.0
@@ -133,6 +137,7 @@ vertical_alignment = 1
 script = ExtResource("8")
 
 [node name="SellLabel" type="Label" parent="."]
+text = "Vendi"
 layout_mode = 0
 offset_left = 67.0
 offset_top = 16.0
@@ -143,6 +148,7 @@ vertical_alignment = 1
 script = ExtResource("8")
 
 [node name="BuyLabel" type="Label" parent="."]
+text = "Compra"
 layout_mode = 0
 offset_left = 679.0
 offset_top = 16.0
@@ -162,6 +168,7 @@ texture = ExtResource("5")
 expand_mode = 1
 
 [node name="CoinsLabel" type="Label" parent="."]
+text = "250"
 layout_mode = 0
 offset_left = 711.0
 offset_top = 477.0
@@ -171,6 +178,7 @@ horizontal_alignment = 2
 script = ExtResource("8")
 
 [node name="BuyValueLabel" type="Label" parent="."]
+text = "---"
 layout_mode = 0
 offset_left = 530.0
 offset_top = 473.0
@@ -180,6 +188,7 @@ horizontal_alignment = 1
 script = ExtResource("8")
 
 [node name="SellValueLabel" type="Label" parent="."]
+text = "---"
 layout_mode = 0
 offset_left = 309.0
 offset_top = 473.0
@@ -217,6 +226,7 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
 
 [node name="SellButton" type="Button" parent="."]
+text = "Vendi"
 layout_mode = 0
 offset_left = 309.0
 offset_top = 417.0
@@ -225,6 +235,7 @@ offset_bottom = 471.0
 script = ExtResource("7")
 
 [node name="BuyButton" type="Button" parent="."]
+text = "Compra"
 layout_mode = 0
 offset_left = 534.0
 offset_top = 417.0
@@ -249,6 +260,7 @@ mouse_filter = 2
 color = Color(0.117647, 0.117647, 0.117647, 0.498039)
 
 [node name="PriceLabel" type="Label" parent="ShopCardPanel1"]
+text = "924"
 layout_mode = 0
 offset_left = 167.0
 offset_top = 1.0
@@ -274,6 +286,7 @@ mouse_filter = 2
 color = Color(0.117647, 0.117647, 0.117647, 0.498039)
 
 [node name="PriceLabel" type="Label" parent="ShopCardPanel2"]
+text = "1498"
 layout_mode = 0
 offset_left = 167.0
 offset_top = 1.0

@@ -69,6 +69,7 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
 
 [node name="Title" type="Label" parent="."]
+text = "Seleziona il Tuo Avversario"
 layout_mode = 0
 offset_left = 300.0
 offset_top = 2.0
@@ -79,6 +80,7 @@ vertical_alignment = 1
 script = ExtResource("3")
 
 [node name="LabelDesc" type="Label" parent="."]
+text = "Avversario: Slime"
 layout_mode = 0
 offset_left = 231.0
 offset_top = 463.0
@@ -88,6 +90,7 @@ vertical_alignment = 1
 script = ExtResource("3")
 
 [node name="BackButton" type="Button" parent="."]
+text = "Indietro"
 layout_mode = 0
 offset_left = 42.0
 offset_top = 463.0
@@ -96,6 +99,7 @@ offset_bottom = 519.0
 script = ExtResource("4")
 
 [node name="SelectButton" type="Button" parent="."]
+text = "Gioca"
 layout_mode = 0
 offset_left = 805.0
 offset_top = 463.0

@@ -52,6 +52,7 @@ texture = ExtResource("2")
 expand_mode = 1
 
 [node name="BackButton" type="Button" parent="."]
+text = "Indietro"
 layout_mode = 0
 offset_left = 42.0
 offset_top = 463.0
@@ -60,6 +61,7 @@ offset_bottom = 519.0
 script = ExtResource("5")
 
 [node name="TitleLabel" type="Label" parent="."]
+text = "Collezione"
 layout_mode = 0
 offset_left = 119.0
 offset_top = 6.0
