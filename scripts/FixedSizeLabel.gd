@@ -36,6 +36,25 @@ func _ready() -> void:
 	_child.horizontal_alignment = horizontal_alignment
 	_child.vertical_alignment = vertical_alignment
 	_child.autowrap_mode = autowrap_mode
+	# A `text = "..."` baked into the .tscn (e.g. this project's editor-preview
+	# text) lands in THIS node's own native Label buffer rather than _child's
+	# - same bypass as autowrap_mode/size above, confirmed by the _set below
+	# never running for it during scene load. But unlike those, native Label
+	# draws its own "text" directly in its C++ draw handler, independent of
+	# the script entirely, so leaving that buffer alone doesn't just miss a
+	# sync - it renders the leftover baked string behind _child's, doubled.
+	# get_text()/set_text() are real bound methods inherited from Label,
+	# called directly rather than through `self.text` (which the _get/_set
+	# below intercept and redirect to _child, never touching this node's own
+	# buffer) - a plain method call reaches Label's native accessor
+	# instead, bypassing the script override. Guarded on non-empty: a
+	# code-built instance already has its real text correctly in _child by
+	# the time _ready() runs (every call site sets .text before add_child()),
+	# and native get_text() is legitimately "" there - copying it over would
+	# blank out text that was never wrong to begin with.
+	if get_text() != "":
+		_child.text = get_text()
+		set_text("")
 	_sync_child_rect()
 
 func _notification(what: int) -> void:

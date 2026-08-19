@@ -86,6 +86,17 @@ func _init() -> void:
 ## "size") onto _label. A no-op for code-built instances, where _set()
 ## already kept _label in sync as .size was assigned.
 func _ready() -> void:
+	# A `text = "..."` baked into the .tscn (editor-preview text) lands in
+	# this node's own native Button buffer rather than _label's, same bypass
+	# as `size` above - and unlike `size`, native Button draws its own text
+	# directly, independent of the script, so it rendered doubled behind
+	# _label's real one. get_text()/set_text() are real bound methods,
+	# called directly rather than through `self.text` (which _set below
+	# intercepts and redirects to _label) - see FixedSizeLabel's matching
+	# fix for the full reasoning, including why this is guarded on non-empty.
+	if get_text() != "":
+		_label.text = get_text()
+		set_text("")
 	_sync_label_rect()
 
 ## Which of the button's state colours the label should currently wear. Falls
