@@ -1,14 +1,15 @@
-[gd_scene load_steps=12 format=3 uid="uid://dqm8x2n4k7t9w"]
+[gd_scene format=3 uid="uid://dqm8x2n4k7uaw"]
 
-[ext_resource type="Script" path="res://scripts/menu/Shop.gd" id="1"]
-[ext_resource type="Texture2D" path="res://assets/common_bkg_clean.png" id="2"]
-[ext_resource type="Texture2D" path="res://assets/common_symbol_a.png" id="3"]
-[ext_resource type="Texture2D" path="res://assets/common_transp_box_single.png" id="4"]
-[ext_resource type="Texture2D" path="res://assets/coins_icon.png" id="5"]
-[ext_resource type="Texture2D" path="res://assets/button_shop.png" id="6"]
-[ext_resource type="Script" path="res://scripts/FixedSizeButton.gd" id="7"]
-[ext_resource type="Script" path="res://scripts/FixedSizeLabel.gd" id="8"]
-[ext_resource type="Script" path="res://scripts/deckselect/BusySpinner.gd" id="9"]
+[ext_resource type="Script" uid="uid://436fqorcx5v1" path="res://scripts/menu/Shop.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://ddx4f4ha8uafx" path="res://assets/common_bkg_clean.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://cxfeslajk0fj5" path="res://assets/common_symbol_a.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://b76koac144v66" path="res://assets/common_transp_box_single.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://bincpabhh1oae" path="res://assets/coins_icon.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://bjmxv8qrqagtu" path="res://assets/button_shop.png" id="6"]
+[ext_resource type="Script" uid="uid://ddk6js2jyxnm2" path="res://scripts/FixedSizeButton.gd" id="7"]
+[ext_resource type="Script" uid="uid://buevnq2d5uop2" path="res://scripts/FixedSizeLabel.gd" id="8"]
+[ext_resource type="Script" uid="uid://bg1gh3e32xo3n" path="res://scripts/deckselect/BusySpinner.gd" id="9"]
+[ext_resource type="FontFile" path="res://assets/fonts/FiraSans-Regular.ttf" id="10"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_outer"]
 bg_color = Color(0.96, 0.93, 0.85, 0.94)
@@ -24,7 +25,6 @@ corner_radius_bottom_left = 12
 shadow_color = Color(0, 0, 0, 0.35)
 shadow_size = 5
 shadow_offset = Vector2(0, 3)
-anti_aliasing = true
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inner"]
 bg_color = Color(0, 0, 0, 0)
@@ -37,35 +37,33 @@ corner_radius_top_left = 7
 corner_radius_top_right = 7
 corner_radius_bottom_right = 7
 corner_radius_bottom_left = 7
-anti_aliasing = true
 
-[node name="Shop" type="Control"]
+[node name="Shop" type="Control" unique_id=1222042869]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 script = ExtResource("1")
 
-[node name="Bg" type="TextureRect" parent="."]
+[node name="Bg" type="TextureRect" parent="." unique_id=455318570]
 layout_mode = 0
 offset_right = 960.0
 offset_bottom = 544.0
 texture = ExtResource("2")
 expand_mode = 1
 
-[node name="PanelLeft" type="Control" parent="."]
+[node name="PanelLeft" type="Control" parent="." unique_id=152874592]
 clip_contents = true
-layout_mode = 0
+anchors_preset = 0
 offset_left = 10.0
 offset_top = 82.0
 offset_right = 358.0
 offset_bottom = 430.0
 mouse_filter = 2
 
-[node name="Symbol" type="TextureRect" parent="PanelLeft"]
+[node name="Symbol" type="TextureRect" parent="PanelLeft" unique_id=1997060736]
 layout_mode = 0
 offset_right = 348.0
 offset_bottom = 348.0
@@ -73,23 +71,23 @@ mouse_filter = 2
 texture = ExtResource("3")
 expand_mode = 1
 
-[node name="PanelCardSlot" type="Control" parent="."]
+[node name="PanelCardSlot" type="Control" parent="." unique_id=1562152569]
 clip_contents = true
-layout_mode = 0
+anchors_preset = 0
 offset_left = 432.0
 offset_top = 391.0
 offset_right = 528.0
 offset_bottom = 519.0
 mouse_filter = 2
 
-[node name="SlotBg" type="ColorRect" parent="PanelCardSlot"]
+[node name="SlotBg" type="ColorRect" parent="PanelCardSlot" unique_id=606597529]
 layout_mode = 0
 offset_right = 96.0
 offset_bottom = 128.0
 mouse_filter = 2
 color = Color(0.6, 0.6, 0.6, 0.498039)
 
-[node name="Placeholder" type="TextureRect" parent="PanelCardSlot"]
+[node name="Placeholder" type="TextureRect" parent="PanelCardSlot" unique_id=1313185846]
 layout_mode = 0
 offset_right = 96.0
 offset_bottom = 128.0
@@ -97,68 +95,101 @@ mouse_filter = 2
 texture = ExtResource("4")
 expand_mode = 1
 
-[node name="BuybackButton" type="Button" parent="."]
-text = "Ricompra!"
+[node name="BuybackButton" type="Button" parent="." unique_id=116507030]
 visible = false
 layout_mode = 0
 offset_left = 744.0
 offset_top = 391.0
 offset_right = 900.0
 offset_bottom = 445.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("10")
+theme_override_font_sizes/font_size = 25
+text = "Ricompra!"
 script = ExtResource("7")
 
-[node name="ShopHelpLabel" type="Label" parent="."]
-text = "Sposta le carte nel riquadro in basso per comprare o vendere."
+[node name="ShopHelpLabel" type="Label" parent="." unique_id=1916252958]
 layout_mode = 0
 offset_top = 79.0
 offset_right = 959.0
 offset_bottom = 113.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("10")
+theme_override_font_sizes/font_size = 20
+text = "Sposta le carte nel riquadro in basso per comprare o vendere."
 horizontal_alignment = 1
 script = ExtResource("8")
 
-[node name="BackButton" type="Button" parent="."]
-text = "Indietro"
+[node name="BackButton" type="Button" parent="." unique_id=587834358]
 layout_mode = 0
 offset_left = 42.0
 offset_top = 463.0
 offset_right = 157.0
 offset_bottom = 519.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("10")
+theme_override_font_sizes/font_size = 36
+text = "Indietro"
 script = ExtResource("7")
 
-[node name="ShopTitleLabel" type="Label" parent="."]
-text = "Negozio"
+[node name="ShopTitleLabel" type="Label" parent="." unique_id=1790185851]
 layout_mode = 0
 offset_left = 348.0
 offset_top = 14.0
 offset_right = 612.0
 offset_bottom = 74.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 46
+text = "Negozio"
 horizontal_alignment = 1
 vertical_alignment = 1
 script = ExtResource("8")
 
-[node name="SellLabel" type="Label" parent="."]
-text = "Vendi"
+[node name="SellLabel" type="Label" parent="." unique_id=1255971188]
 layout_mode = 0
 offset_left = 67.0
 offset_top = 16.0
 offset_right = 281.0
 offset_bottom = 78.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 50
+text = "Vendi"
 horizontal_alignment = 1
 vertical_alignment = 1
 script = ExtResource("8")
 
-[node name="BuyLabel" type="Label" parent="."]
-text = "Compra"
+[node name="BuyLabel" type="Label" parent="." unique_id=155205106]
 layout_mode = 0
 offset_left = 679.0
 offset_top = 16.0
 offset_right = 893.0
 offset_bottom = 78.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 50
+text = "Compra"
 horizontal_alignment = 1
 vertical_alignment = 1
 script = ExtResource("8")
 
-[node name="CoinsIcon" type="TextureRect" parent="."]
+[node name="CoinsIcon" type="TextureRect" parent="." unique_id=565947322]
 layout_mode = 0
 offset_left = 867.0
 offset_top = 463.0
@@ -167,37 +198,57 @@ offset_bottom = 523.0
 texture = ExtResource("5")
 expand_mode = 1
 
-[node name="CoinsLabel" type="Label" parent="."]
-text = "250"
+[node name="CoinsLabel" type="Label" parent="." unique_id=1443505460]
 layout_mode = 0
-offset_left = 711.0
-offset_top = 477.0
-offset_right = 867.0
-offset_bottom = 523.0
+offset_left = 707.0
+offset_top = 470.0
+offset_right = 863.0
+offset_bottom = 517.0
+theme_override_colors/font_color = Color(1, 0.8509804, 0.101960786, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("10")
+theme_override_font_sizes/font_size = 32
+text = "250"
 horizontal_alignment = 2
 script = ExtResource("8")
 
-[node name="BuyValueLabel" type="Label" parent="."]
-text = "---"
+[node name="BuyValueLabel" type="Label" parent="." unique_id=210331825]
 layout_mode = 0
 offset_left = 530.0
 offset_top = 473.0
 offset_right = 653.0
 offset_bottom = 519.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("10")
+theme_override_font_sizes/font_size = 46
+text = "---"
 horizontal_alignment = 1
+vertical_alignment = 1
 script = ExtResource("8")
 
-[node name="SellValueLabel" type="Label" parent="."]
-text = "---"
+[node name="SellValueLabel" type="Label" parent="." unique_id=2144437203]
 layout_mode = 0
 offset_left = 309.0
 offset_top = 473.0
 offset_right = 428.0
 offset_bottom = 519.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("10")
+theme_override_font_sizes/font_size = 46
+text = "---"
 horizontal_alignment = 1
+vertical_alignment = 1
 script = ExtResource("8")
 
-[node name="ShopIcon" type="TextureRect" parent="."]
+[node name="ShopIcon" type="TextureRect" parent="." unique_id=1149921033]
 layout_mode = 0
 offset_left = 372.0
 offset_top = 16.0
@@ -207,7 +258,7 @@ mouse_filter = 2
 texture = ExtResource("6")
 expand_mode = 1
 
-[node name="InfoBkg" type="Panel" parent="."]
+[node name="InfoBkg" type="Panel" parent="." unique_id=725322688]
 layout_mode = 0
 offset_left = 364.0
 offset_top = 117.0
@@ -216,7 +267,7 @@ offset_bottom = 369.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_outer")
 
-[node name="Inner" type="Panel" parent="InfoBkg"]
+[node name="Inner" type="Panel" parent="InfoBkg" unique_id=1986000167]
 layout_mode = 0
 offset_left = 6.0
 offset_top = 6.0
@@ -225,179 +276,229 @@ offset_bottom = 246.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
 
-[node name="SellButton" type="Button" parent="."]
-text = "Vendi"
+[node name="SellButton" type="Button" parent="." unique_id=43805570]
 layout_mode = 0
 offset_left = 309.0
 offset_top = 417.0
 offset_right = 428.0
 offset_bottom = 471.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("10")
+theme_override_font_sizes/font_size = 25
+disabled = true
+text = "Vendi"
 script = ExtResource("7")
 
-[node name="BuyButton" type="Button" parent="."]
-text = "Compra"
+[node name="BuyButton" type="Button" parent="." unique_id=835615118]
 layout_mode = 0
 offset_left = 534.0
 offset_top = 417.0
 offset_right = 653.0
 offset_bottom = 471.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("10")
+theme_override_font_sizes/font_size = 25
+disabled = true
+text = "Compra"
 script = ExtResource("7")
 
-[node name="ShopCardPanel1" type="Control" parent="."]
+[node name="ShopCardPanel1" type="Control" parent="." unique_id=1809450355]
 clip_contents = true
-layout_mode = 0
+anchors_preset = 0
 offset_left = 636.0
 offset_top = 115.0
 offset_right = 942.0
 offset_bottom = 158.0
 mouse_filter = 2
 
-[node name="PanelBg" type="ColorRect" parent="ShopCardPanel1"]
+[node name="PanelBg" type="ColorRect" parent="ShopCardPanel1" unique_id=781595484]
 layout_mode = 0
 offset_right = 306.0
 offset_bottom = 43.0
 mouse_filter = 2
 color = Color(0.117647, 0.117647, 0.117647, 0.498039)
 
-[node name="PriceLabel" type="Label" parent="ShopCardPanel1"]
-text = "924"
+[node name="PriceLabel" type="Label" parent="ShopCardPanel1" unique_id=409773658]
 layout_mode = 0
 offset_left = 167.0
 offset_top = 1.0
 offset_right = 291.0
 offset_bottom = 42.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("10")
+theme_override_font_sizes/font_size = 30
+text = "924"
 horizontal_alignment = 2
 script = ExtResource("8")
 
-[node name="ShopCardPanel2" type="Control" parent="."]
+[node name="ShopCardPanel2" type="Control" parent="." unique_id=479109582]
 clip_contents = true
-layout_mode = 0
+anchors_preset = 0
 offset_left = 636.0
 offset_top = 160.0
 offset_right = 942.0
 offset_bottom = 203.0
 mouse_filter = 2
 
-[node name="PanelBg" type="ColorRect" parent="ShopCardPanel2"]
+[node name="PanelBg" type="ColorRect" parent="ShopCardPanel2" unique_id=2033795268]
 layout_mode = 0
 offset_right = 306.0
 offset_bottom = 43.0
 mouse_filter = 2
 color = Color(0.117647, 0.117647, 0.117647, 0.498039)
 
-[node name="PriceLabel" type="Label" parent="ShopCardPanel2"]
-text = "1498"
+[node name="PriceLabel" type="Label" parent="ShopCardPanel2" unique_id=1769767840]
 layout_mode = 0
 offset_left = 167.0
 offset_top = 1.0
 offset_right = 291.0
 offset_bottom = 42.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("10")
+theme_override_font_sizes/font_size = 30
+text = "1498"
 horizontal_alignment = 2
 script = ExtResource("8")
 
-[node name="ShopCardPanel3" type="Control" parent="."]
+[node name="ShopCardPanel3" type="Control" parent="." unique_id=2113858335]
 clip_contents = true
-layout_mode = 0
+anchors_preset = 0
 offset_left = 636.0
 offset_top = 205.0
 offset_right = 942.0
 offset_bottom = 248.0
 mouse_filter = 2
 
-[node name="PanelBg" type="ColorRect" parent="ShopCardPanel3"]
+[node name="PanelBg" type="ColorRect" parent="ShopCardPanel3" unique_id=1963084985]
 layout_mode = 0
 offset_right = 306.0
 offset_bottom = 43.0
 mouse_filter = 2
 color = Color(0.117647, 0.117647, 0.117647, 0.498039)
 
-[node name="PriceLabel" type="Label" parent="ShopCardPanel3"]
+[node name="PriceLabel" type="Label" parent="ShopCardPanel3" unique_id=1320866764]
 layout_mode = 0
 offset_left = 167.0
 offset_top = 1.0
 offset_right = 291.0
 offset_bottom = 42.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("10")
+theme_override_font_sizes/font_size = 30
 horizontal_alignment = 2
 script = ExtResource("8")
 
-[node name="ShopCardPanel4" type="Control" parent="."]
+[node name="ShopCardPanel4" type="Control" parent="." unique_id=1033163165]
 clip_contents = true
-layout_mode = 0
+anchors_preset = 0
 offset_left = 636.0
 offset_top = 250.0
 offset_right = 942.0
 offset_bottom = 293.0
 mouse_filter = 2
 
-[node name="PanelBg" type="ColorRect" parent="ShopCardPanel4"]
+[node name="PanelBg" type="ColorRect" parent="ShopCardPanel4" unique_id=1321528536]
 layout_mode = 0
 offset_right = 306.0
 offset_bottom = 43.0
 mouse_filter = 2
 color = Color(0.117647, 0.117647, 0.117647, 0.498039)
 
-[node name="PriceLabel" type="Label" parent="ShopCardPanel4"]
+[node name="PriceLabel" type="Label" parent="ShopCardPanel4" unique_id=1418736924]
 layout_mode = 0
 offset_left = 167.0
 offset_top = 1.0
 offset_right = 291.0
 offset_bottom = 42.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("10")
+theme_override_font_sizes/font_size = 30
 horizontal_alignment = 2
 script = ExtResource("8")
 
-[node name="ShopCardPanel5" type="Control" parent="."]
+[node name="ShopCardPanel5" type="Control" parent="." unique_id=1997745751]
 clip_contents = true
-layout_mode = 0
+anchors_preset = 0
 offset_left = 636.0
 offset_top = 295.0
 offset_right = 942.0
 offset_bottom = 338.0
 mouse_filter = 2
 
-[node name="PanelBg" type="ColorRect" parent="ShopCardPanel5"]
+[node name="PanelBg" type="ColorRect" parent="ShopCardPanel5" unique_id=125018708]
 layout_mode = 0
 offset_right = 306.0
 offset_bottom = 43.0
 mouse_filter = 2
 color = Color(0.117647, 0.117647, 0.117647, 0.498039)
 
-[node name="PriceLabel" type="Label" parent="ShopCardPanel5"]
+[node name="PriceLabel" type="Label" parent="ShopCardPanel5" unique_id=368198967]
 layout_mode = 0
 offset_left = 167.0
 offset_top = 1.0
 offset_right = 291.0
 offset_bottom = 42.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("10")
+theme_override_font_sizes/font_size = 30
 horizontal_alignment = 2
 script = ExtResource("8")
 
-[node name="ShopCardPanel6" type="Control" parent="."]
+[node name="ShopCardPanel6" type="Control" parent="." unique_id=591208030]
 clip_contents = true
-layout_mode = 0
+anchors_preset = 0
 offset_left = 636.0
 offset_top = 340.0
 offset_right = 942.0
 offset_bottom = 383.0
 mouse_filter = 2
 
-[node name="PanelBg" type="ColorRect" parent="ShopCardPanel6"]
+[node name="PanelBg" type="ColorRect" parent="ShopCardPanel6" unique_id=493110205]
 layout_mode = 0
 offset_right = 306.0
 offset_bottom = 43.0
 mouse_filter = 2
 color = Color(0.117647, 0.117647, 0.117647, 0.498039)
 
-[node name="PriceLabel" type="Label" parent="ShopCardPanel6"]
+[node name="PriceLabel" type="Label" parent="ShopCardPanel6" unique_id=1788576260]
 layout_mode = 0
 offset_left = 167.0
 offset_top = 1.0
 offset_right = 291.0
 offset_bottom = 42.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("10")
+theme_override_font_sizes/font_size = 30
 horizontal_alignment = 2
 script = ExtResource("8")
 
-[node name="BusySpinner" type="Control" parent="."]
+[node name="BusySpinner" type="Control" parent="." unique_id=88041600]
 visible = false
-layout_mode = 0
+anchors_preset = 0
 offset_left = 912.0
 offset_top = 496.0
 offset_right = 960.0

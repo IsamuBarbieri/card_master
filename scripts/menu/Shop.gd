@@ -292,8 +292,6 @@ func _cancel_staged_card() -> void:
 # ---------------------------------------------------------------- UI build
 
 func _build_ui() -> void:
-	var font_stylish: Font = Game.font_stylish
-
 	card_slot_view = CardView.new()
 	card_slot_view.visible = false
 	card_slot_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -301,92 +299,34 @@ func _build_ui() -> void:
 
 	UIButtonStyle.apply(button_buy_back)
 	button_buy_back.text = StringTable.get_string(StringTable.ID_BUY_BACK)
-	button_buy_back.add_theme_font_override("font", font_stylish)
-	button_buy_back.add_theme_font_size_override("font_size", 25)
-	button_buy_back.add_theme_color_override("font_color", Color.BLACK)
-	button_buy_back.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	button_buy_back.add_theme_constant_override("shadow_offset_x", 1)
-	button_buy_back.add_theme_constant_override("shadow_offset_y", 1)
 	button_buy_back.pressed.connect(_on_buyback_pressed)
 	UIButtonStyle.fit_button_text(button_buy_back)
 
 	var label_shop_help: Label = $ShopHelpLabel
-	label_shop_help.add_theme_font_override("font", font_stylish)
-	label_shop_help.add_theme_font_size_override("font_size", UIConstants.SHOP_HELP_LABEL_FONT_SIZE)
-	label_shop_help.add_theme_color_override("font_color", Color.BLACK)
-	label_shop_help.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-	label_shop_help.add_theme_constant_override("shadow_offset_x", 1)
-	label_shop_help.add_theme_constant_override("shadow_offset_y", 1)
 	label_shop_help.text = StringTable.get_string(StringTable.ID_SHOP_HELP)
 	UIButtonStyle.fit_button_text(label_shop_help)
 
-	# font_size 36 to match every other screen's Back button (DeckSelect,
-	# Opponents, Options) - this helper's other buttons stay at the default
-	# 25, tuned for their own tighter boxes.
 	UIButtonStyle.apply(back_button)
 	back_button.text = StringTable.get_string(StringTable.ID_BACK)
-	back_button.add_theme_font_override("font", font_stylish)
-	back_button.add_theme_font_size_override("font_size", UIConstants.BACK_BUTTON_FONT_SIZE)
-	back_button.add_theme_color_override("font_color", Color.BLACK)
-	back_button.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	back_button.add_theme_constant_override("shadow_offset_x", 1)
-	back_button.add_theme_constant_override("shadow_offset_y", 1)
 	back_button.pressed.connect(_on_back_pressed)
 	UIButtonStyle.fit_button_text(back_button)
 
 	var label_shop: Label = $ShopTitleLabel
 	label_shop.add_theme_font_override("font", Game.font_title)
-	label_shop.add_theme_font_size_override("font_size", UIConstants.SHOP_TITLE_FONT_SIZE)
-	label_shop.add_theme_color_override("font_color", Color.BLACK)
-	label_shop.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-	label_shop.add_theme_constant_override("shadow_offset_x", 1)
-	label_shop.add_theme_constant_override("shadow_offset_y", 1)
 	label_shop.text = StringTable.get_string(StringTable.ID_SHOP)
 	UIButtonStyle.fit_menu_button_text(label_shop, TITLE_ICON_GAP_WIDTH)
 
 	var label_sell: Label = $SellLabel
 	label_sell.add_theme_font_override("font", Game.font_title)
-	label_sell.add_theme_font_size_override("font_size", UIConstants.SHOP_SELL_BUY_LABEL_FONT_SIZE)
-	label_sell.add_theme_color_override("font_color", Color.BLACK)
-	label_sell.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-	label_sell.add_theme_constant_override("shadow_offset_x", 1)
-	label_sell.add_theme_constant_override("shadow_offset_y", 1)
 	label_sell.text = StringTable.get_string(StringTable.ID_SELL)
 	UIButtonStyle.fit_button_text(label_sell)
 
 	var label_buy: Label = $BuyLabel
 	label_buy.add_theme_font_override("font", Game.font_title)
-	label_buy.add_theme_font_size_override("font_size", UIConstants.SHOP_SELL_BUY_LABEL_FONT_SIZE)
-	label_buy.add_theme_color_override("font_color", Color.BLACK)
-	label_buy.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-	label_buy.add_theme_constant_override("shadow_offset_x", 1)
-	label_buy.add_theme_constant_override("shadow_offset_y", 1)
 	label_buy.text = StringTable.get_string(StringTable.ID_BUY)
 	UIButtonStyle.fit_button_text(label_buy)
 
-	label_coins.add_theme_font_override("font", font_stylish)
-	label_coins.add_theme_font_size_override("font_size", UIConstants.SHOP_COINS_LABEL_FONT_SIZE)
-	label_coins.add_theme_color_override("font_color", Color.BLACK)
-	label_coins.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-	label_coins.add_theme_constant_override("shadow_offset_x", 1)
-	label_coins.add_theme_constant_override("shadow_offset_y", 1)
-
-	label_buy_value.add_theme_font_override("font", font_stylish)
-	label_buy_value.add_theme_font_size_override("font_size", UIConstants.SHOP_VALUE_LABEL_FONT_SIZE)
-	label_buy_value.add_theme_color_override("font_color", Color.BLACK)
-	label_buy_value.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-	label_buy_value.add_theme_constant_override("shadow_offset_x", 1)
-	label_buy_value.add_theme_constant_override("shadow_offset_y", 1)
-	label_buy_value.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	label_buy_value.text = "---"
-
-	label_sell_value.add_theme_font_override("font", font_stylish)
-	label_sell_value.add_theme_font_size_override("font_size", UIConstants.SHOP_VALUE_LABEL_FONT_SIZE)
-	label_sell_value.add_theme_color_override("font_color", Color.BLACK)
-	label_sell_value.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-	label_sell_value.add_theme_constant_override("shadow_offset_x", 1)
-	label_sell_value.add_theme_constant_override("shadow_offset_y", 1)
-	label_sell_value.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	label_sell_value.text = "---"
 
 	stat_panel = CardStatPanel.make(Vector2(242, 232))
@@ -395,24 +335,12 @@ func _build_ui() -> void:
 
 	UIButtonStyle.apply(button_sell)
 	button_sell.text = StringTable.get_string(StringTable.ID_SELL_PRICE)
-	button_sell.add_theme_font_override("font", font_stylish)
-	button_sell.add_theme_font_size_override("font_size", 25)
-	button_sell.add_theme_color_override("font_color", Color.BLACK)
-	button_sell.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	button_sell.add_theme_constant_override("shadow_offset_x", 1)
-	button_sell.add_theme_constant_override("shadow_offset_y", 1)
 	button_sell.disabled = true
 	button_sell.pressed.connect(_on_sell_pressed)
 	UIButtonStyle.fit_button_text(button_sell)
 
 	UIButtonStyle.apply(button_buy)
 	button_buy.text = StringTable.get_string(StringTable.ID_BUY_PRICE)
-	button_buy.add_theme_font_override("font", font_stylish)
-	button_buy.add_theme_font_size_override("font_size", 25)
-	button_buy.add_theme_color_override("font_color", Color.BLACK)
-	button_buy.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	button_buy.add_theme_constant_override("shadow_offset_x", 1)
-	button_buy.add_theme_constant_override("shadow_offset_y", 1)
 	button_buy.disabled = true
 	button_buy.pressed.connect(_on_buy_pressed)
 	UIButtonStyle.fit_button_text(button_buy)
@@ -436,15 +364,7 @@ func _build_ui() -> void:
 		panel.add_child(view)
 		shop_card_views.append(view)
 
-		# 30 rather than the old 46: six slots share the band four used to,
-		# so the price has to fit a 41px-tall box now.
 		var price_label: Label = panel.get_node("PriceLabel")
-		price_label.add_theme_font_override("font", font_stylish)
-		price_label.add_theme_font_size_override("font_size", 30)
-		price_label.add_theme_color_override("font_color", Color.BLACK)
-		price_label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-		price_label.add_theme_constant_override("shadow_offset_x", 1)
-		price_label.add_theme_constant_override("shadow_offset_y", 1)
 		shop_card_price_labels.append(price_label)
 
 		shop_cards.append(null)
