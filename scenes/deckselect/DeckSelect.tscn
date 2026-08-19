@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scripts/FixedSizeButton.gd" id="5"]
 [ext_resource type="Script" path="res://scripts/FixedSizeLabel.gd" id="6"]
 [ext_resource type="Script" path="res://scripts/deckselect/BusySpinner.gd" id="7"]
+[ext_resource type="FontFile" path="res://assets/fonts/FiraSans-Regular.ttf" id="8"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_outer"]
 bg_color = Color(0.96, 0.93, 0.85, 0.94)
@@ -177,6 +178,12 @@ mouse_filter = 2
 color = Color(0.6, 0.6, 0.6, 0.498039)
 
 [node name="PlayButton" type="Button" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("8")
+theme_override_font_sizes/font_size = 36
 text = "Gioca"
 layout_mode = 0
 offset_left = 798.0
@@ -186,6 +193,12 @@ offset_bottom = 519.0
 script = ExtResource("5")
 
 [node name="BackButton" type="Button" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("8")
+theme_override_font_sizes/font_size = 36
 text = "Indietro"
 layout_mode = 0
 offset_left = 42.0
@@ -213,6 +226,11 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
 
 [node name="Select5Label" type="Label" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 36
 text = "Seleziona Cinque Carte"
 layout_mode = 0
 offset_left = 313.0
@@ -224,6 +242,11 @@ vertical_alignment = 1
 script = ExtResource("6")
 
 [node name="YourDeckLabel" type="Label" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 36
 text = "Carte"
 layout_mode = 0
 offset_left = 67.0
@@ -235,6 +258,11 @@ vertical_alignment = 1
 script = ExtResource("6")
 
 [node name="YourPrefsLabel" type="Label" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 36
 text = "Carte Preferite"
 layout_mode = 0
 offset_left = 679.0

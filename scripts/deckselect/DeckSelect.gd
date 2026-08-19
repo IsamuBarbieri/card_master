@@ -437,28 +437,14 @@ func _nearest_filled_slot(from_index: int) -> int:
 	return best
 
 func _build_ui() -> void:
-	var font_stylish: Font = Game.font_stylish
-
 	UIButtonStyle.apply(button_play)
 	button_play.text = StringTable.get_string(StringTable.ID_PLAY_BATTLE)
-	button_play.add_theme_font_override("font", font_stylish)
-	button_play.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
-	button_play.add_theme_color_override("font_color", Color.BLACK)
-	button_play.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	button_play.add_theme_constant_override("shadow_offset_x", 1)
-	button_play.add_theme_constant_override("shadow_offset_y", 1)
 	button_play.pressed.connect(_on_play_pressed)
 	UIButtonStyle.fit_button_text(button_play)
 
 	var back_button: Button = $BackButton
 	UIButtonStyle.apply(back_button)
 	back_button.text = StringTable.get_string(StringTable.ID_BACK)
-	back_button.add_theme_font_override("font", font_stylish)
-	back_button.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
-	back_button.add_theme_color_override("font_color", Color.BLACK)
-	back_button.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	back_button.add_theme_constant_override("shadow_offset_x", 1)
-	back_button.add_theme_constant_override("shadow_offset_y", 1)
 	back_button.pressed.connect(_on_back_pressed)
 	UIButtonStyle.fit_button_text(back_button)
 	# B already backs out via nav.cancelled (_setup_nav) - hide the button
@@ -467,31 +453,16 @@ func _build_ui() -> void:
 
 	var label_select5: Label = $Select5Label
 	label_select5.add_theme_font_override("font", Game.font_title)
-	label_select5.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
-	label_select5.add_theme_color_override("font_color", Color.BLACK)
-	label_select5.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-	label_select5.add_theme_constant_override("shadow_offset_x", 1)
-	label_select5.add_theme_constant_override("shadow_offset_y", 1)
 	label_select5.text = StringTable.get_string(StringTable.ID_DECK_SELECT_CARDS)
 	UIButtonStyle.fit_button_text(label_select5)
 
 	var label_your_deck: Label = $YourDeckLabel
 	label_your_deck.add_theme_font_override("font", Game.font_title)
-	label_your_deck.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
-	label_your_deck.add_theme_color_override("font_color", Color.BLACK)
-	label_your_deck.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-	label_your_deck.add_theme_constant_override("shadow_offset_x", 1)
-	label_your_deck.add_theme_constant_override("shadow_offset_y", 1)
 	label_your_deck.text = StringTable.get_string(StringTable.ID_CARDS)
 	UIButtonStyle.fit_button_text(label_your_deck)
 
 	var label_your_prefs: Label = $YourPrefsLabel
 	label_your_prefs.add_theme_font_override("font", Game.font_title)
-	label_your_prefs.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
-	label_your_prefs.add_theme_color_override("font_color", Color.BLACK)
-	label_your_prefs.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-	label_your_prefs.add_theme_constant_override("shadow_offset_x", 1)
-	label_your_prefs.add_theme_constant_override("shadow_offset_y", 1)
 	label_your_prefs.text = StringTable.get_string(StringTable.ID_FAVORITE_CARDS)
 	UIButtonStyle.fit_button_text(label_your_prefs)
 
