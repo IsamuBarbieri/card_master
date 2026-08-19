@@ -19,6 +19,25 @@ func _init() -> void:
 	add_child(_child)
 	resized.connect(_sync_child_rect)
 
+## Belt-and-suspenders for scene-loaded instances (a node baked into a
+## .tscn, not built with `FixedSizeLabel.new()` in code): Godot's scene
+## deserializer sets Label's native properties (autowrap_mode, alignment,
+## the offset_*/size that determine `size`) directly on this object,
+## bypassing the _set() interception below entirely - confirmed empirically,
+## _child was left at Label's own defaults (size (0,0), autowrap off) for
+## every FixedSizeLabel placed in a scene file instead of built in script.
+## _ready() is guaranteed to fire only after every property from the scene
+## has already been applied, so it's the one point that can safely re-pull
+## them from self (whose own native storage still holds the correct
+## scene-authored values, even though _get("text") no longer reads it) onto
+## _child. A no-op for code-built instances, where _set() already kept
+## _child in sync as each property was assigned.
+func _ready() -> void:
+	_child.horizontal_alignment = horizontal_alignment
+	_child.vertical_alignment = vertical_alignment
+	_child.autowrap_mode = autowrap_mode
+	_sync_child_rect()
+
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_THEME_CHANGED and is_instance_valid(_child):
 		if has_theme_font_override("font"):

@@ -75,6 +75,19 @@ func _init() -> void:
 	focus_entered.connect(_refresh_label_color)
 	focus_exited.connect(_refresh_label_color)
 
+## Belt-and-suspenders for scene-loaded instances - see FixedSizeLabel's
+## matching _ready() for the full explanation: a FixedSizeButton placed in a
+## .tscn (as every button converted into a scene now is) gets its `size`
+## (from offset_*) applied by Godot's scene deserializer directly, bypassing
+## the _set() interception below - confirmed empirically, _label was left at
+## its own text-driven minimum size instead of filling the button. _ready()
+## always fires after every scene property has landed, so it's the one safe
+## point to re-sync from self (still correct - _get() isn't overridden for
+## "size") onto _label. A no-op for code-built instances, where _set()
+## already kept _label in sync as .size was assigned.
+func _ready() -> void:
+	_sync_label_rect()
+
 ## Which of the button's state colours the label should currently wear. Falls
 ## back to font_color whenever the state's own colour isn't defined, so a
 ## button that only ever set font_color behaves exactly as it did before.
