@@ -263,10 +263,6 @@ const STARTMENU_CONFIRM_MSG_POS := Vector2(20, 90)
 const STARTMENU_CONFIRM_OK_BTN_POS := Vector2(20, 244)
 const STARTMENU_CONFIRM_CANCEL_BTN_POS := Vector2(310, 244)
 
-# --------------------------------------------------------------- TitleScreen
-
-const TITLESCREEN_PROMPT_FONT_SIZE := 60
-
 # --------------------------------------------------------------- OnScreenKeyboard
 
 const KEYBOARD_CARET_FONT_SIZE := 28

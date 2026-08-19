@@ -1,6 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://cqz7v4k9r2mfp"]
+[gd_scene load_steps=4 format=3 uid="uid://cqz7v4k9r2mfp"]
 
 [ext_resource type="Script" path="res://scripts/menu/TitleScreen.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/app_splash_screen.png" id="2"]
+[ext_resource type="Script" path="res://scripts/FixedSizeLabel.gd" id="3"]
 
 [node name="TitleScreen" type="Control"]
 layout_mode = 3
@@ -10,3 +12,26 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
+
+[node name="Bg" type="TextureRect" parent="."]
+layout_mode = 0
+offset_right = 960.0
+offset_bottom = 544.0
+mouse_filter = 2
+texture = ExtResource("2")
+expand_mode = 1
+
+[node name="PromptLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 155.0
+offset_top = 227.0
+offset_right = 805.0
+offset_bottom = 317.0
+pivot_offset = Vector2(325, 45)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 60
+horizontal_alignment = 1
+vertical_alignment = 1
+script = ExtResource("3")
