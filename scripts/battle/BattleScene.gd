@@ -407,6 +407,10 @@ func _setup_nav() -> void:
 	# right-side hint now shares.
 	const CONTINUE_X := 803.0
 	y_continue_hint = ControllerUI.make_button_hint(&"Y", StringTable.get_string(StringTable.ID_DONE), Vector2(CONTINUE_X, ControllerUI.PROMPT_BAR_Y), Vector2(button_done.size.x, ControllerUI.HINT_ROW_HEIGHT))
+	# Above EndPanel's own z_index (100, so it draws over the board at match
+	# end) - this hint only ever shows alongside EndPanel, and needs to stay
+	# on top of it rather than being covered by its full-screen backdrop.
+	y_continue_hint.z_index = 101
 	add_child(y_continue_hint)
 	# No A entry - the cursor moving already previews, and pressing A on a
 	# hand/board item (including the end-of-match pick) is self-explanatory
@@ -586,6 +590,7 @@ func _get_cpu_deck() -> Array:
 func start_new_game() -> void:
 	end_panel.visible = false
 	end_bkg.position.y = -SCREEN_H
+	_set_board_input_enabled(true)
 
 	# Seed before anything rolls. Online both clients get the same seed from
 	# the server and therefore the same blocks, coin toss and combat rolls;
@@ -1842,9 +1847,26 @@ func gsNextTurn_Set() -> void:
 
 enum BattleResult { PLAYER_WINS, PLAYER_PERFECT, CPU_WINS, CPU_PERFECT, DRAW }
 
+## Board/hand slot Buttons stay in the tree for the whole match (never
+## rebuilt), sitting at z_index 0 while EndPanel is raised to 100 to draw
+## over them - but that only settles who's drawn on top, not who gets the
+## click: several board slots still fall inside EndPanel's own button rects
+## (e.g. the perfect-win Take All button lands mid-board) and, being plain
+## unfiltered Buttons, silently ate clicks meant for whatever's visually
+## above them. IGNORE lets those clicks fall through; start_new_game()
+## puts them back to the default STOP once a new match needs them clickable.
+func _set_board_input_enabled(enabled: bool) -> void:
+	var filter := Control.MOUSE_FILTER_STOP if enabled else Control.MOUSE_FILTER_IGNORE
+	for row in board_slots:
+		for slot in row:
+			slot.mouse_filter = filter
+	for slot in hand_slots:
+		slot.mouse_filter = filter
+
 func gsEndStart_Set() -> void:
 	busy = true
 	turn_cursor.visible = false
+	_set_board_input_enabled(false)
 
 	var p0 := board.count_cards(0)
 	var p1 := board.count_cards(1)
@@ -2285,6 +2307,7 @@ const ONLINE_NOTICE_SECONDS := 3.0
 
 func _show_online_notice(text: String) -> void:
 	busy = true
+	_set_board_input_enabled(false)
 	end_panel.visible = true
 	end_bkg.position.y = 0.0
 	label_central_msg.text = text
