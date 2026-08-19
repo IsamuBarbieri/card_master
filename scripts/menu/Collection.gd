@@ -96,33 +96,15 @@ func _ready() -> void:
 	_setup_nav()  # focus_changed already runs _select_type(0) via focus_by_meta
 
 func _build_ui() -> void:
-	var font_stylish: Font = Game.font_stylish
-
-	# font_size 36 to match every other screen's Back button (DeckSelect,
-	# Opponents, Options) - this helper's other buttons stay at the default
-	# 25, tuned for their own tighter boxes.
 	UIButtonStyle.apply(back_button)
 	back_button.text = StringTable.get_string(StringTable.ID_BACK)
-	back_button.add_theme_font_override("font", font_stylish)
-	back_button.add_theme_font_size_override("font_size", UIConstants.BACK_BUTTON_FONT_SIZE)
-	back_button.add_theme_color_override("font_color", Color.BLACK)
-	back_button.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	back_button.add_theme_constant_override("shadow_offset_x", 1)
-	back_button.add_theme_constant_override("shadow_offset_y", 1)
 	back_button.pressed.connect(_on_back_pressed)
 	UIButtonStyle.fit_button_text(back_button)
 
 	# Label first, icon on top - same "icon has a transparent gap the label
 	# shows through" trick as MainMenu's buttons (button_collection.png is
 	# the same asset used there).
-	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title_label.add_theme_font_override("font", Game.font_title)
-	title_label.add_theme_font_size_override("font_size", UIConstants.COLLECTION_TITLE_FONT_SIZE)
-	title_label.add_theme_color_override("font_color", Color.BLACK)
-	title_label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-	title_label.add_theme_constant_override("shadow_offset_x", 1)
-	title_label.add_theme_constant_override("shadow_offset_y", 1)
 	title_label.text = StringTable.get_string(StringTable.ID_COLLECTION)
 	UIButtonStyle.fit_button_text(title_label)
 
@@ -157,7 +139,7 @@ func _build_ui() -> void:
 	sfx_back.stream = load(ASSETS + "sfx/button_back_sound.wav")
 	add_child(sfx_back)
 
-	_build_type_rows(font_stylish)
+	_build_type_rows(Game.font_stylish)
 
 func _build_type_rows(font: Font) -> void:
 	var card_back_tex: Texture2D = load(ASSETS + "cards/card_back.png")
