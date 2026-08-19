@@ -33,24 +33,8 @@ var lang_arrow_right: Label
 var nav: FocusNav
 
 func _ready() -> void:
-	var font_stylish: Font = Game.font_stylish
-
-	title.add_theme_font_size_override("font_size", UIConstants.OPTIONS_TITLE_FONT_SIZE)
-
-	for l in [label_music, label_sfx, label_lang]:
-		l.add_theme_font_size_override("font_size", UIConstants.LABEL_FONT_SIZE_36)
-		l.add_theme_color_override("font_color", Color.BLACK)
-		l.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-		l.add_theme_constant_override("shadow_offset_x", 1)
-		l.add_theme_constant_override("shadow_offset_y", 1)
-
 	for btn in [back_button, credits_button, title_screen_button]:
 		UIButtonStyle.apply(btn)
-		btn.add_theme_font_size_override("font_size", UIConstants.LABEL_FONT_SIZE_36)
-		btn.add_theme_color_override("font_color", Color.BLACK)
-		btn.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-		btn.add_theme_constant_override("shadow_offset_x", 1)
-		btn.add_theme_constant_override("shadow_offset_y", 1)
 
 	slider_music.value = Game.music_volume * 100.0
 	slider_music.value_changed.connect(_on_music_value_changed)
@@ -184,16 +168,11 @@ func _on_language_selected(index: int) -> void:
 	_update_language_texts()
 
 func _update_language_texts() -> void:
-	# Re-applied every call (not just at construction): Game.font_stylish
-	# may now point at a different actual font than when these controls were
-	# built, if the language just switched to/from one that needs a
-	# different font (see Game._update_fonts_for_language).
-	for ctrl in [label_music, label_sfx, label_lang, back_button, credits_button, title_screen_button]:
-		ctrl.add_theme_font_override("font", Game.font_stylish)
-	# The heading is the one control here on the decorative face. It was in
-	# the loop above, which meant it was set to the decorative font at
-	# construction and then quietly overwritten with the body font a few lines
-	# later - every time, since this runs once at startup too.
+	# The heading is the one control here on the decorative face (the rest
+	# are baked into the scene on the static body face) - it swaps to a
+	# Cyrillic fallback for Russian (see Game._update_fonts_for_language),
+	# so it has to be re-applied on every language switch, not just at
+	# construction.
 	title.add_theme_font_override("font", Game.font_title)
 
 	title.text = StringTable.get_string(StringTable.ID_OPTIONS)

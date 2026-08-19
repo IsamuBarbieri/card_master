@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" path="res://assets/button_option.png" id="3"]
 [ext_resource type="Script" path="res://scripts/FixedSizeLabel.gd" id="4"]
 [ext_resource type="Script" path="res://scripts/FixedSizeButton.gd" id="5"]
+[ext_resource type="FontFile" path="res://assets/fonts/FiraSans-Regular.ttf" id="6"]
 
 [node name="Options" type="Control"]
 layout_mode = 3
@@ -32,6 +33,7 @@ texture = ExtResource("3")
 expand_mode = 1
 
 [node name="Title" type="Label" parent="."]
+theme_override_font_sizes/font_size = 46
 text = "Opzioni"
 layout_mode = 0
 offset_left = 348.0
@@ -42,6 +44,12 @@ horizontal_alignment = 1
 script = ExtResource("4")
 
 [node name="LabelMusic" type="Label" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("6")
+theme_override_font_sizes/font_size = 36
 text = "Musica:"
 layout_mode = 0
 offset_left = 64.0
@@ -53,6 +61,12 @@ vertical_alignment = 1
 script = ExtResource("4")
 
 [node name="LabelSfx" type="Label" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("6")
+theme_override_font_sizes/font_size = 36
 text = "Effetti:"
 layout_mode = 0
 offset_left = 64.0
@@ -64,6 +78,12 @@ vertical_alignment = 1
 script = ExtResource("4")
 
 [node name="LabelLang" type="Label" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("6")
+theme_override_font_sizes/font_size = 36
 text = "Lingua:"
 layout_mode = 0
 offset_left = 64.0
@@ -101,6 +121,12 @@ offset_right = 660.0
 offset_bottom = 384.0
 
 [node name="BackButton" type="Button" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("6")
+theme_override_font_sizes/font_size = 36
 text = "Indietro"
 layout_mode = 0
 offset_left = 42.0
@@ -110,6 +136,12 @@ offset_bottom = 519.0
 script = ExtResource("5")
 
 [node name="CreditsButton" type="Button" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("6")
+theme_override_font_sizes/font_size = 36
 text = "Crediti"
 layout_mode = 0
 offset_left = 412.0
@@ -119,6 +151,12 @@ offset_bottom = 519.0
 script = ExtResource("5")
 
 [node name="TitleScreenButton" type="Button" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("6")
+theme_override_font_sizes/font_size = 36
 text = "Titolo"
 layout_mode = 0
 offset_left = 803.0
