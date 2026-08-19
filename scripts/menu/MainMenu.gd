@@ -146,15 +146,9 @@ func _process(delta: float) -> void:
 			cat_sprite.play("idle")
 
 func _setup_menu_button(btn: Button, label: String, on_pressed: Callable) -> void:
-	var font_stylish: Font = Game.font_title
 	UIButtonStyle.apply(btn)
 	btn.text = label
-	btn.add_theme_font_override("font", font_stylish)
-	btn.add_theme_font_size_override("font_size", UIConstants.MAIN_MENU_BUTTON_FONT_SIZE)
-	btn.add_theme_color_override("font_color", Color.BLACK)
-	btn.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	btn.add_theme_constant_override("shadow_offset_x", 1)
-	btn.add_theme_constant_override("shadow_offset_y", 1)
+	btn.add_theme_font_override("font", Game.font_title)
 	btn.pressed.connect(on_pressed)
 	UIButtonStyle.fit_menu_button_text(btn, MENU_BUTTON_GAP_WIDTHS[btn.name])
 
@@ -171,7 +165,6 @@ func _setup_menu_button(btn: Button, label: String, on_pressed: Callable) -> voi
 const ONLINE_BUTTON_SIZE := 146.0
 ## Black at rest like every other menu label, lighting up to the emblem's own
 ## gold on hover and focus.
-const ONLINE_TEXT_COLOR := Color.BLACK
 const ONLINE_TEXT_HOVER := Color(0.93, 0.75, 0.32)
 const ONLINE_OUTLINE_SIZE := 2
 
@@ -185,18 +178,10 @@ func _setup_online_button() -> void:
 	btn.flat = true
 	btn.text = StringTable.get_string(StringTable.ID_ONLINE)
 	btn.add_theme_font_override("font", Game.font_title)
-	btn.add_theme_font_size_override("font_size", UIConstants.MAIN_MENU_ONLINE_BUTTON_FONT_SIZE)
-	btn.add_theme_color_override("font_color", ONLINE_TEXT_COLOR)
 	# Same touch caveat as every other button - see UIButtonStyle.hover_color.
+	# The only one of this button's colours that can't be baked into the
+	# scene: it depends on OS.has_feature("mobile") at runtime.
 	btn.add_theme_color_override("font_hover_color", UIButtonStyle.hover_color(ONLINE_TEXT_HOVER))
-	btn.add_theme_color_override("font_focus_color", ONLINE_TEXT_HOVER)
-	btn.add_theme_color_override("font_pressed_color", ONLINE_TEXT_HOVER)
-	# Gold rim rather than the usual black one: black-on-black would vanish
-	# against the globe, and this picks up the emblem's own ring. It is dropped
-	# while highlighted - the label turns gold there, so keeping a gold rim
-	# around gold letters just reads as a heavier, blurrier font.
-	btn.add_theme_color_override("font_outline_color", ONLINE_TEXT_HOVER)
-	btn.add_theme_constant_override("outline_size", ONLINE_OUTLINE_SIZE)
 	btn.mouse_entered.connect(_set_online_outline.bind(btn, 0))
 	btn.mouse_exited.connect(_set_online_outline.bind(btn, ONLINE_OUTLINE_SIZE))
 	btn.focus_entered.connect(_set_online_outline.bind(btn, 0))
