@@ -63,11 +63,6 @@ const BUSY_SPINNER_POS := Vector2(912, 496)
 const BUSY_SPINNER_SIZE := Vector2(48, 48)
 const BUSY_SPINNER_PIVOT := Vector2(24, 24)
 
-## Options and Online both lay their button-art title icon and heading label
-## at this exact same spot (Options' own comment calls this out explicitly).
-const SCREEN_TITLE_ICON_POS := Vector2(347, 9)
-const SCREEN_TITLE_LABEL_POS := Vector2(348, 13)
-
 # --------------------------------------------------------------- Battle
 
 const BATTLE_NAME_SHADOW_COLOR := Color(0, 0, 0, 0.9)
@@ -199,14 +194,6 @@ const MAIN_MENU_CAT_POS := Vector2(850, 416)
 
 const OPTIONS_TITLE_FONT_SIZE := 46
 const OPTIONS_LANG_ARROW_FONT_SIZE := 30
-const OPTIONS_LABEL_MUSIC_POS := Vector2(64, 170)
-const OPTIONS_LABEL_SFX_POS := Vector2(64, 243)
-const OPTIONS_LABEL_LANG_POS := Vector2(64, 326)
-const OPTIONS_SLIDER_MUSIC_POS := Vector2(298, 170)
-const OPTIONS_SLIDER_SFX_POS := Vector2(298, 243)
-const OPTIONS_LANG_POPUP_POS := Vector2(300, 328)
-const OPTIONS_CREDITS_BUTTON_POS := Vector2(412, 463)
-const OPTIONS_TITLE_SCREEN_BUTTON_POS := Vector2(803, 463)
 
 # --------------------------------------------------------------- StartMenu
 
