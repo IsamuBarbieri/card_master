@@ -83,8 +83,8 @@ grow_vertical = 2
 
 [node name="EndBg" type="TextureRect" parent="EndPanel"]
 layout_mode = 0
-offset_left = -960.0
 offset_top = -544.0
+offset_right = 960.0
 texture = ExtResource("3")
 expand_mode = 1
 
