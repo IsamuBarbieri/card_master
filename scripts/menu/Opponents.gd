@@ -17,8 +17,6 @@ extends Control
 ## drawn double-rect border) instead, one per item so it scrolls for free as
 ## a child of that item - same visual language as the deck carousel.
 
-const SCREEN_W := 960
-const SCREEN_H := 544
 const ASSETS := "res://assets/"
 ## CardView (used for unlocked portraits) hardcodes custom_minimum_size to
 ## its own CARD_W/CARD_H = 96x128 (CardView.gd) - it silently clamps back up
@@ -39,10 +37,11 @@ var item_portraits: Array = []     # CardView or null (locked) per opponent
 var item_overlays: Array = []      # TextureRect (new/defeated badge) per opponent
 var item_outlines: Array = []      # SelectionOutline per opponent
 
-var label_desc: Label
-var select_button: Button
-var back_button: Button
-var scroll: ScrollContainer
+@onready var title: Label = $Title
+@onready var label_desc: Label = $LabelDesc
+@onready var back_button: Button = $BackButton
+@onready var select_button: Button = $SelectButton
+@onready var scroll: ScrollContainer = $Scroll
 var nav: FocusNav
 
 func _ready() -> void:
@@ -100,42 +99,30 @@ func _setup_nav() -> void:
 func _build_ui() -> void:
 	var font_stylish: Font = Game.font_stylish
 
-	var bg := TextureRect.new()
-	bg.texture = load(ASSETS + "common_bkg_clean.png")
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg.size = Vector2(SCREEN_W, SCREEN_H)
-	add_child(bg)
-
-	var desc_panel := UIPanel.make(Vector2(545, 56))
-	desc_panel.position = UIConstants.OPPONENTS_DESC_PANEL_POS
-	add_child(desc_panel)
-
-	var title := _make_label(UIConstants.OPPONENTS_TITLE_POS, Vector2(359, 46), Game.font_title)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title.add_theme_font_override("font", Game.font_title)
+	title.add_theme_font_size_override("font_size", UIConstants.LABEL_FONT_SIZE_36)
+	title.add_theme_color_override("font_color", Color.BLACK)
+	title.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
+	title.add_theme_constant_override("shadow_offset_x", 1)
+	title.add_theme_constant_override("shadow_offset_y", 1)
 	title.text = StringTable.get_string(StringTable.ID_OPPONENT_SELECT)
-	add_child(title)
 	UIButtonStyle.fit_button_text(title)
 
-	label_desc = _make_label(UIConstants.OPPONENTS_LABEL_DESC_POS, Vector2(498, 56), font_stylish)
-	label_desc.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	add_child(label_desc)
+	label_desc.add_theme_font_override("font", font_stylish)
+	label_desc.add_theme_font_size_override("font_size", UIConstants.LABEL_FONT_SIZE_36)
+	label_desc.add_theme_color_override("font_color", Color.BLACK)
+	label_desc.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
+	label_desc.add_theme_constant_override("shadow_offset_x", 1)
+	label_desc.add_theme_constant_override("shadow_offset_y", 1)
 
-	back_button = _make_text_button(StringTable.get_string(StringTable.ID_BACK), UIConstants.BACK_BUTTON_POS, UIConstants.BACK_BUTTON_SIZE, font_stylish)
+	_setup_text_button(back_button, StringTable.get_string(StringTable.ID_BACK), font_stylish)
 	back_button.pressed.connect(_on_back_pressed)
 
 	# ID_PLAY_BATTLE ("Play"/"Gioca") rather than ID_SELECT - the button
 	# commits to the currently-previewed opponent and launches deck select,
 	# "Play" says that more directly, in both mouse and gamepad mode.
-	select_button = _make_text_button(StringTable.get_string(StringTable.ID_PLAY_BATTLE), UIConstants.OPPONENTS_SELECT_BUTTON_POS, Vector2(115, 56), font_stylish)
+	_setup_text_button(select_button, StringTable.get_string(StringTable.ID_PLAY_BATTLE), font_stylish)
 	select_button.pressed.connect(_on_select_pressed)
-
-	scroll = ScrollContainer.new()
-	scroll.position = UIConstants.OPPONENTS_SCROLL_POS
-	scroll.size = Vector2(770, 402)  # exactly fits 3 rows of 7 (98x130 items, 14/6 sep) with no scrollbar
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED  # GridListScrollOrientation.Vertical
-	add_child(scroll)
 
 	var grid := GridContainer.new()
 	grid.columns = GRID_COLUMNS
@@ -164,33 +151,16 @@ func _build_ui() -> void:
 		item.add_child(outline)
 		item_outlines.append(outline)
 
-func _make_label(pos: Vector2, size: Vector2, font: Font) -> Label:
-	var label := FixedSizeLabel.new()
-	label.position = pos
-	label.size = size
-	label.add_theme_font_override("font", font)
-	label.add_theme_font_size_override("font_size", UIConstants.LABEL_FONT_SIZE_36)
-	label.add_theme_color_override("font_color", Color.BLACK)
-	label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	label.add_theme_constant_override("shadow_offset_x", 1)
-	label.add_theme_constant_override("shadow_offset_y", 1)
-	return label
-
-func _make_text_button(label: String, pos: Vector2, size: Vector2, font: Font) -> Button:
-	var btn := FixedSizeButton.new()
+func _setup_text_button(btn: Button, label: String, font: Font) -> void:
 	UIButtonStyle.apply(btn)
 	btn.text = label
-	btn.position = pos
-	btn.size = size
 	btn.add_theme_font_override("font", font)
 	btn.add_theme_font_size_override("font_size", UIConstants.LABEL_FONT_SIZE_36)
 	btn.add_theme_color_override("font_color", Color.BLACK)
 	btn.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
 	btn.add_theme_constant_override("shadow_offset_x", 1)
 	btn.add_theme_constant_override("shadow_offset_y", 1)
-	add_child(btn)
 	UIButtonStyle.fit_button_text(btn)
-	return btn
 
 # Rebuilds one grid item's portrait/overlay: card_back+"???" if locked,
 # else the AI's stat-card portrait plus a new/defeated badge.

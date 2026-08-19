@@ -213,14 +213,6 @@ const OPTIONS_LANG_POPUP_POS := Vector2(300, 328)
 const OPTIONS_CREDITS_BUTTON_POS := Vector2(412, 463)
 const OPTIONS_TITLE_SCREEN_BUTTON_POS := Vector2(803, 463)
 
-# --------------------------------------------------------------- Opponents
-
-const OPPONENTS_DESC_PANEL_POS := Vector2(207, 463)
-const OPPONENTS_TITLE_POS := Vector2(300, 2)
-const OPPONENTS_LABEL_DESC_POS := Vector2(231, 463)
-const OPPONENTS_SELECT_BUTTON_POS := Vector2(805, 463)
-const OPPONENTS_SCROLL_POS := Vector2(95, 50)
-
 # --------------------------------------------------------------- StartMenu
 
 const STARTMENU_SLOT_BORDER_COLOR := Color(0, 0, 0, 0.7)
