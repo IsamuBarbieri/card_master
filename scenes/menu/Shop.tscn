@@ -9,7 +9,7 @@
 [ext_resource type="Script" uid="uid://ddk6js2jyxnm2" path="res://scripts/FixedSizeButton.gd" id="7"]
 [ext_resource type="Script" uid="uid://buevnq2d5uop2" path="res://scripts/FixedSizeLabel.gd" id="8"]
 [ext_resource type="Script" uid="uid://bg1gh3e32xo3n" path="res://scripts/deckselect/BusySpinner.gd" id="9"]
-[ext_resource type="FontFile" path="res://assets/fonts/FiraSans-Regular.ttf" id="10"]
+[ext_resource type="FontFile" uid="uid://coicfkyljgulh" path="res://assets/fonts/FiraSans-Regular.ttf" id="10"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_outer"]
 bg_color = Color(0.96, 0.93, 0.85, 0.94)
@@ -103,9 +103,6 @@ offset_top = 391.0
 offset_right = 900.0
 offset_bottom = 445.0
 theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
 theme_override_fonts/font = ExtResource("10")
 theme_override_font_sizes/font_size = 25
 text = "Ricompra!"
@@ -133,9 +130,6 @@ offset_top = 463.0
 offset_right = 157.0
 offset_bottom = 519.0
 theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
 theme_override_fonts/font = ExtResource("10")
 theme_override_font_sizes/font_size = 36
 text = "Indietro"
@@ -201,9 +195,9 @@ expand_mode = 1
 [node name="CoinsLabel" type="Label" parent="." unique_id=1443505460]
 layout_mode = 0
 offset_left = 707.0
-offset_top = 470.0
+offset_top = 483.0
 offset_right = 863.0
-offset_bottom = 517.0
+offset_bottom = 530.0
 theme_override_colors/font_color = Color(1, 0.8509804, 0.101960786, 1)
 theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
 theme_override_constants/shadow_offset_x = 1
@@ -283,9 +277,6 @@ offset_top = 417.0
 offset_right = 428.0
 offset_bottom = 471.0
 theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
 theme_override_fonts/font = ExtResource("10")
 theme_override_font_sizes/font_size = 25
 disabled = true
@@ -299,9 +290,6 @@ offset_top = 417.0
 offset_right = 653.0
 offset_bottom = 471.0
 theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
 theme_override_fonts/font = ExtResource("10")
 theme_override_font_sizes/font_size = 25
 disabled = true

@@ -1,14 +1,15 @@
-[gd_scene load_steps=29 format=3 uid="uid://bqm2x8vk4r7ct"]
+[gd_scene format=3 uid="uid://bqm2x8vk4r7ct"]
 
-[ext_resource type="Script" path="res://scripts/menu/Help.gd" id="1_wa8hg"]
-[ext_resource type="Texture2D" path="res://assets/help/help_presentation.png" id="2_hsh1r"]
-[ext_resource type="FontFile" path="res://assets/fonts/FiraSans-Regular.ttf" id="3_kedon"]
-[ext_resource type="Script" path="res://scripts/FixedSizeLabel.gd" id="4_wrpev"]
-[ext_resource type="Texture2D" path="res://assets/help/help_card.png" id="5_t2hyy"]
-[ext_resource type="Texture2D" path="res://assets/help/help_main_menu.png" id="6_4k22f"]
-[ext_resource type="Texture2D" path="res://assets/help/help_deck_select.png" id="7_shrd2"]
-[ext_resource type="Texture2D" path="res://assets/help/help_battle.png" id="8_qgjd0"]
-[ext_resource type="Texture2D" path="res://assets/help/help_shop.png" id="9_dpo61"]
+[ext_resource type="Script" uid="uid://7pn6rlxytbhe" path="res://scripts/menu/Help.gd" id="1_wa8hg"]
+[ext_resource type="Texture2D" uid="uid://bxntu3sknqatg" path="res://assets/help/help_presentation.png" id="2_hsh1r"]
+[ext_resource type="FontFile" uid="uid://coicfkyljgulh" path="res://assets/fonts/FiraSans-Regular.ttf" id="3_kedon"]
+[ext_resource type="Script" uid="uid://buevnq2d5uop2" path="res://scripts/FixedSizeLabel.gd" id="4_wrpev"]
+[ext_resource type="Texture2D" uid="uid://nryp6k54tqfn" path="res://assets/help/help_card.png" id="5_t2hyy"]
+[ext_resource type="Texture2D" uid="uid://l10tca4jg4r8" path="res://assets/help/help_main_menu.png" id="6_4k22f"]
+[ext_resource type="Texture2D" uid="uid://dni881y5eqi1" path="res://assets/help/help_deck_select.png" id="7_shrd2"]
+[ext_resource type="Texture2D" uid="uid://bviv0ml86ye16" path="res://assets/help/help_battle.png" id="8_qgjd0"]
+[ext_resource type="Texture2D" uid="uid://coog8u7uqs7b8" path="res://assets/help/help_shop.png" id="9_dpo61"]
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_swbsk"]
 bg_color = Color(0, 0, 0, 0.55)
 corner_radius_top_left = 8
@@ -152,9 +153,14 @@ grow_vertical = 2
 script = ExtResource("1_wa8hg")
 
 [node name="Scroll" type="ScrollContainer" parent="." unique_id=1765693550]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = -4.0
+offset_bottom = 12.0
+grow_horizontal = 2
+grow_vertical = 2
 vertical_scroll_mode = 0
 
 [node name="Pages" type="HBoxContainer" parent="Scroll" unique_id=1499791422]
@@ -177,8 +183,9 @@ color = Color(0.6, 0.6, 0.6, 1)
 
 [node name="Bg" type="TextureRect" parent="Scroll/Pages/PresentationPage" unique_id=714520858]
 layout_mode = 0
+offset_top = 1.0
 offset_right = 960.0
-offset_bottom = 544.0
+offset_bottom = 545.0
 mouse_filter = 2
 texture = ExtResource("2_hsh1r")
 expand_mode = 1
@@ -193,10 +200,9 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_swbsk")
 
 [node name="Label1" type="Label" parent="Scroll/Pages/PresentationPage" unique_id=877892537]
-text = "Card Master é un gioco di carte collezionabili, dove 2 avversari si sfidano posizionando delle carte su una griglia 4x4. Ogni giocatore sceglie 5 carte tra tutte quelle possedute. Il gioco termina quando tutte le carte di entrambi i giocatori vengono posizionate. Il vincitore é colui che a fine partita possiede piú carte del suo colore. Il giocatore vincente puó sottrarre all'avversario una carta catturata durante la partita."
+custom_minimum_size = Vector2(880, 305)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(880.0, 305.0)
 offset_left = 47.0
 offset_top = 63.0
 offset_right = 927.0
@@ -206,6 +212,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 24
+text = "Card Master é un gioco di carte collezionabili, dove 2 avversari si sfidano posizionando delle carte su una griglia 4x4. Ogni giocatore sceglie 5 carte tra tutte quelle possedute. Il gioco termina quando tutte le carte di entrambi i giocatori vengono posizionate. Il vincitore é colui che a fine partita possiede piú carte del suo colore. Il giocatore vincente puó sottrarre all'avversario una carta catturata durante la partita."
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
 
@@ -240,10 +247,9 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_hwbgu")
 
 [node name="Label1" type="Label" parent="Scroll/Pages/CardsPage" unique_id=1304822684]
-text = "Le carte hanno 4 valori: Attacco, Tipo, Difesa Fisica e Magica. I valori vanno da 0 a 255 e sono mostrati come classe da 0 a F - più alto il valore, più alta la classe. Il Tipo può essere Fisico, Magico, Flessibile o Assalto: Fisico attacca la Difesa Fisica, Magico quella Magica, Flessibile la più bassa delle due, e Assalto usa il tuo valore più alto contro quello più basso dell'avversario. Le carte hanno fino a 8 frecce: una freccia verso una carta senza freccia opposta la cattura subito, verso una freccia opposta inizia il combattimento. Il colore del valore (dal verde al rosso) indica il livello - rosso significa al massimo."
+custom_minimum_size = Vector2(600, 386)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(600.0, 386.0)
 offset_left = 31.0
 offset_top = 36.0
 offset_right = 631.0
@@ -253,6 +259,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 24
+text = "Le carte hanno 4 valori: Attacco, Tipo, Difesa Fisica e Magica. I valori vanno da 0 a 255 e sono mostrati come classe da 0 a F - più alto il valore, più alta la classe. Il Tipo può essere Fisico, Magico, Flessibile o Assalto: Fisico attacca la Difesa Fisica, Magico quella Magica, Flessibile la più bassa delle due, e Assalto usa il tuo valore più alto contro quello più basso dell'avversario. Le carte hanno fino a 8 frecce: una freccia verso una carta senza freccia opposta la cattura subito, verso una freccia opposta inizia il combattimento. Il colore del valore (dal verde al rosso) indica il livello - rosso significa al massimo."
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
 
@@ -287,10 +294,9 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_exclg")
 
 [node name="Label1" type="Label" parent="Scroll/Pages/MainPage" unique_id=1757080882]
-text = "Combatti gli avversari per conquistare nuove carte, potenziarle e sbloccare nuovi sfidanti"
+custom_minimum_size = Vector2(300, 95)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(300.0, 95.0)
 offset_left = 330.0
 offset_top = 15.0
 offset_right = 630.0
@@ -300,6 +306,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 18
+text = "Combatti gli avversari per conquistare nuove carte, potenziarle e sbloccare nuovi sfidanti"
 horizontal_alignment = 1
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
@@ -314,10 +321,9 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_os11e")
 
 [node name="Label2" type="Label" parent="Scroll/Pages/MainPage" unique_id=544728075]
-text = "Vendi e compra nuove carte da usare in battaglia"
+custom_minimum_size = Vector2(300, 95)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(300.0, 95.0)
 offset_left = 30.0
 offset_top = 225.0
 offset_right = 330.0
@@ -327,6 +333,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 24
+text = "Vendi e compra nuove carte da usare in battaglia"
 horizontal_alignment = 1
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
@@ -341,10 +348,9 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_7gn6w")
 
 [node name="Label3" type="Label" parent="Scroll/Pages/MainPage" unique_id=277937000]
-text = "Ammira la tua collezione di carte in alta risoluzione"
+custom_minimum_size = Vector2(300, 95)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(300.0, 95.0)
 offset_left = 629.0
 offset_top = 225.0
 offset_right = 929.0
@@ -354,6 +360,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 24
+text = "Ammira la tua collezione di carte in alta risoluzione"
 horizontal_alignment = 1
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
@@ -368,10 +375,9 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_48exy")
 
 [node name="LabelOnline" type="Label" parent="Scroll/Pages/MainPage" unique_id=1011696415]
-text = "Gioca online contro avversari veri"
+custom_minimum_size = Vector2(206, 113)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(206.0, 113.0)
 offset_left = 377.0
 offset_top = 216.0
 offset_right = 583.0
@@ -381,6 +387,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 24
+text = "Gioca online contro avversari veri"
 horizontal_alignment = 1
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
@@ -395,10 +402,9 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_7d6ru")
 
 [node name="Label4" type="Label" parent="Scroll/Pages/MainPage" unique_id=904815051]
-text = "Cambia la lingua di gioco e modifica i volumi audio. Non dimenticarti di guadare i Crediti ^^"
+custom_minimum_size = Vector2(334, 90)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(334.0, 90.0)
 offset_left = 313.0
 offset_top = 432.0
 offset_right = 647.0
@@ -408,6 +414,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 21
+text = "Cambia la lingua di gioco e modifica i volumi audio. Non dimenticarti di guadare i Crediti ^^"
 horizontal_alignment = 1
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
@@ -442,10 +449,9 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_3qa0x")
 
 [node name="Label1" type="Label" parent="Scroll/Pages/DeckSelectPage" unique_id=1342058866]
-text = "Questo é il Deck Menu. Qui puoi scegliere quali carte usare per giocare."
+custom_minimum_size = Vector2(960, 50)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(960.0, 50.0)
 offset_top = 20.0
 offset_right = 960.0
 offset_bottom = 70.0
@@ -454,6 +460,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 24
+text = "Questo é il Deck Menu. Qui puoi scegliere quali carte usare per giocare."
 horizontal_alignment = 1
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
@@ -468,10 +475,9 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_ig1ew")
 
 [node name="Label2" type="Label" parent="Scroll/Pages/DeckSelectPage" unique_id=125317417]
-text = "Puoi spostare le carte dalla lista ai preferiti, e vice versa, trascinandole."
+custom_minimum_size = Vector2(253, 274)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(253.0, 274.0)
 offset_left = 353.0
 offset_top = 95.0
 offset_right = 606.0
@@ -481,6 +487,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 24
+text = "Puoi spostare le carte dalla lista ai preferiti, e vice versa, trascinandole."
 horizontal_alignment = 1
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
@@ -495,10 +502,9 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_vk8oa")
 
 [node name="Label3" type="Label" parent="Scroll/Pages/DeckSelectPage" unique_id=1053493930]
-text = "Scorri verticalmente per cambiare il tipo di carta e orizzontalmente per scorrere le carte."
+custom_minimum_size = Vector2(253, 125)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(253.0, 125.0)
 offset_left = 46.0
 offset_top = 183.0
 offset_right = 299.0
@@ -508,6 +514,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 23
+text = "Scorri verticalmente per cambiare il tipo di carta e orizzontalmente per scorrere le carte."
 horizontal_alignment = 1
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
@@ -522,10 +529,9 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_gmk8t")
 
 [node name="Label4" type="Label" parent="Scroll/Pages/DeckSelectPage" unique_id=1813822054]
-text = "Trascina le carte nel riquadro per selezionarle."
+custom_minimum_size = Vector2(393, 125)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(393.0, 125.0)
 offset_left = 283.0
 offset_top = 393.0
 offset_right = 676.0
@@ -535,6 +541,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 24
+text = "Trascina le carte nel riquadro per selezionarle."
 horizontal_alignment = 1
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
@@ -570,10 +577,9 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_nhbci")
 
 [node name="Label1" type="Label" parent="Scroll/Pages/BattlePage" unique_id=497107120]
-text = "Trascina le carte nella griglia per giocarle"
+custom_minimum_size = Vector2(239, 125)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(239.0, 125.0)
 offset_left = 472.0
 offset_top = 135.0
 offset_right = 711.0
@@ -583,87 +589,88 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 24
+text = "Trascina le carte nella griglia per giocarle"
 horizontal_alignment = 1
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
 
 [node name="Label2Backing" type="Panel" parent="Scroll/Pages/BattlePage" unique_id=624902138]
 layout_mode = 0
-offset_left = 320.0
-offset_top = 10.0
-offset_right = 542.0
-offset_bottom = 135.0
+offset_left = 418.0
+offset_top = 408.0
+offset_right = 640.0
+offset_bottom = 533.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_l23ps")
 
 [node name="Label2" type="Label" parent="Scroll/Pages/BattlePage" unique_id=664200893]
-text = "Le carte non possono essere giocate sui blocchi"
+custom_minimum_size = Vector2(222, 125)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(222.0, 125.0)
-offset_left = 320.0
-offset_top = 10.0
-offset_right = 542.0
-offset_bottom = 135.0
+offset_left = 418.0
+offset_top = 408.0
+offset_right = 640.0
+offset_bottom = 533.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 24
+text = "Le carte non possono essere giocate sui blocchi"
 horizontal_alignment = 1
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
 
 [node name="Label3Backing" type="Panel" parent="Scroll/Pages/BattlePage" unique_id=1520481630]
 layout_mode = 0
-offset_left = 17.0
-offset_top = 200.0
-offset_right = 269.0
-offset_bottom = 280.0
+offset_left = 12.0
+offset_top = 208.0
+offset_right = 264.0
+offset_bottom = 288.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_0b30k")
 
 [node name="Label3" type="Label" parent="Scroll/Pages/BattlePage" unique_id=166728734]
-text = "Carte rimanenti dell'avversario"
+custom_minimum_size = Vector2(252, 80)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(252.0, 80.0)
-offset_left = 17.0
-offset_top = 200.0
-offset_right = 269.0
-offset_bottom = 280.0
+offset_left = 12.0
+offset_top = 208.0
+offset_right = 264.0
+offset_bottom = 288.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 24
+text = "Carte rimanenti dell'avversario"
 horizontal_alignment = 1
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
 
 [node name="Label4Backing" type="Panel" parent="Scroll/Pages/BattlePage" unique_id=1779542329]
 layout_mode = 0
-offset_left = 47.0
-offset_top = 100.0
-offset_right = 224.0
-offset_bottom = 135.0
+offset_left = 57.0
+offset_top = 11.0
+offset_right = 234.0
+offset_bottom = 46.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_d207i")
 
 [node name="Label4" type="Label" parent="Scroll/Pages/BattlePage" unique_id=110449484]
-text = "Punteggio"
+custom_minimum_size = Vector2(177, 35)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(177.0, 35.0)
-offset_left = 47.0
-offset_top = 100.0
-offset_right = 224.0
-offset_bottom = 135.0
+offset_left = 57.0
+offset_top = 11.0
+offset_right = 234.0
+offset_bottom = 46.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 24
+text = "Punteggio"
 horizontal_alignment = 1
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
@@ -671,26 +678,26 @@ script = ExtResource("4_wrpev")
 [node name="Label5Backing" type="Panel" parent="Scroll/Pages/BattlePage" unique_id=287780130]
 layout_mode = 0
 offset_left = 66.0
-offset_top = 340.0
+offset_top = 334.0
 offset_right = 217.0
-offset_bottom = 386.0
+offset_bottom = 380.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_cs6b8")
 
 [node name="Label5" type="Label" parent="Scroll/Pages/BattlePage" unique_id=1672709048]
-text = "Statistiche Carta"
+custom_minimum_size = Vector2(151, 46)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(151.0, 46.0)
 offset_left = 66.0
-offset_top = 340.0
+offset_top = 334.0
 offset_right = 217.0
-offset_bottom = 386.0
+offset_bottom = 380.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 20
+text = "Statistiche Carta"
 horizontal_alignment = 1
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
@@ -718,54 +725,54 @@ expand_mode = 1
 
 [node name="Label1Backing" type="Panel" parent="Scroll/Pages/ShopPage" unique_id=449252388]
 layout_mode = 0
-offset_left = 280.0
-offset_top = 267.0
-offset_right = 533.0
-offset_bottom = 392.0
+offset_left = 355.0
+offset_top = 390.0
+offset_right = 608.0
+offset_bottom = 515.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_x52g1")
 
 [node name="Label1" type="Label" parent="Scroll/Pages/ShopPage" unique_id=1894557452]
-text = "Posiziona la carta qui per venderla o comprarla"
+custom_minimum_size = Vector2(253, 125)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(253.0, 125.0)
-offset_left = 280.0
-offset_top = 267.0
-offset_right = 533.0
-offset_bottom = 392.0
+offset_left = 355.0
+offset_top = 390.0
+offset_right = 608.0
+offset_bottom = 515.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 24
+text = "Posiziona la carta qui per venderla o comprarla"
 horizontal_alignment = 1
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
 
 [node name="Label2Backing" type="Panel" parent="Scroll/Pages/ShopPage" unique_id=1789533820]
 layout_mode = 0
-offset_left = 644.0
-offset_top = 388.0
-offset_right = 897.0
-offset_bottom = 498.0
+offset_left = 689.0
+offset_top = 422.0
+offset_right = 942.0
+offset_bottom = 532.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_g54y7")
 
 [node name="Label2" type="Label" parent="Scroll/Pages/ShopPage" unique_id=333460987]
-text = "Monete possedute"
+custom_minimum_size = Vector2(253, 110)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(253.0, 110.0)
-offset_left = 644.0
-offset_top = 388.0
-offset_right = 897.0
-offset_bottom = 498.0
+offset_left = 689.0
+offset_top = 422.0
+offset_right = 942.0
+offset_bottom = 532.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 24
+text = "Monete possedute"
 horizontal_alignment = 1
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
@@ -780,10 +787,9 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_774if")
 
 [node name="Label3" type="Label" parent="Scroll/Pages/ShopPage" unique_id=1414829280]
-text = "Questa é la lista delle carte acquistabili. Si sbloccano nuove carte sconfiggendo avversari piú forti"
+custom_minimum_size = Vector2(280, 268)
 clip_contents = true
 layout_mode = 0
-custom_minimum_size = Vector2(280.0, 268.0)
 offset_left = 651.0
 offset_top = 110.0
 offset_right = 931.0
@@ -793,14 +799,15 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("3_kedon")
 theme_override_font_sizes/font_size = 24
+text = "Questa é la lista delle carte acquistabili. Si sbloccano nuove carte sconfiggendo avversari piú forti"
 horizontal_alignment = 1
 autowrap_mode = 2
 script = ExtResource("4_wrpev")
 
 [node name="CloseButton" type="Button" parent="." unique_id=1766580177]
-text = "X"
 layout_mode = 0
-offset_left = 42.0
-offset_top = 506.0
-offset_right = 84.0
-offset_bottom = 546.0
+offset_left = 25.0
+offset_top = 486.0
+offset_right = 67.0
+offset_bottom = 526.0
+text = "X"

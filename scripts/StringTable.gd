@@ -303,7 +303,7 @@ const TABLE := [
 		"Scorri verticalmente per cambiare il tipo di carta e orizzontalmente per scorrere le carte.",
 		"Trascina le carte nel riquadro per selezionarle.",
 		"Trascina le carte nella griglia per giocarle",
-		"Le carte non possno essere giocate sui blocci",
+		"Le carte non possono essere giocate sui blocchi",
 		"Carte rimanenti dell'avversario", "Punteggio", "Statistiche Carta",
 		"Posiziona la carta qui per venderla o comprarla", "Monete possedute",
 		"Questa é la lista delle carte acquistabili. Si sbloccano nuove carte sconfiggendo avversari piú forti",
