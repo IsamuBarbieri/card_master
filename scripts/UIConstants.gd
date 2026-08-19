@@ -109,28 +109,8 @@ const SHOP_TITLE_FONT_SIZE := 46
 const SHOP_SELL_BUY_LABEL_FONT_SIZE := 50
 const SHOP_COINS_LABEL_FONT_SIZE := 36
 const SHOP_VALUE_LABEL_FONT_SIZE := 46
-const SHOP_CARD_PANEL_POS := [
-	Vector2(636, 115), Vector2(636, 160), Vector2(636, 205),
-	Vector2(636, 250), Vector2(636, 295), Vector2(636, 340),
-]
 const SHOP_CARD_IMAGE_POS := Vector2(4, 1)
-const SHOP_CARD_PRICE_POS := Vector2(167, 1)
-const SHOP_PANEL_LEFT_POS := Vector2(10, 82)
-const SHOP_CARD_SLOT_POS := Vector2(432, 391)
-const SHOP_BUYBACK_BUTTON_POS := Vector2(744, 391)
-const SHOP_HELP_LABEL_POS := Vector2(0, 79)
-const SHOP_TITLE_LABEL_POS := Vector2(348, 14)
-const SHOP_LABEL_SELL_POS := Vector2(67, 16)
-const SHOP_LABEL_BUY_POS := Vector2(679, 16)
-const SHOP_COINS_ICON_POS := Vector2(867, 463)
-const SHOP_LABEL_COINS_POS := Vector2(711, 477)
-const SHOP_LABEL_BUY_VALUE_POS := Vector2(530, 473)
-const SHOP_LABEL_SELL_VALUE_POS := Vector2(309, 473)
-const SHOP_ICON_POS := Vector2(372, 16)
-const SHOP_INFO_BKG_POS := Vector2(364, 117)
 const SHOP_STAT_PANEL_POS := Vector2(373, 129)
-const SHOP_SELL_BUTTON_POS := Vector2(309, 417)
-const SHOP_BUY_BUTTON_POS := Vector2(534, 417)
 const SHOP_BUYBACK_CARD_POS := Vector2(694, 391)
 
 # --------------------------------------------------------------- Leaderboard

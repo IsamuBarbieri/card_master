@@ -55,18 +55,11 @@ const BUYBACK_DIVISOR := 2
 const RESTOCK_WINS := 3
 
 # Six slots at a 45px pitch fit the 115..385 band left between the offer
-# column's top and the buyback card/button row at y 391.
-const SHOP_CARD_PANEL_POS := UIConstants.SHOP_CARD_PANEL_POS
-## Card-stats readout inside the info panel at (364,117) 260x252. The caption
-## column shrank and the value column grew when the captions went
-## abbreviated: the values now carry the long strings (the attack type is
-## spelled out) and "Физический" needs the room more than "Atk" does.
-
+# column's top and the buyback card/button row at y 391 - now laid out in
+# Shop.tscn (ShopCardPanel1..6).
 const SHOP_CARD_PANEL_SIZE := Vector2(306, 43)
 const SHOP_CARD_IMAGE_POS := UIConstants.SHOP_CARD_IMAGE_POS
 const SHOP_CARD_IMAGE_SIZE := Vector2(30, 40)  # keeps the 96x128 card aspect
-const SHOP_CARD_PRICE_POS := UIConstants.SHOP_CARD_PRICE_POS
-const SHOP_CARD_PRICE_SIZE := Vector2(124, 41)
 const BUYBACK_SIZE := Vector2(40, 54)
 
 enum GameState { WAITING_INPUT, DECK_SCROLL, DRAG_CARD }
@@ -77,19 +70,19 @@ var next_sel: int = 0  # 0 none, 1 wheel, 2 card_slot, 3 buyback, 4 shop_card
 
 var deck_selector := DeckSelectorWheel.new()
 
-var panel_left: Control
-var panel_card_slot: Control
-var card_slot_placeholder: TextureRect
+@onready var panel_left: Control = $PanelLeft
+@onready var panel_card_slot: Control = $PanelCardSlot
+@onready var card_slot_placeholder: TextureRect = $PanelCardSlot/Placeholder
 var card_slot_view: CardView
 
-var label_coins: Label
-var label_buy_value: Label
-var label_sell_value: Label
-var button_sell: Button
-var button_buy: Button
-var button_buy_back: Button
+@onready var label_coins: Label = $CoinsLabel
+@onready var label_buy_value: Label = $BuyValueLabel
+@onready var label_sell_value: Label = $SellValueLabel
+@onready var button_sell: Button = $SellButton
+@onready var button_buy: Button = $BuyButton
+@onready var button_buy_back: Button = $BuybackButton
 var image_buyback_card: CardView
-var busy_spinner: BusySpinner
+@onready var busy_spinner: BusySpinner = $BusySpinner
 var selection_outline: SelectionOutline
 var drag_ghost: CardView
 
@@ -114,7 +107,7 @@ var sfx_sell: AudioStreamPlayer
 var sfx_buy: AudioStreamPlayer
 
 var nav: FocusNav
-var back_button: Button
+@onready var back_button: Button = $BackButton
 var _wheel_stick_locked := false
 var _last_browse_item: FocusNav.NavItem = null  # wheel or offer, whichever slot's up/down returns to
 
@@ -145,9 +138,6 @@ var dc_get_back_tween: Tween = null
 var _pointer_down := false
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
-	mouse_filter = Control.MOUSE_FILTER_STOP
-
 	for card in Game.player.cards:
 		card.is_on_deck = false
 
@@ -304,138 +294,128 @@ func _cancel_staged_card() -> void:
 func _build_ui() -> void:
 	var font_stylish: Font = Game.font_stylish
 
-	var bg := TextureRect.new()
-	bg.texture = load(ASSETS + "common_bkg_clean.png")
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg.size = Vector2(SCREEN_W, SCREEN_H)
-	add_child(bg)
-
-	panel_left = Control.new()
-	panel_left.position = UIConstants.SHOP_PANEL_LEFT_POS
-	panel_left.size = Vector2(348, 348)
-	panel_left.clip_contents = true
-	panel_left.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(panel_left)
-
-	var symbol := TextureRect.new()
-	symbol.texture = load(ASSETS + "common_symbol_a.png")
-	symbol.stretch_mode = TextureRect.STRETCH_SCALE
-	symbol.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	symbol.size = Vector2(348, 348)
-	symbol.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel_left.add_child(symbol)
-
-	panel_card_slot = Control.new()
-	panel_card_slot.position = UIConstants.SHOP_CARD_SLOT_POS
-	panel_card_slot.size = Vector2(CARD_W, CARD_H)
-	panel_card_slot.clip_contents = true
-	panel_card_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var slot_bg := ColorRect.new()
-	slot_bg.color = UIConstants.COLOR_PANEL_FILL_GRAY
-	slot_bg.size = Vector2(CARD_W, CARD_H)
-	slot_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel_card_slot.add_child(slot_bg)
-	add_child(panel_card_slot)
-
-	card_slot_placeholder = TextureRect.new()
-	card_slot_placeholder.texture = load(ASSETS + "common_transp_box_single.png")
-	card_slot_placeholder.stretch_mode = TextureRect.STRETCH_SCALE
-	card_slot_placeholder.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	card_slot_placeholder.size = Vector2(CARD_W, CARD_H)
-	card_slot_placeholder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel_card_slot.add_child(card_slot_placeholder)
-
 	card_slot_view = CardView.new()
 	card_slot_view.visible = false
 	card_slot_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel_card_slot.add_child(card_slot_view)
 
-	button_buy_back = _make_button(StringTable.get_string(StringTable.ID_BUY_BACK), UIConstants.SHOP_BUYBACK_BUTTON_POS, Vector2(156, 54), font_stylish)
-	button_buy_back.visible = false
+	UIButtonStyle.apply(button_buy_back)
+	button_buy_back.text = StringTable.get_string(StringTable.ID_BUY_BACK)
+	button_buy_back.add_theme_font_override("font", font_stylish)
+	button_buy_back.add_theme_font_size_override("font_size", 25)
+	button_buy_back.add_theme_color_override("font_color", Color.BLACK)
+	button_buy_back.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
+	button_buy_back.add_theme_constant_override("shadow_offset_x", 1)
+	button_buy_back.add_theme_constant_override("shadow_offset_y", 1)
 	button_buy_back.pressed.connect(_on_buyback_pressed)
+	UIButtonStyle.fit_button_text(button_buy_back)
 
-	var label_shop_help := _make_label(UIConstants.SHOP_HELP_LABEL_POS, Vector2(959, 34), font_stylish, UIConstants.SHOP_HELP_LABEL_FONT_SIZE)
-	label_shop_help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var label_shop_help: Label = $ShopHelpLabel
+	label_shop_help.add_theme_font_override("font", font_stylish)
+	label_shop_help.add_theme_font_size_override("font_size", UIConstants.SHOP_HELP_LABEL_FONT_SIZE)
+	label_shop_help.add_theme_color_override("font_color", Color.BLACK)
+	label_shop_help.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
+	label_shop_help.add_theme_constant_override("shadow_offset_x", 1)
+	label_shop_help.add_theme_constant_override("shadow_offset_y", 1)
 	label_shop_help.text = StringTable.get_string(StringTable.ID_SHOP_HELP)
-	add_child(label_shop_help)
 	UIButtonStyle.fit_button_text(label_shop_help)
 
 	# font_size 36 to match every other screen's Back button (DeckSelect,
 	# Opponents, Options) - this helper's other buttons stay at the default
 	# 25, tuned for their own tighter boxes.
-	back_button = _make_button(StringTable.get_string(StringTable.ID_BACK), UIConstants.BACK_BUTTON_POS, UIConstants.BACK_BUTTON_SIZE, font_stylish, UIConstants.BACK_BUTTON_FONT_SIZE)
+	UIButtonStyle.apply(back_button)
+	back_button.text = StringTable.get_string(StringTable.ID_BACK)
+	back_button.add_theme_font_override("font", font_stylish)
+	back_button.add_theme_font_size_override("font_size", UIConstants.BACK_BUTTON_FONT_SIZE)
+	back_button.add_theme_color_override("font_color", Color.BLACK)
+	back_button.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
+	back_button.add_theme_constant_override("shadow_offset_x", 1)
+	back_button.add_theme_constant_override("shadow_offset_y", 1)
 	back_button.pressed.connect(_on_back_pressed)
+	UIButtonStyle.fit_button_text(back_button)
 
-	var label_shop := _make_label(UIConstants.SHOP_TITLE_LABEL_POS, Vector2(264, 60), Game.font_title, UIConstants.SHOP_TITLE_FONT_SIZE)
-	label_shop.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label_shop.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var label_shop: Label = $ShopTitleLabel
+	label_shop.add_theme_font_override("font", Game.font_title)
+	label_shop.add_theme_font_size_override("font_size", UIConstants.SHOP_TITLE_FONT_SIZE)
+	label_shop.add_theme_color_override("font_color", Color.BLACK)
+	label_shop.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
+	label_shop.add_theme_constant_override("shadow_offset_x", 1)
+	label_shop.add_theme_constant_override("shadow_offset_y", 1)
 	label_shop.text = StringTable.get_string(StringTable.ID_SHOP)
-	add_child(label_shop)
 	UIButtonStyle.fit_menu_button_text(label_shop, TITLE_ICON_GAP_WIDTH)
 
-	var label_sell := _make_label(UIConstants.SHOP_LABEL_SELL_POS, Vector2(214, 62), Game.font_title, UIConstants.SHOP_SELL_BUY_LABEL_FONT_SIZE)
-	label_sell.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label_sell.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var label_sell: Label = $SellLabel
+	label_sell.add_theme_font_override("font", Game.font_title)
+	label_sell.add_theme_font_size_override("font_size", UIConstants.SHOP_SELL_BUY_LABEL_FONT_SIZE)
+	label_sell.add_theme_color_override("font_color", Color.BLACK)
+	label_sell.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
+	label_sell.add_theme_constant_override("shadow_offset_x", 1)
+	label_sell.add_theme_constant_override("shadow_offset_y", 1)
 	label_sell.text = StringTable.get_string(StringTable.ID_SELL)
-	add_child(label_sell)
 	UIButtonStyle.fit_button_text(label_sell)
 
-	var label_buy := _make_label(UIConstants.SHOP_LABEL_BUY_POS, Vector2(214, 62), Game.font_title, UIConstants.SHOP_SELL_BUY_LABEL_FONT_SIZE)
-	label_buy.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label_buy.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var label_buy: Label = $BuyLabel
+	label_buy.add_theme_font_override("font", Game.font_title)
+	label_buy.add_theme_font_size_override("font_size", UIConstants.SHOP_SELL_BUY_LABEL_FONT_SIZE)
+	label_buy.add_theme_color_override("font_color", Color.BLACK)
+	label_buy.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
+	label_buy.add_theme_constant_override("shadow_offset_x", 1)
+	label_buy.add_theme_constant_override("shadow_offset_y", 1)
 	label_buy.text = StringTable.get_string(StringTable.ID_BUY)
-	add_child(label_buy)
 	UIButtonStyle.fit_button_text(label_buy)
 
-	var coins_icon := TextureRect.new()
-	coins_icon.texture = load(UIConstants.ICON_COIN)
-	coins_icon.stretch_mode = TextureRect.STRETCH_SCALE
-	coins_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	coins_icon.position = UIConstants.SHOP_COINS_ICON_POS
-	coins_icon.size = Vector2(60, 60)
-	add_child(coins_icon)
+	label_coins.add_theme_font_override("font", font_stylish)
+	label_coins.add_theme_font_size_override("font_size", UIConstants.SHOP_COINS_LABEL_FONT_SIZE)
+	label_coins.add_theme_color_override("font_color", Color.BLACK)
+	label_coins.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
+	label_coins.add_theme_constant_override("shadow_offset_x", 1)
+	label_coins.add_theme_constant_override("shadow_offset_y", 1)
 
-	label_coins = _make_label(UIConstants.SHOP_LABEL_COINS_POS, Vector2(156, 46), font_stylish, UIConstants.SHOP_COINS_LABEL_FONT_SIZE)
-	label_coins.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	add_child(label_coins)
-
-	label_buy_value = _make_label(UIConstants.SHOP_LABEL_BUY_VALUE_POS, Vector2(123, 46), font_stylish, UIConstants.SHOP_VALUE_LABEL_FONT_SIZE)
-	label_buy_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label_buy_value.add_theme_font_override("font", font_stylish)
+	label_buy_value.add_theme_font_size_override("font_size", UIConstants.SHOP_VALUE_LABEL_FONT_SIZE)
+	label_buy_value.add_theme_color_override("font_color", Color.BLACK)
+	label_buy_value.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
+	label_buy_value.add_theme_constant_override("shadow_offset_x", 1)
+	label_buy_value.add_theme_constant_override("shadow_offset_y", 1)
 	label_buy_value.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	label_buy_value.text = "---"
-	add_child(label_buy_value)
 
-	label_sell_value = _make_label(UIConstants.SHOP_LABEL_SELL_VALUE_POS, Vector2(119, 46), font_stylish, UIConstants.SHOP_VALUE_LABEL_FONT_SIZE)
-	label_sell_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label_sell_value.add_theme_font_override("font", font_stylish)
+	label_sell_value.add_theme_font_size_override("font_size", UIConstants.SHOP_VALUE_LABEL_FONT_SIZE)
+	label_sell_value.add_theme_color_override("font_color", Color.BLACK)
+	label_sell_value.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
+	label_sell_value.add_theme_constant_override("shadow_offset_x", 1)
+	label_sell_value.add_theme_constant_override("shadow_offset_y", 1)
 	label_sell_value.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	label_sell_value.text = "---"
-	add_child(label_sell_value)
-
-	var image_shop_icon := TextureRect.new()
-	image_shop_icon.texture = load(ASSETS + "button_shop.png")
-	image_shop_icon.stretch_mode = TextureRect.STRETCH_SCALE
-	image_shop_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	image_shop_icon.position = UIConstants.SHOP_ICON_POS
-	image_shop_icon.size = Vector2(214, 56)
-	image_shop_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(image_shop_icon)
-
-	var info_bkg := UIPanel.make(Vector2(260, 252))
-	info_bkg.position = UIConstants.SHOP_INFO_BKG_POS
-	add_child(info_bkg)
 
 	stat_panel = CardStatPanel.make(Vector2(242, 232))
 	stat_panel.position = UIConstants.SHOP_STAT_PANEL_POS
 	add_child(stat_panel)
 
-	button_sell = _make_button(StringTable.get_string(StringTable.ID_SELL_PRICE), UIConstants.SHOP_SELL_BUTTON_POS, Vector2(119, 54), font_stylish)
+	UIButtonStyle.apply(button_sell)
+	button_sell.text = StringTable.get_string(StringTable.ID_SELL_PRICE)
+	button_sell.add_theme_font_override("font", font_stylish)
+	button_sell.add_theme_font_size_override("font_size", 25)
+	button_sell.add_theme_color_override("font_color", Color.BLACK)
+	button_sell.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
+	button_sell.add_theme_constant_override("shadow_offset_x", 1)
+	button_sell.add_theme_constant_override("shadow_offset_y", 1)
 	button_sell.disabled = true
 	button_sell.pressed.connect(_on_sell_pressed)
+	UIButtonStyle.fit_button_text(button_sell)
 
-	button_buy = _make_button(StringTable.get_string(StringTable.ID_BUY_PRICE), UIConstants.SHOP_BUY_BUTTON_POS, Vector2(119, 54), font_stylish)
+	UIButtonStyle.apply(button_buy)
+	button_buy.text = StringTable.get_string(StringTable.ID_BUY_PRICE)
+	button_buy.add_theme_font_override("font", font_stylish)
+	button_buy.add_theme_font_size_override("font_size", 25)
+	button_buy.add_theme_color_override("font_color", Color.BLACK)
+	button_buy.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
+	button_buy.add_theme_constant_override("shadow_offset_x", 1)
+	button_buy.add_theme_constant_override("shadow_offset_y", 1)
 	button_buy.disabled = true
 	button_buy.pressed.connect(_on_buy_pressed)
+	UIButtonStyle.fit_button_text(button_buy)
 
 	image_buyback_card = CardView.new()
 	image_buyback_card.position = UIConstants.SHOP_BUYBACK_CARD_POS
@@ -445,17 +425,7 @@ func _build_ui() -> void:
 	add_child(image_buyback_card)
 
 	for i in GEN_TABLE.size():
-		var panel := Control.new()
-		panel.position = SHOP_CARD_PANEL_POS[i]
-		panel.size = SHOP_CARD_PANEL_SIZE
-		panel.clip_contents = true
-		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var panel_bg := ColorRect.new()
-		panel_bg.color = UIConstants.SHOP_BUYBACK_BG_COLOR
-		panel_bg.size = SHOP_CARD_PANEL_SIZE
-		panel_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		panel.add_child(panel_bg)
-		add_child(panel)
+		var panel: Control = get_node("ShopCardPanel%d" % (i + 1))
 		shop_card_panels.append(panel)
 
 		var view := CardView.new()
@@ -468,21 +438,20 @@ func _build_ui() -> void:
 
 		# 30 rather than the old 46: six slots share the band four used to,
 		# so the price has to fit a 41px-tall box now.
-		var price_label := _make_label(SHOP_CARD_PRICE_POS, SHOP_CARD_PRICE_SIZE, font_stylish, 30)
-		price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		panel.add_child(price_label)
+		var price_label: Label = panel.get_node("PriceLabel")
+		price_label.add_theme_font_override("font", font_stylish)
+		price_label.add_theme_font_size_override("font_size", 30)
+		price_label.add_theme_color_override("font_color", Color.BLACK)
+		price_label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
+		price_label.add_theme_constant_override("shadow_offset_x", 1)
+		price_label.add_theme_constant_override("shadow_offset_y", 1)
 		shop_card_price_labels.append(price_label)
 
 		shop_cards.append(null)
 		shop_cards_active.append(false)
 		shop_cards_time.append(0.0)
 
-	busy_spinner = BusySpinner.new()
-	busy_spinner.position = UIConstants.BUSY_SPINNER_POS
-	busy_spinner.size = UIConstants.BUSY_SPINNER_SIZE
-	busy_spinner.pivot_offset = UIConstants.BUSY_SPINNER_PIVOT
 	busy_spinner.visible = false
-	add_child(busy_spinner)
 
 	drag_ghost = CardView.new()
 	drag_ghost.visible = false
@@ -514,34 +483,6 @@ func _make_sfx(path: String) -> AudioStreamPlayer:
 	p.stream = load(ASSETS + path)
 	add_child(p)
 	return p
-
-func _make_label(pos: Vector2, label_size: Vector2, font: Font, font_size: int) -> Label:
-	var label := FixedSizeLabel.new()
-	label.position = pos
-	label.size = label_size
-	label.add_theme_font_override("font", font)
-	label.add_theme_font_size_override("font_size", font_size)
-	label.add_theme_color_override("font_color", Color.BLACK)
-	label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-	label.add_theme_constant_override("shadow_offset_x", 1)
-	label.add_theme_constant_override("shadow_offset_y", 1)
-	return label
-
-func _make_button(text: String, pos: Vector2, btn_size: Vector2, font: Font, font_size: int = 25) -> Button:
-	var btn := FixedSizeButton.new()
-	UIButtonStyle.apply(btn)
-	btn.text = text
-	btn.position = pos
-	btn.size = btn_size
-	btn.add_theme_font_override("font", font)
-	btn.add_theme_font_size_override("font_size", font_size)
-	btn.add_theme_color_override("font_color", Color.BLACK)
-	btn.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	btn.add_theme_constant_override("shadow_offset_x", 1)
-	btn.add_theme_constant_override("shadow_offset_y", 1)
-	add_child(btn)
-	UIButtonStyle.fit_button_text(btn)
-	return btn
 
 func _hit_test(control: Control, x: int, y: int) -> bool:
 	return Rect2(control.global_position, control.size).has_point(Vector2(x, y))

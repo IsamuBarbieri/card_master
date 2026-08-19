@@ -1,6 +1,43 @@
-[gd_scene load_steps=2 format=3 uid="uid://dqm8x2n4k7t9w"]
+[gd_scene load_steps=12 format=3 uid="uid://dqm8x2n4k7t9w"]
 
 [ext_resource type="Script" path="res://scripts/menu/Shop.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/common_bkg_clean.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/common_symbol_a.png" id="3"]
+[ext_resource type="Texture2D" path="res://assets/common_transp_box_single.png" id="4"]
+[ext_resource type="Texture2D" path="res://assets/coins_icon.png" id="5"]
+[ext_resource type="Texture2D" path="res://assets/button_shop.png" id="6"]
+[ext_resource type="Script" path="res://scripts/FixedSizeButton.gd" id="7"]
+[ext_resource type="Script" path="res://scripts/FixedSizeLabel.gd" id="8"]
+[ext_resource type="Script" path="res://scripts/deckselect/BusySpinner.gd" id="9"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_outer"]
+bg_color = Color(0.96, 0.93, 0.85, 0.94)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.42, 0.3, 0.14, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 5
+shadow_offset = Vector2(0, 3)
+anti_aliasing = true
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inner"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.8, 0.66, 0.36, 0.75)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+anti_aliasing = true
 
 [node name="Shop" type="Control"]
 layout_mode = 3
@@ -9,4 +46,348 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 0
 script = ExtResource("1")
+
+[node name="Bg" type="TextureRect" parent="."]
+layout_mode = 0
+offset_right = 960.0
+offset_bottom = 544.0
+texture = ExtResource("2")
+expand_mode = 1
+
+[node name="PanelLeft" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_left = 10.0
+offset_top = 82.0
+offset_right = 358.0
+offset_bottom = 430.0
+mouse_filter = 2
+
+[node name="Symbol" type="TextureRect" parent="PanelLeft"]
+layout_mode = 0
+offset_right = 348.0
+offset_bottom = 348.0
+mouse_filter = 2
+texture = ExtResource("3")
+expand_mode = 1
+
+[node name="PanelCardSlot" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_left = 432.0
+offset_top = 391.0
+offset_right = 528.0
+offset_bottom = 519.0
+mouse_filter = 2
+
+[node name="SlotBg" type="ColorRect" parent="PanelCardSlot"]
+layout_mode = 0
+offset_right = 96.0
+offset_bottom = 128.0
+mouse_filter = 2
+color = Color(0.6, 0.6, 0.6, 0.498039)
+
+[node name="Placeholder" type="TextureRect" parent="PanelCardSlot"]
+layout_mode = 0
+offset_right = 96.0
+offset_bottom = 128.0
+mouse_filter = 2
+texture = ExtResource("4")
+expand_mode = 1
+
+[node name="BuybackButton" type="Button" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 744.0
+offset_top = 391.0
+offset_right = 900.0
+offset_bottom = 445.0
+script = ExtResource("7")
+
+[node name="ShopHelpLabel" type="Label" parent="."]
+layout_mode = 0
+offset_top = 79.0
+offset_right = 959.0
+offset_bottom = 113.0
+horizontal_alignment = 1
+script = ExtResource("8")
+
+[node name="BackButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 42.0
+offset_top = 463.0
+offset_right = 157.0
+offset_bottom = 519.0
+script = ExtResource("7")
+
+[node name="ShopTitleLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 348.0
+offset_top = 14.0
+offset_right = 612.0
+offset_bottom = 74.0
+horizontal_alignment = 1
+vertical_alignment = 1
+script = ExtResource("8")
+
+[node name="SellLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 67.0
+offset_top = 16.0
+offset_right = 281.0
+offset_bottom = 78.0
+horizontal_alignment = 1
+vertical_alignment = 1
+script = ExtResource("8")
+
+[node name="BuyLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 679.0
+offset_top = 16.0
+offset_right = 893.0
+offset_bottom = 78.0
+horizontal_alignment = 1
+vertical_alignment = 1
+script = ExtResource("8")
+
+[node name="CoinsIcon" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 867.0
+offset_top = 463.0
+offset_right = 927.0
+offset_bottom = 523.0
+texture = ExtResource("5")
+expand_mode = 1
+
+[node name="CoinsLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 711.0
+offset_top = 477.0
+offset_right = 867.0
+offset_bottom = 523.0
+horizontal_alignment = 2
+script = ExtResource("8")
+
+[node name="BuyValueLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 530.0
+offset_top = 473.0
+offset_right = 653.0
+offset_bottom = 519.0
+horizontal_alignment = 1
+script = ExtResource("8")
+
+[node name="SellValueLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 309.0
+offset_top = 473.0
+offset_right = 428.0
+offset_bottom = 519.0
+horizontal_alignment = 1
+script = ExtResource("8")
+
+[node name="ShopIcon" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 372.0
+offset_top = 16.0
+offset_right = 586.0
+offset_bottom = 72.0
+mouse_filter = 2
+texture = ExtResource("6")
+expand_mode = 1
+
+[node name="InfoBkg" type="Panel" parent="."]
+layout_mode = 0
+offset_left = 364.0
+offset_top = 117.0
+offset_right = 624.0
+offset_bottom = 369.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_outer")
+
+[node name="Inner" type="Panel" parent="InfoBkg"]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = 254.0
+offset_bottom = 246.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
+
+[node name="SellButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 309.0
+offset_top = 417.0
+offset_right = 428.0
+offset_bottom = 471.0
+script = ExtResource("7")
+
+[node name="BuyButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 534.0
+offset_top = 417.0
+offset_right = 653.0
+offset_bottom = 471.0
+script = ExtResource("7")
+
+[node name="ShopCardPanel1" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_left = 636.0
+offset_top = 115.0
+offset_right = 942.0
+offset_bottom = 158.0
+mouse_filter = 2
+
+[node name="PanelBg" type="ColorRect" parent="ShopCardPanel1"]
+layout_mode = 0
+offset_right = 306.0
+offset_bottom = 43.0
+mouse_filter = 2
+color = Color(0.117647, 0.117647, 0.117647, 0.498039)
+
+[node name="PriceLabel" type="Label" parent="ShopCardPanel1"]
+layout_mode = 0
+offset_left = 167.0
+offset_top = 1.0
+offset_right = 291.0
+offset_bottom = 42.0
+horizontal_alignment = 2
+script = ExtResource("8")
+
+[node name="ShopCardPanel2" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_left = 636.0
+offset_top = 160.0
+offset_right = 942.0
+offset_bottom = 203.0
+mouse_filter = 2
+
+[node name="PanelBg" type="ColorRect" parent="ShopCardPanel2"]
+layout_mode = 0
+offset_right = 306.0
+offset_bottom = 43.0
+mouse_filter = 2
+color = Color(0.117647, 0.117647, 0.117647, 0.498039)
+
+[node name="PriceLabel" type="Label" parent="ShopCardPanel2"]
+layout_mode = 0
+offset_left = 167.0
+offset_top = 1.0
+offset_right = 291.0
+offset_bottom = 42.0
+horizontal_alignment = 2
+script = ExtResource("8")
+
+[node name="ShopCardPanel3" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_left = 636.0
+offset_top = 205.0
+offset_right = 942.0
+offset_bottom = 248.0
+mouse_filter = 2
+
+[node name="PanelBg" type="ColorRect" parent="ShopCardPanel3"]
+layout_mode = 0
+offset_right = 306.0
+offset_bottom = 43.0
+mouse_filter = 2
+color = Color(0.117647, 0.117647, 0.117647, 0.498039)
+
+[node name="PriceLabel" type="Label" parent="ShopCardPanel3"]
+layout_mode = 0
+offset_left = 167.0
+offset_top = 1.0
+offset_right = 291.0
+offset_bottom = 42.0
+horizontal_alignment = 2
+script = ExtResource("8")
+
+[node name="ShopCardPanel4" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_left = 636.0
+offset_top = 250.0
+offset_right = 942.0
+offset_bottom = 293.0
+mouse_filter = 2
+
+[node name="PanelBg" type="ColorRect" parent="ShopCardPanel4"]
+layout_mode = 0
+offset_right = 306.0
+offset_bottom = 43.0
+mouse_filter = 2
+color = Color(0.117647, 0.117647, 0.117647, 0.498039)
+
+[node name="PriceLabel" type="Label" parent="ShopCardPanel4"]
+layout_mode = 0
+offset_left = 167.0
+offset_top = 1.0
+offset_right = 291.0
+offset_bottom = 42.0
+horizontal_alignment = 2
+script = ExtResource("8")
+
+[node name="ShopCardPanel5" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_left = 636.0
+offset_top = 295.0
+offset_right = 942.0
+offset_bottom = 338.0
+mouse_filter = 2
+
+[node name="PanelBg" type="ColorRect" parent="ShopCardPanel5"]
+layout_mode = 0
+offset_right = 306.0
+offset_bottom = 43.0
+mouse_filter = 2
+color = Color(0.117647, 0.117647, 0.117647, 0.498039)
+
+[node name="PriceLabel" type="Label" parent="ShopCardPanel5"]
+layout_mode = 0
+offset_left = 167.0
+offset_top = 1.0
+offset_right = 291.0
+offset_bottom = 42.0
+horizontal_alignment = 2
+script = ExtResource("8")
+
+[node name="ShopCardPanel6" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_left = 636.0
+offset_top = 340.0
+offset_right = 942.0
+offset_bottom = 383.0
+mouse_filter = 2
+
+[node name="PanelBg" type="ColorRect" parent="ShopCardPanel6"]
+layout_mode = 0
+offset_right = 306.0
+offset_bottom = 43.0
+mouse_filter = 2
+color = Color(0.117647, 0.117647, 0.117647, 0.498039)
+
+[node name="PriceLabel" type="Label" parent="ShopCardPanel6"]
+layout_mode = 0
+offset_left = 167.0
+offset_top = 1.0
+offset_right = 291.0
+offset_bottom = 42.0
+horizontal_alignment = 2
+script = ExtResource("8")
+
+[node name="BusySpinner" type="Control" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 912.0
+offset_top = 496.0
+offset_right = 960.0
+offset_bottom = 544.0
+pivot_offset = Vector2(24, 24)
+script = ExtResource("9")
