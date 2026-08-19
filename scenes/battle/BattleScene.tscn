@@ -113,6 +113,12 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
 
 [node name="OwnedLabel" type="Label" parent="EndPanel/PanelOwned"]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("8")
+theme_override_font_sizes/font_size = 22
 layout_mode = 0
 offset_right = 96.0
 offset_bottom = 64.0
@@ -149,6 +155,12 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
 
 [node name="CentralMsgLabel" type="Label" parent="EndPanel"]
 visible = false
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("8")
+theme_override_font_sizes/font_size = 34
 layout_mode = 0
 custom_minimum_size = Vector2(742.0, 90.0)
 offset_left = 46.0
@@ -177,6 +189,12 @@ scroll_active = false
 
 [node name="DoneButton" type="Button" parent="EndPanel"]
 visible = false
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("8")
+theme_override_font_sizes/font_size = 36
 layout_mode = 0
 offset_left = 790.0
 offset_top = 463.0
@@ -185,6 +203,12 @@ offset_bottom = 519.0
 script = ExtResource("6")
 
 [node name="TakeallButton" type="Button" parent="EndPanel"]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("8")
+theme_override_font_sizes/font_size = 36
 text = "Prendi Tutte"
 visible = false
 layout_mode = 0

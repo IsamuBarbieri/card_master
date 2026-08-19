@@ -973,29 +973,11 @@ func _build_end_panel() -> void:
 ## fonts/connections and builds the still-genuinely-dynamic pieces (the stat
 ## panel, whose layout is parametric).
 func _build_battle_end_ui() -> void:
-	owned_label.add_theme_font_override("font", font_stylish)
-	owned_label.add_theme_font_size_override("font_size", MIN_READABLE_FONT_SIZE)
-	owned_label.add_theme_color_override("font_color", Color.BLACK)
-	owned_label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-	owned_label.add_theme_constant_override("shadow_offset_x", 1)
-	owned_label.add_theme_constant_override("shadow_offset_y", 1)
-
 	# Same readout as the in-match panel, same component, so the same card
 	# reads identically on both screens.
 	end_stat_panel = CardStatPanel.make(Vector2(END_INFO_WIDTH, 208))
 	end_stat_panel.position = Vector2(END_INFO_LEFT, 8)
 	panel_info.add_child(end_stat_panel)
-
-	# The line telling the player what to do next on the end screen ("choose a
-	# card as your prize", "the opponent will now choose", the draw notice).
-	# It was 25 - the smallest running text in the game, on the one screen
-	# where the player has to act on what it says.
-	label_central_msg.add_theme_font_override("font", font_stylish)
-	label_central_msg.add_theme_font_size_override("font_size", END_MESSAGE_FONT_SIZE)
-	label_central_msg.add_theme_color_override("font_color", Color.BLACK)
-	label_central_msg.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-	label_central_msg.add_theme_constant_override("shadow_offset_x", 1)
-	label_central_msg.add_theme_constant_override("shadow_offset_y", 1)
 
 	_style_end_button(button_done, StringTable.get_string(StringTable.ID_DONE))
 	button_done.pressed.connect(_on_end_done_pressed)
@@ -1015,12 +997,6 @@ func _build_battle_end_ui() -> void:
 func _style_end_button(btn: Button, text: String) -> void:
 	UIButtonStyle.apply(btn)
 	btn.text = text
-	btn.add_theme_font_override("font", font_stylish)
-	btn.add_theme_font_size_override("font_size", UIConstants.BATTLE_END_BUTTON_FONT_SIZE)
-	btn.add_theme_color_override("font_color", Color.BLACK)
-	btn.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	btn.add_theme_constant_override("shadow_offset_x", 2)
-	btn.add_theme_constant_override("shadow_offset_y", 1)
 	UIButtonStyle.fit_button_text(btn)
 
 func _build_audio() -> void:
