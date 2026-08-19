@@ -61,14 +61,15 @@ var card_outlines: Array = []  # SelectionOutline x N
 
 var type_list_box: VBoxContainer
 var card_list_box: GridContainer
-var type_scroll: ScrollContainer
-var card_scroll: ScrollContainer
+@onready var type_scroll: ScrollContainer = $TypeScroll
+@onready var card_scroll: ScrollContainer = $CardScroll
 
 var big_card_view: CardView
 var stat_panel: CardStatPanel
 
+@onready var back_button: Button = $BackButton
+@onready var title_label: Label = $TitleLabel
 var sfx_back: AudioStreamPlayer
-var back_button: Button
 var nav: FocusNav
 
 # New QoL addition (not in the reference, which relies on the thin native
@@ -97,72 +98,53 @@ func _ready() -> void:
 func _build_ui() -> void:
 	var font_stylish: Font = Game.font_stylish
 
-	var bg := TextureRect.new()
-	bg.texture = load(ASSETS + "common_bkg_clean.png")
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg.size = Vector2(SCREEN_W, SCREEN_H)
-	add_child(bg)
-
 	# font_size 36 to match every other screen's Back button (DeckSelect,
 	# Opponents, Options) - this helper's other buttons stay at the default
 	# 25, tuned for their own tighter boxes.
-	back_button = _make_button(StringTable.get_string(StringTable.ID_BACK), UIConstants.BACK_BUTTON_POS, UIConstants.BACK_BUTTON_SIZE, font_stylish, UIConstants.BACK_BUTTON_FONT_SIZE)
+	UIButtonStyle.apply(back_button)
+	back_button.text = StringTable.get_string(StringTable.ID_BACK)
+	back_button.add_theme_font_override("font", font_stylish)
+	back_button.add_theme_font_size_override("font_size", UIConstants.BACK_BUTTON_FONT_SIZE)
+	back_button.add_theme_color_override("font_color", Color.BLACK)
+	back_button.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
+	back_button.add_theme_constant_override("shadow_offset_x", 1)
+	back_button.add_theme_constant_override("shadow_offset_y", 1)
 	back_button.pressed.connect(_on_back_pressed)
+	UIButtonStyle.fit_button_text(back_button)
 
 	# Label first, icon on top - same "icon has a transparent gap the label
 	# shows through" trick as MainMenu's buttons (button_collection.png is
 	# the same asset used there).
-	var label_collection := _make_label(UIConstants.COLLECTION_TITLE_LABEL_POS, Vector2(264, 60), Game.font_title, UIConstants.COLLECTION_TITLE_FONT_SIZE)
-	label_collection.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label_collection.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label_collection.text = StringTable.get_string(StringTable.ID_COLLECTION)
-	add_child(label_collection)
-	UIButtonStyle.fit_button_text(label_collection)
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title_label.add_theme_font_override("font", Game.font_title)
+	title_label.add_theme_font_size_override("font_size", UIConstants.COLLECTION_TITLE_FONT_SIZE)
+	title_label.add_theme_color_override("font_color", Color.BLACK)
+	title_label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
+	title_label.add_theme_constant_override("shadow_offset_x", 1)
+	title_label.add_theme_constant_override("shadow_offset_y", 1)
+	title_label.text = StringTable.get_string(StringTable.ID_COLLECTION)
+	UIButtonStyle.fit_button_text(title_label)
 
-	var image_collection := TextureRect.new()
-	image_collection.texture = load(ASSETS + "button_collection.png")
-	image_collection.stretch_mode = TextureRect.STRETCH_SCALE
-	image_collection.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	image_collection.position = UIConstants.COLLECTION_ICON_POS
-	image_collection.size = Vector2(263, 69)
-	image_collection.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(image_collection)
-
-	UIShadow.behind(self, UIConstants.COLLECTION_BIG_CARD_POS, Vector2(384, 512))
 	big_card_view = CardView.new()
 	big_card_view.position = UIConstants.COLLECTION_BIG_CARD_POS
 	big_card_view.scale = Vector2(384, 512) / Vector2(CARD_W, CARD_H)
 	big_card_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(big_card_view)
 
-	type_scroll = ScrollContainer.new()
-	type_scroll.position = UIConstants.COLLECTION_TYPE_SCROLL_POS
-	type_scroll.size = Vector2(204, 280)
-	type_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	type_scroll.gui_input.connect(_on_list_gui_input.bind(type_scroll, func() -> int: return type_rows.size(), _select_type, 1, Vector2(204, ROW_HEIGHT)))
-	add_child(type_scroll)
 	type_list_box = VBoxContainer.new()
 	type_list_box.add_theme_constant_override("separation", 0)
 	type_list_box.custom_minimum_size = Vector2(204, 0)
 	type_scroll.add_child(type_list_box)
 
-	card_scroll = ScrollContainer.new()
-	card_scroll.position = UIConstants.COLLECTION_CARD_SCROLL_POS
-	card_scroll.size = Vector2(230, 280)
-	card_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	card_scroll.gui_input.connect(_on_list_gui_input.bind(card_scroll, func() -> int: return card_rows.size(), _select_card, CARD_GRID_COLUMNS, CARD_GRID_CELL + Vector2(CARD_GRID_GAP, CARD_GRID_GAP)))
-	add_child(card_scroll)
 	card_list_box = GridContainer.new()
 	card_list_box.columns = CARD_GRID_COLUMNS
 	card_list_box.add_theme_constant_override("h_separation", CARD_GRID_GAP)
 	card_list_box.add_theme_constant_override("v_separation", CARD_GRID_GAP)
 	card_list_box.custom_minimum_size = Vector2(230, 0)
 	card_scroll.add_child(card_list_box)
-
-	var info_bkg := UIPanel.make(Vector2(299, 158))
-	info_bkg.position = UIConstants.COLLECTION_INFO_BKG_POS
-	add_child(info_bkg)
 
 	# 146 tall (6px margin top and bottom inside the 158px background panel) is
 	# the shortest this box can be and still clear the 22px readable floor in
@@ -275,34 +257,6 @@ func _paint_row(row: Panel, color: Color) -> void:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = color
 	row.add_theme_stylebox_override("panel", sb)
-
-func _make_label(pos: Vector2, label_size: Vector2, font: Font, font_size: int) -> Label:
-	var label := FixedSizeLabel.new()
-	label.position = pos
-	label.size = label_size
-	label.add_theme_font_override("font", font)
-	label.add_theme_font_size_override("font_size", font_size)
-	label.add_theme_color_override("font_color", Color.BLACK)
-	label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-	label.add_theme_constant_override("shadow_offset_x", 1)
-	label.add_theme_constant_override("shadow_offset_y", 1)
-	return label
-
-func _make_button(text: String, pos: Vector2, btn_size: Vector2, font: Font, font_size: int = 25) -> Button:
-	var btn := FixedSizeButton.new()
-	UIButtonStyle.apply(btn)
-	btn.text = text
-	btn.position = pos
-	btn.size = btn_size
-	btn.add_theme_font_override("font", font)
-	btn.add_theme_font_size_override("font_size", font_size)
-	btn.add_theme_color_override("font_color", Color.BLACK)
-	btn.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	btn.add_theme_constant_override("shadow_offset_x", 1)
-	btn.add_theme_constant_override("shadow_offset_y", 1)
-	add_child(btn)
-	UIButtonStyle.fit_button_text(btn)
-	return btn
 
 # ------------------------------------------------------------- selection
 
