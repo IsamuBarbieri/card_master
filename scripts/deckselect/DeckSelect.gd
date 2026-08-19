@@ -13,13 +13,8 @@ extends Control
 ## SlideTransition animations are skipped (plain change_scene_to_file), same
 ## simplification as every other menu scene ported so far.
 
-const SCREEN_W := 960
-const SCREEN_H := 544
 const ASSETS := "res://assets/"
 const LABEL_FONT_SIZE := 36
-
-const PLACEHOLDER_POS := UIConstants.DECKSELECT_PLACEHOLDER_POS
-const PLACEHOLDER_SIZE := Vector2(96, 128)
 
 const GET_BACK_TIME := 0.1
 const DECK_SCROLL_TIME := 0.25
@@ -35,13 +30,13 @@ var deck_selector_left := DeckSelectorWheel.new()
 var deck_selector_right := DeckSelectorWheel.new()
 var lower_deck := LowerDeck.new()
 
-var panel_left: Control
-var panel_right: Control
-var placeholders: Array = []  # Array[Control], 5
+@onready var panel_left: Control = $PanelLeft
+@onready var panel_right: Control = $PanelRight
+@onready var placeholders: Array = [$Placeholder1, $Placeholder2, $Placeholder3, $Placeholder4, $Placeholder5]
 
 var stat_panel: CardStatPanel
-var button_play: Button
-var busy_indicator: BusySpinner
+@onready var button_play: Button = $PlayButton
+@onready var busy_indicator: BusySpinner = $BusySpinner
 
 var drag_ghost: CardView
 var selection_outline: SelectionOutline
@@ -83,9 +78,6 @@ var launch_battle_delay: float = 0.0
 var _pointer_down := false
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
-	mouse_filter = Control.MOUSE_FILTER_STOP
-
 	_build_ui()
 
 	for card in Game.player.cards:
@@ -447,82 +439,65 @@ func _nearest_filled_slot(from_index: int) -> int:
 func _build_ui() -> void:
 	var font_stylish: Font = Game.font_stylish
 
-	var bg := TextureRect.new()
-	bg.texture = load(ASSETS + "common_bkg_clean.png")
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg.size = Vector2(SCREEN_W, SCREEN_H)
-	add_child(bg)
-
-	var deck_bar := TextureRect.new()
-	deck_bar.texture = load(ASSETS + "common_transp_box_b.png")
-	deck_bar.stretch_mode = TextureRect.STRETCH_SCALE
-	deck_bar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	deck_bar.position = UIConstants.DECKSELECT_DECK_BAR_POS
-	deck_bar.size = Vector2(503, 157)
-	add_child(deck_bar)
-
-	panel_left = _make_selector_panel(UIConstants.DECKSELECT_PANEL_LEFT_POS, Vector2(348, 348))
-	panel_right = _make_selector_panel(UIConstants.DECKSELECT_PANEL_RIGHT_POS, Vector2(348, 348))
-
-	for i in 5:
-		var ph := Control.new()
-		ph.position = PLACEHOLDER_POS[i]
-		ph.size = PLACEHOLDER_SIZE
-		ph.clip_contents = true
-		ph.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var bg_rect := ColorRect.new()
-		bg_rect.color = UIConstants.COLOR_PANEL_FILL_GRAY
-		bg_rect.size = PLACEHOLDER_SIZE
-		bg_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		ph.add_child(bg_rect)
-		add_child(ph)
-		placeholders.append(ph)
-
-	button_play = _make_text_button(StringTable.get_string(StringTable.ID_PLAY_BATTLE), UIConstants.DECKSELECT_PLAY_BUTTON_POS, Vector2(115, 56), font_stylish)
+	UIButtonStyle.apply(button_play)
+	button_play.text = StringTable.get_string(StringTable.ID_PLAY_BATTLE)
+	button_play.add_theme_font_override("font", font_stylish)
+	button_play.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
+	button_play.add_theme_color_override("font_color", Color.BLACK)
+	button_play.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
+	button_play.add_theme_constant_override("shadow_offset_x", 1)
+	button_play.add_theme_constant_override("shadow_offset_y", 1)
 	button_play.pressed.connect(_on_play_pressed)
+	UIButtonStyle.fit_button_text(button_play)
 
-	var back_button := _make_text_button(StringTable.get_string(StringTable.ID_BACK), UIConstants.BACK_BUTTON_POS, UIConstants.BACK_BUTTON_SIZE, font_stylish)
+	var back_button: Button = $BackButton
+	UIButtonStyle.apply(back_button)
+	back_button.text = StringTable.get_string(StringTable.ID_BACK)
+	back_button.add_theme_font_override("font", font_stylish)
+	back_button.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
+	back_button.add_theme_color_override("font_color", Color.BLACK)
+	back_button.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
+	back_button.add_theme_constant_override("shadow_offset_x", 1)
+	back_button.add_theme_constant_override("shadow_offset_y", 1)
 	back_button.pressed.connect(_on_back_pressed)
+	UIButtonStyle.fit_button_text(back_button)
 	# B already backs out via nav.cancelled (_setup_nav) - hide the button
 	# itself in gamepad mode rather than also making it a redundant focus stop.
 	ControllerUI.hide_in_gamepad(back_button)
 
-	var info_bkg := UIPanel.make(Vector2(260, 252))
-	info_bkg.position = UIConstants.DECKSELECT_INFO_BKG_POS
-	add_child(info_bkg)
-
-	var label_select5 := _make_label(UIConstants.DECKSELECT_LABEL_SELECT5_POS, Vector2(333, 62), Game.font_title)
-	label_select5.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label_select5.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var label_select5: Label = $Select5Label
+	label_select5.add_theme_font_override("font", Game.font_title)
+	label_select5.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
+	label_select5.add_theme_color_override("font_color", Color.BLACK)
+	label_select5.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
+	label_select5.add_theme_constant_override("shadow_offset_x", 1)
+	label_select5.add_theme_constant_override("shadow_offset_y", 1)
 	label_select5.text = StringTable.get_string(StringTable.ID_DECK_SELECT_CARDS)
-	add_child(label_select5)
 	UIButtonStyle.fit_button_text(label_select5)
 
-	var label_your_deck := _make_label(UIConstants.DECKSELECT_LABEL_YOUR_DECK_POS, Vector2(214, 60), Game.font_title)
-	label_your_deck.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label_your_deck.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var label_your_deck: Label = $YourDeckLabel
+	label_your_deck.add_theme_font_override("font", Game.font_title)
+	label_your_deck.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
+	label_your_deck.add_theme_color_override("font_color", Color.BLACK)
+	label_your_deck.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
+	label_your_deck.add_theme_constant_override("shadow_offset_x", 1)
+	label_your_deck.add_theme_constant_override("shadow_offset_y", 1)
 	label_your_deck.text = StringTable.get_string(StringTable.ID_CARDS)
-	add_child(label_your_deck)
 	UIButtonStyle.fit_button_text(label_your_deck)
 
-	var label_your_prefs := _make_label(UIConstants.DECKSELECT_LABEL_YOUR_PREFS_POS, Vector2(214, 60), Game.font_title)
-	label_your_prefs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label_your_prefs.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var label_your_prefs: Label = $YourPrefsLabel
+	label_your_prefs.add_theme_font_override("font", Game.font_title)
+	label_your_prefs.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
+	label_your_prefs.add_theme_color_override("font_color", Color.BLACK)
+	label_your_prefs.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
+	label_your_prefs.add_theme_constant_override("shadow_offset_x", 1)
+	label_your_prefs.add_theme_constant_override("shadow_offset_y", 1)
 	label_your_prefs.text = StringTable.get_string(StringTable.ID_FAVORITE_CARDS)
-	add_child(label_your_prefs)
 	UIButtonStyle.fit_button_text(label_your_prefs)
 
 	stat_panel = CardStatPanel.make(Vector2(242, 232))
 	stat_panel.position = UIConstants.DECKSELECT_STAT_PANEL_POS
 	add_child(stat_panel)
-
-	busy_indicator = BusySpinner.new()
-	busy_indicator.position = UIConstants.BUSY_SPINNER_POS
-	busy_indicator.size = UIConstants.BUSY_SPINNER_SIZE
-	busy_indicator.pivot_offset = UIConstants.BUSY_SPINNER_PIVOT
-	busy_indicator.visible = false
-	add_child(busy_indicator)
 
 	drag_ghost = CardView.new()
 	drag_ghost.visible = false
@@ -540,52 +515,6 @@ func _build_ui() -> void:
 	# drag_ghost (100) so a dragged card still passes over the glow.
 	selection_outline.z_index = 50
 	add_child(selection_outline)
-
-func _make_selector_panel(pos: Vector2, panel_size: Vector2) -> Control:
-	var panel := Control.new()
-	panel.position = pos
-	panel.size = panel_size
-	panel.clip_contents = true
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	var symbol := TextureRect.new()
-	symbol.texture = load(ASSETS + "common_symbol_a.png")
-	symbol.stretch_mode = TextureRect.STRETCH_SCALE
-	symbol.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	symbol.size = panel_size
-	symbol.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(symbol)
-
-	add_child(panel)
-	return panel
-
-func _make_label(pos: Vector2, label_size: Vector2, font: Font) -> Label:
-	var label := FixedSizeLabel.new()
-	label.position = pos
-	label.size = label_size
-	label.add_theme_font_override("font", font)
-	label.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
-	label.add_theme_color_override("font_color", Color.BLACK)
-	label.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_LIGHT)
-	label.add_theme_constant_override("shadow_offset_x", 1)
-	label.add_theme_constant_override("shadow_offset_y", 1)
-	return label
-
-func _make_text_button(label: String, pos: Vector2, btn_size: Vector2, font: Font) -> Button:
-	var btn := FixedSizeButton.new()
-	UIButtonStyle.apply(btn)
-	btn.text = label
-	btn.position = pos
-	btn.size = btn_size
-	btn.add_theme_font_override("font", font)
-	btn.add_theme_font_size_override("font_size", LABEL_FONT_SIZE)
-	btn.add_theme_color_override("font_color", Color.BLACK)
-	btn.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	btn.add_theme_constant_override("shadow_offset_x", 1)
-	btn.add_theme_constant_override("shadow_offset_y", 1)
-	add_child(btn)
-	UIButtonStyle.fit_button_text(btn)
-	return btn
 
 func _hit_test(control: Control, x: int, y: int) -> bool:
 	return Rect2(control.global_position, control.size).has_point(Vector2(x, y))

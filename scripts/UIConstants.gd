@@ -185,18 +185,6 @@ const ICON_BLACK_PIXEL := "res://assets/black8x8.png"
 
 # --------------------------------------------------------------- DeckSelect
 
-const DECKSELECT_PLACEHOLDER_POS := [
-	Vector2(237, 391), Vector2(334, 391), Vector2(431, 391),
-	Vector2(528, 391), Vector2(625, 391),
-]
-const DECKSELECT_DECK_BAR_POS := Vector2(228, 377)
-const DECKSELECT_PANEL_LEFT_POS := Vector2(0, 72)
-const DECKSELECT_PANEL_RIGHT_POS := Vector2(612, 72)
-const DECKSELECT_PLAY_BUTTON_POS := Vector2(798, 463)
-const DECKSELECT_INFO_BKG_POS := Vector2(352, 106)
-const DECKSELECT_LABEL_SELECT5_POS := Vector2(313, 10)
-const DECKSELECT_LABEL_YOUR_DECK_POS := Vector2(67, 12)
-const DECKSELECT_LABEL_YOUR_PREFS_POS := Vector2(679, 12)
 const DECKSELECT_STAT_PANEL_POS := Vector2(361, 118)
 
 # --------------------------------------------------------------- UIPanel

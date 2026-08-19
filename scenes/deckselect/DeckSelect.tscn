@@ -1,6 +1,41 @@
-[gd_scene load_steps=2 format=3 uid="uid://c8h3x2m9k7t4p"]
+[gd_scene load_steps=9 format=3 uid="uid://c8h3x2m9k7t4p"]
 
 [ext_resource type="Script" path="res://scripts/deckselect/DeckSelect.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/common_bkg_clean.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/common_transp_box_b.png" id="3"]
+[ext_resource type="Texture2D" path="res://assets/common_symbol_a.png" id="4"]
+[ext_resource type="Script" path="res://scripts/FixedSizeButton.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/FixedSizeLabel.gd" id="6"]
+[ext_resource type="Script" path="res://scripts/deckselect/BusySpinner.gd" id="7"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_outer"]
+bg_color = Color(0.96, 0.93, 0.85, 0.94)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.42, 0.3, 0.14, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 5
+shadow_offset = Vector2(0, 3)
+anti_aliasing = true
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inner"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.8, 0.66, 0.36, 0.75)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+anti_aliasing = true
 
 [node name="DeckSelect" type="Control"]
 layout_mode = 3
@@ -9,4 +44,208 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 0
 script = ExtResource("1")
+
+[node name="Bg" type="TextureRect" parent="."]
+layout_mode = 0
+offset_right = 960.0
+offset_bottom = 544.0
+texture = ExtResource("2")
+expand_mode = 1
+
+[node name="DeckBar" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 228.0
+offset_top = 377.0
+offset_right = 731.0
+offset_bottom = 534.0
+texture = ExtResource("3")
+expand_mode = 1
+
+[node name="PanelLeft" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_top = 72.0
+offset_right = 348.0
+offset_bottom = 420.0
+mouse_filter = 2
+
+[node name="Symbol" type="TextureRect" parent="PanelLeft"]
+layout_mode = 0
+offset_right = 348.0
+offset_bottom = 348.0
+mouse_filter = 2
+texture = ExtResource("4")
+expand_mode = 1
+
+[node name="PanelRight" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_left = 612.0
+offset_top = 72.0
+offset_right = 960.0
+offset_bottom = 420.0
+mouse_filter = 2
+
+[node name="Symbol" type="TextureRect" parent="PanelRight"]
+layout_mode = 0
+offset_right = 348.0
+offset_bottom = 348.0
+mouse_filter = 2
+texture = ExtResource("4")
+expand_mode = 1
+
+[node name="Placeholder1" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_left = 237.0
+offset_top = 391.0
+offset_right = 333.0
+offset_bottom = 519.0
+mouse_filter = 2
+
+[node name="BgRect" type="ColorRect" parent="Placeholder1"]
+layout_mode = 0
+offset_right = 96.0
+offset_bottom = 128.0
+mouse_filter = 2
+color = Color(0.6, 0.6, 0.6, 0.498039)
+
+[node name="Placeholder2" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_left = 334.0
+offset_top = 391.0
+offset_right = 430.0
+offset_bottom = 519.0
+mouse_filter = 2
+
+[node name="BgRect" type="ColorRect" parent="Placeholder2"]
+layout_mode = 0
+offset_right = 96.0
+offset_bottom = 128.0
+mouse_filter = 2
+color = Color(0.6, 0.6, 0.6, 0.498039)
+
+[node name="Placeholder3" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_left = 431.0
+offset_top = 391.0
+offset_right = 527.0
+offset_bottom = 519.0
+mouse_filter = 2
+
+[node name="BgRect" type="ColorRect" parent="Placeholder3"]
+layout_mode = 0
+offset_right = 96.0
+offset_bottom = 128.0
+mouse_filter = 2
+color = Color(0.6, 0.6, 0.6, 0.498039)
+
+[node name="Placeholder4" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_left = 528.0
+offset_top = 391.0
+offset_right = 624.0
+offset_bottom = 519.0
+mouse_filter = 2
+
+[node name="BgRect" type="ColorRect" parent="Placeholder4"]
+layout_mode = 0
+offset_right = 96.0
+offset_bottom = 128.0
+mouse_filter = 2
+color = Color(0.6, 0.6, 0.6, 0.498039)
+
+[node name="Placeholder5" type="Control" parent="."]
+clip_contents = true
+layout_mode = 0
+offset_left = 625.0
+offset_top = 391.0
+offset_right = 721.0
+offset_bottom = 519.0
+mouse_filter = 2
+
+[node name="BgRect" type="ColorRect" parent="Placeholder5"]
+layout_mode = 0
+offset_right = 96.0
+offset_bottom = 128.0
+mouse_filter = 2
+color = Color(0.6, 0.6, 0.6, 0.498039)
+
+[node name="PlayButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 798.0
+offset_top = 463.0
+offset_right = 913.0
+offset_bottom = 519.0
+script = ExtResource("5")
+
+[node name="BackButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 42.0
+offset_top = 463.0
+offset_right = 157.0
+offset_bottom = 519.0
+script = ExtResource("5")
+
+[node name="InfoBkg" type="Panel" parent="."]
+layout_mode = 0
+offset_left = 352.0
+offset_top = 106.0
+offset_right = 612.0
+offset_bottom = 358.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_outer")
+
+[node name="Inner" type="Panel" parent="InfoBkg"]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = 254.0
+offset_bottom = 246.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
+
+[node name="Select5Label" type="Label" parent="."]
+layout_mode = 0
+offset_left = 313.0
+offset_top = 10.0
+offset_right = 646.0
+offset_bottom = 72.0
+horizontal_alignment = 1
+vertical_alignment = 1
+script = ExtResource("6")
+
+[node name="YourDeckLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 67.0
+offset_top = 12.0
+offset_right = 281.0
+offset_bottom = 72.0
+horizontal_alignment = 1
+vertical_alignment = 1
+script = ExtResource("6")
+
+[node name="YourPrefsLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 679.0
+offset_top = 12.0
+offset_right = 893.0
+offset_bottom = 72.0
+horizontal_alignment = 1
+vertical_alignment = 1
+script = ExtResource("6")
+
+[node name="BusySpinner" type="Control" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 912.0
+offset_top = 496.0
+offset_right = 960.0
+offset_bottom = 544.0
+pivot_offset = Vector2(24, 24)
+script = ExtResource("7")
