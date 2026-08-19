@@ -43,8 +43,12 @@ const ROW_COLOR := Color.BLACK
 ## Band drawn behind the player's own row.
 const SELF_BAND_COLOR := Color(1.0, 0.84, 0.32, 0.55)
 
-var status_label: Label
-var page_label: Label
+@onready var title: Label = $Title
+@onready var page_label: Label = $PageLabel
+@onready var prev_button: Button = $PrevButton
+@onready var next_button: Button = $NextButton
+@onready var status_label: Label = $StatusLabel
+@onready var back_button: Button = $BackButton
 var self_band: ColorRect
 var rows: Array = []      # Array of Array[Label], one per visible row
 var entries: Array = []   # every fetched standing, best first
@@ -54,26 +58,11 @@ var page := 0
 var nav: FocusNav
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
-
-	var bg := TextureRect.new()
-	bg.texture = load(ASSETS + "common_bkg_clean.png")
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg.size = Vector2(SCREEN_W, SCREEN_H)
-	add_child(bg)
-
 	# Same 46 as Online's and Options' headings.
-	var title := FixedSizeLabel.new()
-	title.position = UIConstants.LEADERBOARD_TITLE_POS
-	title.size = Vector2(359, 47)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title.add_theme_font_override("font", Game.font_title)
 	title.add_theme_font_size_override("font_size", UIConstants.LEADERBOARD_TITLE_FONT_SIZE)
 	title.add_theme_color_override("font_color", Color.BLACK)
 	title.text = StringTable.get_string(StringTable.ID_LEADERBOARD)
-	add_child(title)
 	UIButtonStyle.fit_button_text(title)
 
 	# Behind the rows, so the row text draws over it.
@@ -103,53 +92,37 @@ func _ready() -> void:
 	for i in PAGE_SIZE:
 		rows.append(_make_row(ROWS_TOP + i * ROW_HEIGHT, ROW_COLOR, 24, 0))
 
-	page_label = Label.new()
-	page_label.position = Vector2(SCREEN_W / 2.0 - 120.0, 465)
-	page_label.size = Vector2(240, 34)
-	page_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	page_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	page_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	page_label.add_theme_font_override("font", Game.font_stylish)
 	page_label.add_theme_font_size_override("font_size", UIConstants.LEADERBOARD_PAGE_FONT_SIZE)
 	page_label.add_theme_color_override("font_color", Color.BLACK)
-	add_child(page_label)
 
-	var prev := _make_page_button("<", Vector2(SCREEN_W / 2.0 - 178.0, 463), _on_prev_pressed)
-	var next := _make_page_button(">", Vector2(SCREEN_W / 2.0 + 122.0, 463), _on_next_pressed)
+	_setup_page_button(prev_button, "<", _on_prev_pressed)
+	_setup_page_button(next_button, ">", _on_next_pressed)
 
-	status_label = Label.new()
-	status_label.position = Vector2(0, ROWS_TOP + 4 * ROW_HEIGHT)
-	status_label.size = Vector2(SCREEN_W, 34)
-	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status_label.add_theme_font_override("font", Game.font_info)
 	status_label.add_theme_font_size_override("font_size", UIConstants.LEADERBOARD_STATUS_FONT_SIZE)
 	status_label.add_theme_color_override("font_color", UIConstants.COLOR_STATUS_BROWN)
 	status_label.text = "..."
-	add_child(status_label)
 
-	var back := FixedSizeButton.new()
-	UIButtonStyle.apply(back)
-	back.text = StringTable.get_string(StringTable.ID_BACK)
-	back.position = UIConstants.BACK_BUTTON_POS
-	back.size = UIConstants.BACK_BUTTON_SIZE
-	back.add_theme_font_override("font", Game.font_stylish)
-	back.add_theme_font_size_override("font_size", UIConstants.BACK_BUTTON_FONT_SIZE)
-	back.add_theme_color_override("font_color", Color.BLACK)
-	back.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	back.add_theme_constant_override("shadow_offset_x", 1)
-	back.add_theme_constant_override("shadow_offset_y", 1)
-	back.pressed.connect(_on_back_pressed)
-	add_child(back)
-	UIButtonStyle.fit_button_text(back)
+	UIButtonStyle.apply(back_button)
+	back_button.text = StringTable.get_string(StringTable.ID_BACK)
+	back_button.add_theme_font_override("font", Game.font_stylish)
+	back_button.add_theme_font_size_override("font_size", UIConstants.BACK_BUTTON_FONT_SIZE)
+	back_button.add_theme_color_override("font_color", Color.BLACK)
+	back_button.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
+	back_button.add_theme_constant_override("shadow_offset_x", 1)
+	back_button.add_theme_constant_override("shadow_offset_y", 1)
+	back_button.pressed.connect(_on_back_pressed)
+	UIButtonStyle.fit_button_text(back_button)
 
 	# On a pad the page arrows are left/right rather than focus stops, so the
 	# only thing to select here is nothing and B is the only real control -
 	# routed through nav.cancelled like every other menu.
 	nav = FocusNav.new()
 	add_child(nav)
-	ControllerUI.hide_in_gamepad(back)
-	ControllerUI.hide_in_gamepad(prev)
-	ControllerUI.hide_in_gamepad(next)
+	ControllerUI.hide_in_gamepad(back_button)
+	ControllerUI.hide_in_gamepad(prev_button)
+	ControllerUI.hide_in_gamepad(next_button)
 	ControllerUI.hide_hand()
 	nav.cancelled.connect(_on_back_pressed)
 	# The shoulder buttons are this project's own paging channel
@@ -184,19 +157,14 @@ func _make_row(y: float, color: Color, font_size: int, outline: int) -> Array:
 		labels.append(label)
 	return labels
 
-func _make_page_button(text: String, pos: Vector2, on_pressed: Callable) -> Button:
-	var btn := FixedSizeButton.new()
+func _setup_page_button(btn: Button, text: String, on_pressed: Callable) -> void:
 	UIButtonStyle.apply(btn)
 	btn.text = text
-	btn.position = pos
-	btn.size = Vector2(56, 56)
 	btn.add_theme_font_override("font", Game.font_stylish)
 	btn.add_theme_font_size_override("font_size", UIConstants.LEADERBOARD_NAV_BUTTON_FONT_SIZE)
 	btn.add_theme_color_override("font_color", Color.BLACK)
 	btn.pressed.connect(on_pressed)
-	add_child(btn)
 	UIButtonStyle.fit_button_text(btn)
-	return btn
 
 func _load() -> void:
 	if not Net.is_signed_in():

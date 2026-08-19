@@ -139,7 +139,6 @@ const LEADERBOARD_TITLE_FONT_SIZE := 46
 const LEADERBOARD_PAGE_FONT_SIZE := 28
 const LEADERBOARD_STATUS_FONT_SIZE := 24
 const LEADERBOARD_NAV_BUTTON_FONT_SIZE := 36
-const LEADERBOARD_TITLE_POS := Vector2(300, 9)
 
 # --------------------------------------------------------------- Collection
 
