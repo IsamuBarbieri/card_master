@@ -1,6 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://dxk9p4qwr7t3n"]
+[gd_scene load_steps=4 format=3 uid="uid://dxk9p4qwr7t3n"]
 
 [ext_resource type="Script" path="res://scripts/menu/Credits.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/credits_screen.png" id="2"]
+[ext_resource type="FontFile" path="res://assets/fonts/FiraSans-Regular.ttf" id="3"]
 
 [node name="Credits" type="Control"]
 layout_mode = 3
@@ -10,3 +12,72 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
+
+[node name="BgBlack" type="ColorRect" parent="."]
+layout_mode = 0
+offset_right = 960.0
+offset_bottom = 544.0
+color = Color(0, 0, 0, 1)
+
+[node name="Bg" type="TextureButton" parent="."]
+layout_mode = 0
+offset_right = 960.0
+offset_bottom = 544.0
+texture_normal = ExtResource("2")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="DesignLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 320.0
+offset_top = 36.0
+offset_right = 640.0
+offset_bottom = 130.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("3")
+theme_override_font_sizes/font_size = 36
+text = "Samuele Barbieri
+Game Design, Graphics"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="CardsLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 263.0
+offset_top = 170.0
+offset_right = 695.0
+offset_bottom = 264.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("3")
+theme_override_font_sizes/font_size = 36
+text = "Viviana Massicut
+Cards Graphics"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ThanksLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 320.0
+offset_top = 305.0
+offset_right = 640.0
+offset_bottom = 399.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("3")
+theme_override_font_sizes/font_size = 36
+text = "Marco Castrucci
+Special Thanks"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="MusicLabel" type="Label" parent="."]
+layout_mode = 0
+offset_top = 448.0
+offset_right = 958.0
+offset_bottom = 527.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("3")
+theme_override_font_sizes/font_size = 36
+text = "Music: Essa (soundcloud)
+SFX: http://www.freesfx.co.uk"
+horizontal_alignment = 1
+autowrap_mode = 2

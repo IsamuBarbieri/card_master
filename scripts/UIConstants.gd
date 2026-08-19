@@ -263,13 +263,6 @@ const STARTMENU_CONFIRM_MSG_POS := Vector2(20, 90)
 const STARTMENU_CONFIRM_OK_BTN_POS := Vector2(20, 244)
 const STARTMENU_CONFIRM_CANCEL_BTN_POS := Vector2(310, 244)
 
-# --------------------------------------------------------------- Credits
-
-const CREDITS_DESIGN_LABEL_POS := Vector2(320, 36)
-const CREDITS_CARDS_LABEL_POS := Vector2(263, 170)
-const CREDITS_THANKS_LABEL_POS := Vector2(320, 305)
-const CREDITS_MUSIC_LABEL_POS := Vector2(0, 448)
-
 # --------------------------------------------------------------- TitleScreen
 
 const TITLESCREEN_PROMPT_FONT_SIZE := 60
