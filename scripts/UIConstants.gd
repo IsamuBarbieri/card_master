@@ -138,11 +138,6 @@ const SHOP_SELL_BUTTON_POS := Vector2(309, 417)
 const SHOP_BUY_BUTTON_POS := Vector2(534, 417)
 const SHOP_BUYBACK_CARD_POS := Vector2(694, 391)
 
-# --------------------------------------------------------------- Online
-
-const ONLINE_NOTE_COLOR := Color(0.25, 0.22, 0.18)
-const ONLINE_STATUS_LABEL_Y := 404.0
-
 # --------------------------------------------------------------- Leaderboard
 
 const LEADERBOARD_TITLE_FONT_SIZE := 46
