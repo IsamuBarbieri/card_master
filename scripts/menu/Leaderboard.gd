@@ -58,10 +58,7 @@ var page := 0
 var nav: FocusNav
 
 func _ready() -> void:
-	# Same 46 as Online's and Options' headings.
 	title.add_theme_font_override("font", Game.font_title)
-	title.add_theme_font_size_override("font_size", UIConstants.LEADERBOARD_TITLE_FONT_SIZE)
-	title.add_theme_color_override("font_color", Color.BLACK)
 	title.text = StringTable.get_string(StringTable.ID_LEADERBOARD)
 	UIButtonStyle.fit_button_text(title)
 
@@ -92,26 +89,13 @@ func _ready() -> void:
 	for i in PAGE_SIZE:
 		rows.append(_make_row(ROWS_TOP + i * ROW_HEIGHT, ROW_COLOR, 24, 0))
 
-	page_label.add_theme_font_override("font", Game.font_stylish)
-	page_label.add_theme_font_size_override("font_size", UIConstants.LEADERBOARD_PAGE_FONT_SIZE)
-	page_label.add_theme_color_override("font_color", Color.BLACK)
-
 	_setup_page_button(prev_button, "<", _on_prev_pressed)
 	_setup_page_button(next_button, ">", _on_next_pressed)
 
-	status_label.add_theme_font_override("font", Game.font_info)
-	status_label.add_theme_font_size_override("font_size", UIConstants.LEADERBOARD_STATUS_FONT_SIZE)
-	status_label.add_theme_color_override("font_color", UIConstants.COLOR_STATUS_BROWN)
 	status_label.text = "..."
 
 	UIButtonStyle.apply(back_button)
 	back_button.text = StringTable.get_string(StringTable.ID_BACK)
-	back_button.add_theme_font_override("font", Game.font_stylish)
-	back_button.add_theme_font_size_override("font_size", UIConstants.BACK_BUTTON_FONT_SIZE)
-	back_button.add_theme_color_override("font_color", Color.BLACK)
-	back_button.add_theme_color_override("font_shadow_color", UIConstants.COLOR_SHADOW_DIM)
-	back_button.add_theme_constant_override("shadow_offset_x", 1)
-	back_button.add_theme_constant_override("shadow_offset_y", 1)
 	back_button.pressed.connect(_on_back_pressed)
 	UIButtonStyle.fit_button_text(back_button)
 
@@ -160,9 +144,6 @@ func _make_row(y: float, color: Color, font_size: int, outline: int) -> Array:
 func _setup_page_button(btn: Button, text: String, on_pressed: Callable) -> void:
 	UIButtonStyle.apply(btn)
 	btn.text = text
-	btn.add_theme_font_override("font", Game.font_stylish)
-	btn.add_theme_font_size_override("font_size", UIConstants.LEADERBOARD_NAV_BUTTON_FONT_SIZE)
-	btn.add_theme_color_override("font_color", Color.BLACK)
 	btn.pressed.connect(on_pressed)
 	UIButtonStyle.fit_button_text(btn)
 

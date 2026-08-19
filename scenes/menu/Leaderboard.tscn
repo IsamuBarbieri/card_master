@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" path="res://assets/common_bkg_clean.png" id="2"]
 [ext_resource type="Script" path="res://scripts/FixedSizeLabel.gd" id="3"]
 [ext_resource type="Script" path="res://scripts/FixedSizeButton.gd" id="4"]
+[ext_resource type="FontFile" path="res://assets/fonts/FiraSans-Regular.ttf" id="5"]
 
 [node name="Leaderboard" type="Control"]
 layout_mode = 3
@@ -22,6 +23,8 @@ texture = ExtResource("2")
 expand_mode = 1
 
 [node name="Title" type="Label" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 46
 text = "Classifica"
 layout_mode = 0
 offset_left = 300.0
@@ -33,6 +36,9 @@ vertical_alignment = 1
 script = ExtResource("3")
 
 [node name="PageLabel" type="Label" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("5")
+theme_override_font_sizes/font_size = 28
 layout_mode = 0
 offset_left = 360.0
 offset_top = 465.0
@@ -43,6 +49,9 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="PrevButton" type="Button" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("5")
+theme_override_font_sizes/font_size = 36
 text = "<"
 layout_mode = 0
 offset_left = 302.0
@@ -52,6 +61,9 @@ offset_bottom = 519.0
 script = ExtResource("4")
 
 [node name="NextButton" type="Button" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("5")
+theme_override_font_sizes/font_size = 36
 text = ">"
 layout_mode = 0
 offset_left = 602.0
@@ -61,6 +73,9 @@ offset_bottom = 519.0
 script = ExtResource("4")
 
 [node name="StatusLabel" type="Label" parent="."]
+theme_override_colors/font_color = Color(0.45, 0.18, 0.05, 1)
+theme_override_fonts/font = ExtResource("5")
+theme_override_font_sizes/font_size = 24
 text = "..."
 layout_mode = 0
 offset_top = 246.0
@@ -69,6 +84,12 @@ offset_bottom = 280.0
 horizontal_alignment = 1
 
 [node name="BackButton" type="Button" parent="."]
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("5")
+theme_override_font_sizes/font_size = 36
 text = "Indietro"
 layout_mode = 0
 offset_left = 42.0
