@@ -231,6 +231,8 @@ var sfx_button: AudioStreamPlayer
 var sfx_place: AudioStreamPlayer
 var sfx_attack_p: AudioStreamPlayer
 var sfx_attack_m: AudioStreamPlayer
+var sfx_attack_x: AudioStreamPlayer
+var sfx_attack_a: AudioStreamPlayer
 var sfx_ragequit: AudioStreamPlayer  # (RAGEQUIT)
 
 # --------------------------------------------------------------- controller
@@ -1009,6 +1011,8 @@ func _build_audio() -> void:
 	sfx_place = _make_sfx("sfx/place_card.wav")
 	sfx_attack_p = _make_sfx("sfx/attack_p.wav")
 	sfx_attack_m = _make_sfx("sfx/attack_m.wav")
+	sfx_attack_x = _make_sfx("sfx/attack_x.wav")
+	sfx_attack_a = _make_sfx("sfx/attack_a.wav")
 	sfx_ragequit = _make_sfx("sfx/ragequit_sfx.wav")
 
 func _make_sfx(path: String) -> AudioStreamPlayer:
@@ -1619,10 +1623,15 @@ func gsBattle_StartRumble(card0: Card, card1: Card, result: Dictionary) -> void:
 	vfx.frame = 0
 	vfx.play("play")
 
-	if card0.attack_type == Card.AttackType.MAGICAL:
-		sfx_attack_m.play()
-	else:
-		sfx_attack_p.play()
+	match card0.attack_type:
+		Card.AttackType.MAGICAL:
+			sfx_attack_m.play()
+		Card.AttackType.FLEXIBLE:
+			sfx_attack_x.play()
+		Card.AttackType.ASSAULT:
+			sfx_attack_a.play()
+		_:
+			sfx_attack_p.play()
 
 	var tw := create_tween()
 	tw.set_parallel(true)

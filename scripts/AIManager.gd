@@ -113,6 +113,19 @@ func prepare_set(ai: AIData) -> Array:
 		while cards.size() < 5:
 			cards.append(ai.generic_cards[_pick_unique(count_gen, picked)])
 
+	# Ensure the AI always has at least one card of its own species in the
+	# hand (identified by image_id, which matches the card def_id). Without
+	# this, an AI whose type-matching cards have all been captured by the
+	# player would field a deck with none of its own kind - losing its
+	# identity.
+	var has_own_type := false
+	for c in cards:
+		if c.def_id == ai.image_id:
+			has_own_type = true
+			break
+	if not has_own_type and cards.size() > 0:
+		cards[-1] = CardManager.generate_card(ai.image_id)
+
 	return cards
 
 func _pick_unique(count: int, picked: Dictionary) -> int:

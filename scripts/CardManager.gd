@@ -135,38 +135,12 @@ func generate_card(def_id: int) -> Card:
 	card.arrows = generate_arrows()
 	return card
 
-## Each additional arrow beyond the first is strictly rarer than the last,
-## instead of every direction rolling an independent 50/50 (the old system -
-## every card averaged ~4.5/8 arrows regardless of species, which is why a
-## captured card's Chain almost always found a way to keep going: ~32%
-## chance any two adjacent enemies had a mutual return arrow). ARROW_BASE is
-## the odds of getting a 2nd arrow at all; each arrow past that multiplies
-## the odds by ARROW_DECAY again, so the chain of rolls stops at the first
-## failure - a monotonically decreasing count distribution (1 arrow ~35% of
-## cards, 8 arrows ~0.08%, average ~2.2) instead of a bell curve centered on
-## "most cards have half the compass covered."
-const ARROW_BASE := 0.65
-const ARROW_DECAY := 0.82
-
-## The guaranteed 1st arrow is random in direction too, same as every arrow
-## after it - "guaranteed" only means the count never drops below 1, not
-## that any particular direction is predictable. A shuffled direction order
-## decides which slot is the guaranteed one and which order the rest are
-## attempted in.
+## Each of the 8 directions has an independent 50% chance of being active.
+## Cards can have anywhere from 0 to 8 arrows.
 func generate_arrows() -> Array:
 	var arrows := [false, false, false, false, false, false, false, false]
-	var order: Array = range(8)
-	order.shuffle()
-
-	arrows[order[0]] = true
-
-	var continue_chance := ARROW_BASE
-	for i in range(1, 8):
-		if randf() >= continue_chance:
-			break
-		arrows[order[i]] = true
-		continue_chance *= ARROW_DECAY
-
+	for i in 8:
+		arrows[i] = randf() < 0.5
 	return arrows
 
 ## Port of CardManager.cs's CardPrice(). Flexible/Assault types command a
@@ -190,25 +164,7 @@ func card_price(card: Card) -> int:
 			f += 1.0
 
 	var val: float = float(card.attack_power + card.physical_defense + card.magical_defense) / 3.0
-	# The reference multiplied straight by the arrow count, making an 8-arrow
-	# card worth 8x the same species at 1 arrow. That assumed "more arrows is
-	# strictly better", which isn't true here: an arrow is also an entry point
-	# for the opponent (a card with no return arrow is captured without a
-	# fight, and a captured card's own arrows are what lets a Chain keep
-	# going - see Board.get_capturable_cards/get_adjacent_battle_cards). A
-	# low-arrow card is a deliberate anti-chain anchor, not a dud. The +2
-	# offset keeps arrows a price factor but compresses the spread from 8x
-	# to 3.3x so they no longer dominate the valuation.
-	#
-	# 15.4 (was 10.0): generate_arrows' rarer-each-time curve dropped the
-	# average arrow count from ~4.5 to ~2.2, which would silently shrink
-	# every price (and, since buy/sell/buyback in Shop.gd all derive from
-	# this same number, the whole coin economy) by ~35% as a side effect.
-	# Rescaled so the average (2.0 + f) factor lands back on the same ~6.5
-	# it was before (10.0 * 6.5 == 15.4 * (2.0 + ~2.22)) - same prices on
-	# average, same 3.3x spread between a 1-arrow and an 8-arrow card, just
-	# priced against the new rarity curve instead of the old one.
-	var total: float = 15.4 * (2.0 + f) * pow(val, t)
+	var total: float = 10.0 * (2.0 + f) * pow(val, t)
 	return int(total)
 
 ## Matchmaking weight for a deck: the plain sum of the three numeric stats

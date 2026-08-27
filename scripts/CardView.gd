@@ -128,7 +128,7 @@ func _make_layer() -> TextureRect:
 ## Coins - e.g. UIOpponents.cs sets renderFlags=0 for its AI portraits, so
 ## those show plain art with no stat text or arrows. show_price is Shop's
 ## ShopRenderFlags (Arrows|Stats|Coins).
-func setup(new_card: Card, show_stats := true, show_arrows := true, show_price := false) -> void:
+func setup(new_card: Card, show_stats := true, show_arrows := true, show_price := false, sell_mode := false) -> void:
 	card = new_card
 	var def: CardManager.CardDef = CardManager.defs[card.def_id]
 	var color_name := "blue" if card.owner == 0 else "red"
@@ -157,7 +157,10 @@ func setup(new_card: Card, show_stats := true, show_arrows := true, show_price :
 
 	_price_label.visible = show_price
 	if show_price:
-		_price_label.text = "[center]%d [img=18x18]%s[/img][/center]" % [CardManager.card_price(card), UIConstants.ICON_COIN]
+		var price: int = CardManager.card_price(card)
+		if sell_mode:
+			price = price / 3
+		_price_label.text = "[center]%d [img=18x18]%s[/img][/center]" % [price, UIConstants.ICON_COIN]
 
 	for c in _arrows_box.get_children():
 		c.queue_free()

@@ -143,7 +143,7 @@ func _ready() -> void:
 
 	_build_ui()
 
-	deck_selector.init(panel_left, Game.player.cards, false, true, true)
+	deck_selector.init(panel_left, Game.player.cards, false, false, true)
 
 	_load_shop_cards()
 	for i in GEN_TABLE.size():
@@ -249,7 +249,7 @@ func _on_nav_activated(item: FocusNav.NavItem) -> void:
 		var selector_card: Card = deck_selector.remove_current_card()
 		if cur_sell_card != null:
 			deck_selector.add_card(cur_sell_card)
-		_show_card_slot(selector_card)
+		_show_card_slot(selector_card, true)
 		_set_sell_card(selector_card)
 		_enter_waiting_input()
 		next_sel = 2
@@ -259,7 +259,7 @@ func _on_nav_activated(item: FocusNav.NavItem) -> void:
 		_cancel_current_interaction()
 		if cur_sell_card != null:
 			deck_selector.add_card(cur_sell_card)
-		_show_card_slot(shop_cards[i])
+		_show_card_slot(shop_cards[i], false)
 		_set_buy_card(shop_cards[i])
 		last_chosen_shop_card_index = i
 		_enter_waiting_input()
@@ -627,7 +627,7 @@ func _handle_double_click(x: int, y: int) -> bool:
 		var selector_card: Card = deck_selector.remove_current_card()
 		if cur_sell_card != null:
 			deck_selector.add_card(cur_sell_card)
-		_show_card_slot(selector_card)
+		_show_card_slot(selector_card, true)
 		_set_sell_card(selector_card)
 		_enter_waiting_input()
 		next_sel = 2
@@ -638,7 +638,7 @@ func _handle_double_click(x: int, y: int) -> bool:
 			_cancel_current_interaction()
 			if cur_sell_card != null:
 				deck_selector.add_card(cur_sell_card)
-			_show_card_slot(shop_cards[i])
+			_show_card_slot(shop_cards[i], false)
 			_set_buy_card(shop_cards[i])
 			last_chosen_shop_card_index = i
 			_enter_waiting_input()
@@ -810,20 +810,21 @@ func _drag_card_set(x: int, y: int, from_left: bool, from_right: bool, from_slot
 	if from_left:
 		cstats = deck_selector.central_card_stats()
 		ghost_center = Vector2(deck_selector.central_card_x(), deck_selector.central_card_y())
-		drag_ghost.setup(cstats, true, true, true)
+		drag_ghost.setup(cstats, true, true, true, true)
 		drag_ghost.scale = Vector2.ONE
 		dc_ghost_size = Vector2(CARD_W, CARD_H)
 	elif from_right:
 		cstats = shop_cards[index]
 		ghost_center = shop_card_views[index].global_position
-		drag_ghost.setup(cstats, false, false, true)
+		drag_ghost.setup(cstats, false, false, true, false)
 		drag_ghost.scale = SHOP_CARD_IMAGE_SIZE / Vector2(CARD_W, CARD_H)
 		dc_ghost_size = SHOP_CARD_IMAGE_SIZE
 	else:
 		cstats = cur_sell_card if cur_sell_card != null else cur_buy_card
 		ghost_center = panel_card_slot.global_position
+		var is_sell := (cur_sell_card != null)
 		_show_card_slot(null)
-		drag_ghost.setup(cstats, true, true, true)
+		drag_ghost.setup(cstats, true, true, true, is_sell)
 		drag_ghost.scale = Vector2.ONE
 		dc_ghost_size = Vector2(CARD_W, CARD_H)
 
@@ -852,14 +853,14 @@ func _drag_card_on_unclick(x: int, y: int) -> void:
 			var selector_card: Card = deck_selector.remove_current_card()
 			if cur_sell_card != null:
 				deck_selector.add_card(cur_sell_card)
-			_show_card_slot(selector_card)
+			_show_card_slot(selector_card, true)
 			_set_sell_card(selector_card)
 			next_sel = 2
 			quit_now = true
 		elif dc_from_right:
 			if cur_sell_card != null:
 				deck_selector.add_card(cur_sell_card)
-			_show_card_slot(shop_cards[dc_index])
+			_show_card_slot(shop_cards[dc_index], false)
 			_set_buy_card(shop_cards[dc_index])
 			next_sel = 2
 			quit_now = true
@@ -894,9 +895,10 @@ func _drag_card_on_unclick(x: int, y: int) -> void:
 			# needs restoring here - unlike the wheel/shop-card cases,
 			# which never touched the slot.
 			var restored_card := dc_dragged_card
+			var was_sell := (cur_sell_card != null)
 			tw.tween_callback(func() -> void:
 				drag_ghost.visible = false
-				_show_card_slot(restored_card)
+				_show_card_slot(restored_card, was_sell)
 				_enter_waiting_input())
 		else:
 			tw.tween_callback(func() -> void:
@@ -915,14 +917,14 @@ func _shop_cards_region_intersects(rect: Rect2) -> bool:
 	var region := Rect2(top, Vector2(SHOP_CARD_PANEL_SIZE.x, bottom - top.y))
 	return rect.intersects(region)
 
-func _show_card_slot(card: Card) -> void:
+func _show_card_slot(card: Card, is_sell := false) -> void:
 	if card == null:
 		card_slot_placeholder.visible = true
 		card_slot_view.visible = false
 	else:
 		card_slot_placeholder.visible = false
 		card_slot_view.visible = true
-		card_slot_view.setup(card, true, true, true)
+		card_slot_view.setup(card, true, true, true, is_sell)
 
 # ------------------------------------------------------------- UI sync ---
 
