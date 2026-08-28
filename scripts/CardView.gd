@@ -127,6 +127,18 @@ func _make_layer() -> TextureRect:
 ## show_stats/show_arrows/show_price port Card.cs's RenderFlag.Stats/Arrows/
 ## Coins - e.g. UIOpponents.cs sets renderFlags=0 for its AI portraits, so
 ## those show plain art with no stat text or arrows. show_price is Shop's
+func _load_texture(path: String) -> Texture2D:
+	var global_path := ProjectSettings.globalize_path(path)
+	if FileAccess.file_exists(global_path):
+		var img := Image.new()
+		if img.load(global_path) == OK:
+			return ImageTexture.create_from_image(img)
+	if ResourceLoader.exists(path):
+		var res = load(path)
+		if res is Texture2D:
+			return res
+	return null
+
 ## ShopRenderFlags (Arrows|Stats|Coins).
 func setup(new_card: Card, show_stats := true, show_arrows := true, show_price := false, sell_mode := false) -> void:
 	card = new_card
@@ -138,12 +150,12 @@ func setup(new_card: Card, show_stats := true, show_arrows := true, show_price :
 	# card_bkg_%s.png + monster-art layering every other card uses, drawn
 	# over a plain black backdrop rather than the blue/red gradient bkg.
 	if def.name == "The Void":
-		_bkg.texture = load(UIConstants.ICON_BLACK_PIXEL)
-		_art.texture = load(ASSETS_DIR + "the_void_%s.png" % color_name)
+		_bkg.texture = _load_texture(UIConstants.ICON_BLACK_PIXEL)
+		_art.texture = _load_texture(ASSETS_DIR + "the_void_%s.png" % color_name)
 	else:
-		_bkg.texture = load(ASSETS_DIR + "card_bkg_%s.png" % color_name)
-		_art.texture = load(ASSETS_DIR + def.image)
-	_border.texture = load(ASSETS_DIR + "card_border.png")
+		_bkg.texture = _load_texture(ASSETS_DIR + "card_bkg_%s.png" % color_name)
+		_art.texture = _load_texture(ASSETS_DIR + def.image)
+	_border.texture = _load_texture(ASSETS_DIR + "card_border.png")
 
 	_stat_label.visible = show_stats
 	if show_stats:

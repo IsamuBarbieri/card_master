@@ -191,6 +191,8 @@ func _refresh_item(index: int) -> void:
 	item_portraits[index] = portrait
 
 func _on_item_pressed(index: int) -> void:
+	if Game.player.available_opponents[index]:
+		Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 	_select(index)
 
 func _select(index: int) -> void:

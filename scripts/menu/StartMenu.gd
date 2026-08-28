@@ -29,11 +29,11 @@ const ASSETS := "res://assets/"
 ## arbitrary pick.
 
 ## Collection icon grid: gen_table.csv has exactly 21 card types, so a 7x3
-## grid (21 cells) covers the whole collection with no overflow/"+N" needed
-## - icon size/gap are picked to fill the box exactly at 7x3, so a full
-## collection tiles it precisely with no leftover slack.
-const COLLECTION_ICON_SIZE := Vector2(35, 47)
-const COLLECTION_ICON_GAP := 4.0
+## grid (21 cells) covers the whole collection with no overflow/"+N" needed.
+## Sized to preserve original 3:4 card aspect ratio (34x45.33).
+const COLLECTION_ICON_SIZE := Vector2(34, 45.333)
+const COLLECTION_ICON_GAP_X := 4.0
+const COLLECTION_ICON_GAP_Y := 8.0
 const COLLECTION_COLUMNS := 7
 
 var slot_buttons: Array = []        # Button x3
@@ -227,6 +227,7 @@ func _on_keyboard_cancelled() -> void:
 	_on_name_cancel_pressed()
 
 func _style_slot_button(slot: FixedSizeButton) -> void:
+	slot.clip_contents = false
 	const RADIUS := 14
 	const BORDER_W := 4
 
@@ -246,6 +247,7 @@ func _style_slot_button(slot: FixedSizeButton) -> void:
 	normal.shadow_size = 6
 	normal.shadow_offset = Vector2(0, 3)
 	normal.anti_aliasing = true
+	normal.anti_aliasing_size = 1.0
 
 	# Hover / Focus: Illuminated parchment with glowing gold frame and glow shadow
 	var hover := StyleBoxFlat.new()
@@ -263,6 +265,7 @@ func _style_slot_button(slot: FixedSizeButton) -> void:
 	hover.shadow_size = 10
 	hover.shadow_offset = Vector2(0, 2)
 	hover.anti_aliasing = true
+	hover.anti_aliasing_size = 1.0
 
 	# Pressed: Slightly deeper warm parchment
 	var pressed := StyleBoxFlat.new()
@@ -279,6 +282,7 @@ func _style_slot_button(slot: FixedSizeButton) -> void:
 	pressed.shadow_size = 2
 	pressed.shadow_offset = Vector2(0, 1)
 	pressed.anti_aliasing = true
+	pressed.anti_aliasing_size = 1.0
 
 	# Disabled: Dimmed/greyed out
 	var disabled := StyleBoxFlat.new()
@@ -320,10 +324,10 @@ func _style_slot_button(slot: FixedSizeButton) -> void:
 	inner_style.border_width_top = 1
 	inner_style.border_width_bottom = 1
 	inner_style.border_color = UIConstants.COLOR_PANEL_INNER_LINE
-	inner_style.corner_radius_top_left = 8
-	inner_style.corner_radius_top_right = 8
-	inner_style.corner_radius_bottom_left = 8
-	inner_style.corner_radius_bottom_right = 8
+	inner_style.corner_radius_top_left = 10
+	inner_style.corner_radius_top_right = 10
+	inner_style.corner_radius_bottom_left = 10
+	inner_style.corner_radius_bottom_right = 10
 	inner_style.anti_aliasing = true
 	inner.add_theme_stylebox_override("panel", inner_style)
 	slot.add_child(inner)
@@ -388,19 +392,35 @@ func _refresh_slots() -> void:
 			slot_empty_labels[i].text = StringTable.get_string(StringTable.ID_NEW)
 			UIButtonStyle.fit_button_text(slot_empty_labels[i])
 
+func _load_texture(path: String) -> Texture2D:
+	var global_path := ProjectSettings.globalize_path(path)
+	if FileAccess.file_exists(global_path):
+		var img := Image.new()
+		if img.load(global_path) == OK:
+			return ImageTexture.create_from_image(img)
+	if ResourceLoader.exists(path):
+		var res = load(path)
+		if res is Texture2D:
+			return res
+	return null
+
 func _rebuild_collection_icons(box: Control, card_defs: Array) -> void:
 	for child in box.get_children():
 		child.free()
 
-	var pitch: Vector2 = COLLECTION_ICON_SIZE + Vector2(COLLECTION_ICON_GAP, COLLECTION_ICON_GAP)
 	for idx in card_defs.size():
 		var def: CardManager.CardDef = CardManager.defs[card_defs[idx]]
 		var icon := TextureRect.new()
-		icon.texture = load(CardView.ASSETS_DIR + def.image)
-		icon.stretch_mode = TextureRect.STRETCH_SCALE
+		icon.texture = _load_texture(CardView.ASSETS_DIR + def.image)
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.size = COLLECTION_ICON_SIZE
-		icon.position = Vector2(idx % COLLECTION_COLUMNS, idx / COLLECTION_COLUMNS) * pitch
+		var col := idx % COLLECTION_COLUMNS
+		var row := idx / COLLECTION_COLUMNS
+		icon.position = Vector2(
+			col * (COLLECTION_ICON_SIZE.x + COLLECTION_ICON_GAP_X),
+			row * (COLLECTION_ICON_SIZE.y + COLLECTION_ICON_GAP_Y)
+		)
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		box.add_child(icon)
 
