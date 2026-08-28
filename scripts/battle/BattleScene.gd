@@ -1662,13 +1662,16 @@ func gsBattle_Countdown(card0: Card, card1: Card, result: Dictionary) -> void:
 	await get_tree().create_timer(0.15).timeout
 
 	var tw := create_tween()
-	tw.tween_method(func(v): battle_value_labels[0].text = str(int(v)),
+	tw.tween_method(func(v): battle_value_labels[0].text = str(roundi(v)),
 		float(result["attack_stat"]), float(result["attack_value"]), BATTLE_COUNTDOWN_TIME) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_method(func(v): battle_value_labels[1].text = str(int(v)),
+	tw.parallel().tween_method(func(v): battle_value_labels[1].text = str(roundi(v)),
 		float(result["defense_stat"]), float(result["defense_value"]), BATTLE_COUNTDOWN_TIME) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	await tw.finished
+	battle_value_labels[0].text = str(result["attack_value"])
+	battle_value_labels[1].text = str(result["defense_value"])
+	await get_tree().create_timer(0.25).timeout
 
 func gsBattle_End(card0: Card, card1: Card, result: Dictionary, depth: int, tied: Array) -> void:
 	for i in 2:
@@ -1695,20 +1698,22 @@ func gsBattle_End(card0: Card, card1: Card, result: Dictionary, depth: int, tied
 	await tw_back.finished
 
 	var winner: Card = result["winner"]
-	if winner == null or (winner != card0 and depth >= 1):
-		# A tie never captures either side. A LOSS is treated the same way,
-		# but only for a chain battle (depth >= 1, card0 is itself a card
-		# captured earlier this cascade): fighting onward wasn't the
-		# player's deliberate choice the way placing the original card was,
-		# so a losing chain link shouldn't cost them the card either - it
-		# just stays put and this line stops, exactly like a tie. Only the
-		# very first battle (depth 0, the one the player actually chose by
-		# placing there) keeps real capture-on-loss risk, handled below.
+	if winner == null:
+		# A tie (equal values) never captures either side. Both cards stay in place.
 		await get_tree().create_timer(0.3).timeout
 		# card0 is still standing and may still have other neighbors left
 		# to challenge, in the player's next chosen order (see
 		# gsBattleChainBattle_Set's `tied` doc comment on why card1 must be
 		# excluded, not just dropped).
+		await gsBattleChainBattle_Set(card0, depth, tied + [card1])
+		return
+	elif winner != card0 and depth >= 1:
+		# A LOSS is treated the same way, but only for a chain battle
+		# (depth >= 1, card0 is itself a card captured earlier this cascade):
+		# fighting onward wasn't the player's deliberate choice the way
+		# placing the original card was, so a losing chain link shouldn't
+		# cost them the card either - it just stays put and this line stops.
+		await get_tree().create_timer(0.3).timeout
 		await gsBattleChainBattle_Set(card0, depth, tied + [card1])
 		return
 

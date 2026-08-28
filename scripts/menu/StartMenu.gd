@@ -92,7 +92,7 @@ func _ready() -> void:
 	var font_stylish: Font = Game.font_stylish
 	for i in 3:
 		var slot: FixedSizeButton = get_node("Slot%d" % (i + 1))
-		UIButtonStyle.apply(slot)
+		_style_slot_button(slot)
 		slot.pressed.connect(_on_slot_pressed.bind(i))
 		slot_buttons.append(slot)
 
@@ -225,6 +225,109 @@ func _on_keyboard_confirmed(text: String) -> void:
 func _on_keyboard_cancelled() -> void:
 	_close_keyboard()
 	_on_name_cancel_pressed()
+
+func _style_slot_button(slot: FixedSizeButton) -> void:
+	const RADIUS := 14
+	const BORDER_W := 4
+
+	# Normal: Warm parchment with dark bronze frame and soft shadow
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = UIConstants.COLOR_PANEL_FILL
+	normal.border_width_left = BORDER_W
+	normal.border_width_right = BORDER_W
+	normal.border_width_top = BORDER_W
+	normal.border_width_bottom = BORDER_W
+	normal.border_color = UIConstants.COLOR_PANEL_FRAME
+	normal.corner_radius_top_left = RADIUS
+	normal.corner_radius_top_right = RADIUS
+	normal.corner_radius_bottom_left = RADIUS
+	normal.corner_radius_bottom_right = RADIUS
+	normal.shadow_color = UIConstants.COLOR_SHADOW_SOFT
+	normal.shadow_size = 6
+	normal.shadow_offset = Vector2(0, 3)
+	normal.anti_aliasing = true
+
+	# Hover / Focus: Illuminated parchment with glowing gold frame and glow shadow
+	var hover := StyleBoxFlat.new()
+	hover.bg_color = Color(0.99, 0.97, 0.91, 0.98)
+	hover.border_width_left = BORDER_W
+	hover.border_width_right = BORDER_W
+	hover.border_width_top = BORDER_W
+	hover.border_width_bottom = BORDER_W
+	hover.border_color = Color(0.85, 0.65, 0.20, 1.0)
+	hover.corner_radius_top_left = RADIUS
+	hover.corner_radius_top_right = RADIUS
+	hover.corner_radius_bottom_left = RADIUS
+	hover.corner_radius_bottom_right = RADIUS
+	hover.shadow_color = Color(0.85, 0.65, 0.20, 0.45)
+	hover.shadow_size = 10
+	hover.shadow_offset = Vector2(0, 2)
+	hover.anti_aliasing = true
+
+	# Pressed: Slightly deeper warm parchment
+	var pressed := StyleBoxFlat.new()
+	pressed.bg_color = Color(0.90, 0.86, 0.76, 0.98)
+	pressed.border_width_left = BORDER_W
+	pressed.border_width_right = BORDER_W
+	pressed.border_width_top = BORDER_W
+	pressed.border_width_bottom = BORDER_W
+	pressed.border_color = Color(0.35, 0.24, 0.10, 1.0)
+	pressed.corner_radius_top_left = RADIUS
+	pressed.corner_radius_top_right = RADIUS
+	pressed.corner_radius_bottom_left = RADIUS
+	pressed.corner_radius_bottom_right = RADIUS
+	pressed.shadow_size = 2
+	pressed.shadow_offset = Vector2(0, 1)
+	pressed.anti_aliasing = true
+
+	# Disabled: Dimmed/greyed out
+	var disabled := StyleBoxFlat.new()
+	disabled.bg_color = Color(0.70, 0.68, 0.62, 0.65)
+	disabled.border_width_left = BORDER_W
+	disabled.border_width_right = BORDER_W
+	disabled.border_width_top = BORDER_W
+	disabled.border_width_bottom = BORDER_W
+	disabled.border_color = Color(0.35, 0.35, 0.35, 0.8)
+	disabled.corner_radius_top_left = RADIUS
+	disabled.corner_radius_top_right = RADIUS
+	disabled.corner_radius_bottom_left = RADIUS
+	disabled.corner_radius_bottom_right = RADIUS
+	disabled.anti_aliasing = true
+
+	slot.add_theme_stylebox_override("normal", normal)
+	slot.add_theme_stylebox_override("hover", hover)
+	slot.add_theme_stylebox_override("pressed", pressed)
+	slot.add_theme_stylebox_override("disabled", disabled)
+	slot.add_theme_stylebox_override("focus", hover)
+
+	var hover_text_color := Color(0.12, 0.08, 0.02)
+	slot.add_theme_color_override("font_hover_color", hover_text_color)
+	slot.add_theme_color_override("font_hover_pressed_color", hover_text_color)
+	slot.add_theme_color_override("font_pressed_color", Color.BLACK)
+	slot.add_theme_color_override("font_color", Color.BLACK)
+
+	# Inner gold decorative hairline border
+	var inner := Panel.new()
+	const INNER_INSET := 6.0
+	inner.position = Vector2(INNER_INSET, INNER_INSET)
+	inner.size = slot.size - Vector2(INNER_INSET, INNER_INSET) * 2.0
+	inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var inner_style := StyleBoxFlat.new()
+	inner_style.bg_color = Color.TRANSPARENT
+	inner_style.border_width_left = 1
+	inner_style.border_width_right = 1
+	inner_style.border_width_top = 1
+	inner_style.border_width_bottom = 1
+	inner_style.border_color = UIConstants.COLOR_PANEL_INNER_LINE
+	inner_style.corner_radius_top_left = 8
+	inner_style.corner_radius_top_right = 8
+	inner_style.corner_radius_bottom_left = 8
+	inner_style.corner_radius_bottom_right = 8
+	inner_style.anti_aliasing = true
+	inner.add_theme_stylebox_override("panel", inner_style)
+	slot.add_child(inner)
+	slot.move_child(inner, 0)
 
 func _style_delete_button(btn: Button) -> void:
 	# A font glyph instead of button_delete_save.png's raster X: same X at any
