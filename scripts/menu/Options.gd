@@ -31,6 +31,10 @@ var _sfx_dragging := false
 var lang_arrow_left: Control
 var lang_arrow_right: Control
 var nav: FocusNav
+# Joypad button hints - kept so their labels can be refreshed on language change.
+var _hint_title_screen: Control
+var _hint_credits: Control
+var _hint_back: Control
 
 func _ready() -> void:
 	for btn in [back_button, credits_button, title_screen_button]:
@@ -370,9 +374,12 @@ func _setup_nav() -> void:
 
 	# Same row every screen's hints share now (ControllerUI.PROMPT_BAR_Y,
 	# matching MainMenu's own A/Select row) - x stays each button's own.
-	add_child(ControllerUI.make_button_hint(&"X", StringTable.get_string(StringTable.ID_TITLE_SCREEN), Vector2(title_screen_button.position.x, ControllerUI.PROMPT_BAR_Y), Vector2(title_screen_button.size.x, ControllerUI.HINT_ROW_HEIGHT)))
-	add_child(ControllerUI.make_button_hint(&"Y", StringTable.get_string(StringTable.ID_CREDITS), Vector2(credits_button.position.x, ControllerUI.PROMPT_BAR_Y), Vector2(credits_button.size.x, ControllerUI.HINT_ROW_HEIGHT)))
-	add_child(ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK), Vector2(back_button.position.x, ControllerUI.PROMPT_BAR_Y), Vector2(back_button.size.x, ControllerUI.HINT_ROW_HEIGHT)))
+	_hint_title_screen = ControllerUI.make_button_hint(&"X", StringTable.get_string(StringTable.ID_TITLE_SCREEN), Vector2(title_screen_button.position.x, ControllerUI.PROMPT_BAR_Y), Vector2(title_screen_button.size.x, ControllerUI.HINT_ROW_HEIGHT))
+	_hint_credits     = ControllerUI.make_button_hint(&"Y", StringTable.get_string(StringTable.ID_CREDITS),      Vector2(credits_button.position.x,       ControllerUI.PROMPT_BAR_Y), Vector2(credits_button.size.x,       ControllerUI.HINT_ROW_HEIGHT))
+	_hint_back        = ControllerUI.make_button_hint(&"B", StringTable.get_string(StringTable.ID_BACK),         Vector2(back_button.position.x,          ControllerUI.PROMPT_BAR_Y), Vector2(back_button.size.x,          ControllerUI.HINT_ROW_HEIGHT))
+	add_child(_hint_title_screen)
+	add_child(_hint_credits)
+	add_child(_hint_back)
 
 	nav.activated.connect(func(item: FocusNav.NavItem) -> void:
 		if item.control is Button:
@@ -453,6 +460,14 @@ func _update_language_texts() -> void:
 	UIButtonStyle.fit_button_text(credits_button)
 	title_screen_button.text = StringTable.get_string(StringTable.ID_TITLE_SCREEN)
 	UIButtonStyle.fit_button_text(title_screen_button)
+
+	# Refresh the joypad button hint labels (second child of each hint control).
+	if is_instance_valid(_hint_title_screen) and _hint_title_screen.get_child_count() > 1:
+		(_hint_title_screen.get_child(1) as Label).text = StringTable.get_string(StringTable.ID_TITLE_SCREEN)
+	if is_instance_valid(_hint_credits) and _hint_credits.get_child_count() > 1:
+		(_hint_credits.get_child(1) as Label).text = StringTable.get_string(StringTable.ID_CREDITS)
+	if is_instance_valid(_hint_back) and _hint_back.get_child_count() > 1:
+		(_hint_back.get_child(1) as Label).text = StringTable.get_string(StringTable.ID_BACK)
 
 func _on_back_pressed() -> void:
 	Game.play_sfx(ASSETS + "sfx/button_back_sound.wav")
