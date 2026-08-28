@@ -99,7 +99,7 @@ func _add_action_row(y: float, font: Font) -> void:
 
 func _make_key(label: String, pos: Vector2, key_size: Vector2, font: Font, font_size: int = UIConstants.KEYBOARD_KEY_FONT_SIZE) -> Button:
 	var btn := FixedSizeButton.new()
-	UIButtonStyle.apply(btn)
+	UIButtonStyle.apply_compact(btn, 6, 2)
 	btn.text = label
 	btn.position = pos
 	btn.size = key_size

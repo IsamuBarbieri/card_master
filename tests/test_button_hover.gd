@@ -51,7 +51,7 @@ func _ready() -> void:
 	# or the button under that spot in the NEXT screen lights up and stays lit.
 	assert(UIButtonStyle.hover_color(Color.WHITE) == Color.WHITE,
 		"the highlight is switched off on this desktop run - it should only go on a touch platform")
-	assert(UIButtonStyle.RESTING_TEXT_COLOR == Color.BLACK,
+	assert(UIButtonStyle.RESTING_TEXT_COLOR == UIConstants.COLOR_BTN_TEXT,
 		"the no-hover fallback no longer matches what buttons actually paint")
 
 	# ...and the rule has to survive FixedSizeButton, which is what nearly

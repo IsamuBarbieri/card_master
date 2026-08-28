@@ -109,6 +109,16 @@ func _ready() -> void:
 		stat_label.add_theme_font_override("font", font_stylish)
 		slot_stat_labels.append(stat_label)
 
+		var empty_label: Label = slot.get_node("EmptyLabel")
+		empty_label.add_theme_font_override("font", font_stylish)
+		slot_empty_labels.append(empty_label)
+
+		var slot_text_color: Color = UIConstants.COLOR_SLOT_TEXT
+		number_label.add_theme_color_override("font_color", slot_text_color)
+		name_label.add_theme_color_override("font_color", slot_text_color)
+		stat_label.add_theme_color_override("font_color", slot_text_color)
+		empty_label.add_theme_color_override("font_color", slot_text_color)
+
 		# A slot's content is these labels, not the button's own text, so the
 		# button has nothing of its own to recolour under the pointer - they
 		# are registered so they light up with it like any other button's
@@ -126,9 +136,6 @@ func _ready() -> void:
 		coins_label.add_theme_font_override("normal_font", font_stylish)
 		slot_coins_labels.append(coins_label)
 
-		var empty_label: Label = slot.get_node("EmptyLabel")
-		empty_label.add_theme_font_override("font", font_stylish)
-		slot_empty_labels.append(empty_label)
 		# "New" is what an empty slot shows, so it lights up with the pointer
 		# like the filled slots' own labels do.
 		slot.add_state_label(empty_label)
@@ -231,71 +238,114 @@ func _style_slot_button(slot: FixedSizeButton) -> void:
 	const RADIUS := 14
 	const BORDER_W := 4
 
-	# Normal: Warm parchment with dark bronze frame and soft shadow
+	# Normal: Dark antique leather panel with bronze frame and soft shadow
+	# Normal: Dark antique leather panel with bronze frame
 	var normal := StyleBoxFlat.new()
-	normal.bg_color = UIConstants.COLOR_PANEL_FILL
+	normal.bg_color = UIConstants.COLOR_SLOT_FILL
 	normal.border_width_left = BORDER_W
 	normal.border_width_right = BORDER_W
 	normal.border_width_top = BORDER_W
 	normal.border_width_bottom = BORDER_W
-	normal.border_color = UIConstants.COLOR_PANEL_FRAME
+	normal.border_width_left = UIConstants.SLOT_BORDER_WIDTH
+	normal.border_width_right = UIConstants.SLOT_BORDER_WIDTH
+	normal.border_width_top = UIConstants.SLOT_BORDER_WIDTH
+	normal.border_width_bottom = UIConstants.SLOT_BORDER_WIDTH
+	normal.border_color = UIConstants.COLOR_SLOT_FRAME
 	normal.corner_radius_top_left = RADIUS
 	normal.corner_radius_top_right = RADIUS
 	normal.corner_radius_bottom_left = RADIUS
 	normal.corner_radius_bottom_right = RADIUS
-	normal.shadow_color = UIConstants.COLOR_SHADOW_SOFT
-	normal.shadow_size = 6
-	normal.shadow_offset = Vector2(0, 3)
+	normal.shadow_color = Color(0, 0, 0, 0.55)
+	normal.shadow_size = 8
+	normal.shadow_offset = Vector2(0, 4)
+	normal.corner_radius_top_left = UIConstants.SLOT_RADIUS
+	normal.corner_radius_top_right = UIConstants.SLOT_RADIUS
+	normal.corner_radius_bottom_left = UIConstants.SLOT_RADIUS
+	normal.corner_radius_bottom_right = UIConstants.SLOT_RADIUS
+	normal.shadow_size = 0
 	normal.anti_aliasing = true
 	normal.anti_aliasing_size = 1.0
 
-	# Hover / Focus: Illuminated parchment with glowing gold frame and glow shadow
+	# Hover / Focus: Illuminated dark leather with glowing gold frame and gold glow shadow
+	# Hover / Focus: Illuminated dark leather with glowing gold frame
 	var hover := StyleBoxFlat.new()
-	hover.bg_color = Color(0.99, 0.97, 0.91, 0.98)
+	hover.bg_color = Color(0.26, 0.19, 0.11, 0.98)
 	hover.border_width_left = BORDER_W
 	hover.border_width_right = BORDER_W
 	hover.border_width_top = BORDER_W
 	hover.border_width_bottom = BORDER_W
-	hover.border_color = Color(0.85, 0.65, 0.20, 1.0)
+	hover.bg_color = UIConstants.COLOR_BTN_FILL_HOVER
+	hover.border_width_left = UIConstants.SLOT_BORDER_WIDTH
+	hover.border_width_right = UIConstants.SLOT_BORDER_WIDTH
+	hover.border_width_top = UIConstants.SLOT_BORDER_WIDTH
+	hover.border_width_bottom = UIConstants.SLOT_BORDER_WIDTH
+	hover.border_color = UIConstants.COLOR_SLOT_FRAME_HOVER
 	hover.corner_radius_top_left = RADIUS
 	hover.corner_radius_top_right = RADIUS
 	hover.corner_radius_bottom_left = RADIUS
 	hover.corner_radius_bottom_right = RADIUS
-	hover.shadow_color = Color(0.85, 0.65, 0.20, 0.45)
-	hover.shadow_size = 10
+	hover.shadow_color = Color(0.95, 0.75, 0.20, 0.55)
+	hover.shadow_size = 12
 	hover.shadow_offset = Vector2(0, 2)
+	hover.corner_radius_top_left = UIConstants.SLOT_RADIUS
+	hover.corner_radius_top_right = UIConstants.SLOT_RADIUS
+	hover.corner_radius_bottom_left = UIConstants.SLOT_RADIUS
+	hover.corner_radius_bottom_right = UIConstants.SLOT_RADIUS
+	hover.shadow_size = 0
 	hover.anti_aliasing = true
 	hover.anti_aliasing_size = 1.0
 
-	# Pressed: Slightly deeper warm parchment
+	# Pressed: Deep sunken dark bronze
 	var pressed := StyleBoxFlat.new()
-	pressed.bg_color = Color(0.90, 0.86, 0.76, 0.98)
+	pressed.bg_color = Color(0.12, 0.08, 0.05, 0.98)
 	pressed.border_width_left = BORDER_W
 	pressed.border_width_right = BORDER_W
 	pressed.border_width_top = BORDER_W
 	pressed.border_width_bottom = BORDER_W
-	pressed.border_color = Color(0.35, 0.24, 0.10, 1.0)
+	pressed.border_color = Color(0.38, 0.26, 0.10, 1.0)
 	pressed.corner_radius_top_left = RADIUS
 	pressed.corner_radius_top_right = RADIUS
 	pressed.corner_radius_bottom_left = RADIUS
 	pressed.corner_radius_bottom_right = RADIUS
 	pressed.shadow_size = 2
 	pressed.shadow_offset = Vector2(0, 1)
+	pressed.bg_color = UIConstants.COLOR_BTN_FILL_PRESSED
+	pressed.border_width_left = UIConstants.SLOT_BORDER_WIDTH
+	pressed.border_width_right = UIConstants.SLOT_BORDER_WIDTH
+	pressed.border_width_top = UIConstants.SLOT_BORDER_WIDTH
+	pressed.border_width_bottom = UIConstants.SLOT_BORDER_WIDTH
+	pressed.border_color = UIConstants.COLOR_BTN_BORDER_PRESSED
+	pressed.corner_radius_top_left = UIConstants.SLOT_RADIUS
+	pressed.corner_radius_top_right = UIConstants.SLOT_RADIUS
+	pressed.corner_radius_bottom_left = UIConstants.SLOT_RADIUS
+	pressed.corner_radius_bottom_right = UIConstants.SLOT_RADIUS
+	pressed.shadow_size = 0
 	pressed.anti_aliasing = true
 	pressed.anti_aliasing_size = 1.0
 
-	# Disabled: Dimmed/greyed out
+	# Disabled: Dimmed charcoal
 	var disabled := StyleBoxFlat.new()
-	disabled.bg_color = Color(0.70, 0.68, 0.62, 0.65)
+	disabled.bg_color = Color(0.14, 0.12, 0.10, 0.60)
 	disabled.border_width_left = BORDER_W
 	disabled.border_width_right = BORDER_W
 	disabled.border_width_top = BORDER_W
 	disabled.border_width_bottom = BORDER_W
-	disabled.border_color = Color(0.35, 0.35, 0.35, 0.8)
+	disabled.border_color = Color(0.32, 0.28, 0.24, 0.40)
 	disabled.corner_radius_top_left = RADIUS
 	disabled.corner_radius_top_right = RADIUS
 	disabled.corner_radius_bottom_left = RADIUS
 	disabled.corner_radius_bottom_right = RADIUS
+	disabled.bg_color = UIConstants.COLOR_BTN_FILL_DISABLED
+	disabled.border_width_left = UIConstants.SLOT_BORDER_WIDTH
+	disabled.border_width_right = UIConstants.SLOT_BORDER_WIDTH
+	disabled.border_width_top = UIConstants.SLOT_BORDER_WIDTH
+	disabled.border_width_bottom = UIConstants.SLOT_BORDER_WIDTH
+	disabled.border_color = UIConstants.COLOR_BTN_BORDER_DISABLED
+	disabled.corner_radius_top_left = UIConstants.SLOT_RADIUS
+	disabled.corner_radius_top_right = UIConstants.SLOT_RADIUS
+	disabled.corner_radius_bottom_left = UIConstants.SLOT_RADIUS
+	disabled.corner_radius_bottom_right = UIConstants.SLOT_RADIUS
+	disabled.shadow_size = 0
 	disabled.anti_aliasing = true
 
 	slot.add_theme_stylebox_override("normal", normal)
@@ -304,11 +354,10 @@ func _style_slot_button(slot: FixedSizeButton) -> void:
 	slot.add_theme_stylebox_override("disabled", disabled)
 	slot.add_theme_stylebox_override("focus", hover)
 
-	var hover_text_color := Color(0.12, 0.08, 0.02)
-	slot.add_theme_color_override("font_hover_color", hover_text_color)
-	slot.add_theme_color_override("font_hover_pressed_color", hover_text_color)
-	slot.add_theme_color_override("font_pressed_color", Color.BLACK)
-	slot.add_theme_color_override("font_color", Color.BLACK)
+	slot.add_theme_color_override("font_color", UIConstants.COLOR_SLOT_TEXT)
+	slot.add_theme_color_override("font_hover_color", Color.WHITE)
+	slot.add_theme_color_override("font_hover_pressed_color", Color.WHITE)
+	slot.add_theme_color_override("font_pressed_color", UIConstants.COLOR_SLOT_TEXT)
 
 	# Inner gold decorative hairline border
 	var inner := Panel.new()
@@ -323,7 +372,7 @@ func _style_slot_button(slot: FixedSizeButton) -> void:
 	inner_style.border_width_right = 1
 	inner_style.border_width_top = 1
 	inner_style.border_width_bottom = 1
-	inner_style.border_color = UIConstants.COLOR_PANEL_INNER_LINE
+	inner_style.border_color = UIConstants.COLOR_SLOT_INNER_LINE
 	inner_style.corner_radius_top_left = 10
 	inner_style.corner_radius_top_right = 10
 	inner_style.corner_radius_bottom_left = 10

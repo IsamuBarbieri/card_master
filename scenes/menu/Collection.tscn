@@ -18,9 +18,6 @@ corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-shadow_color = Color(0, 0, 0, 0.35)
-shadow_size = 5
-shadow_offset = Vector2(0, 3)
 anti_aliasing = true
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inner"]
@@ -53,9 +50,7 @@ texture = ExtResource("2")
 expand_mode = 1
 
 [node name="BackButton" type="Button" parent="."]
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
-theme_override_constants/shadow_offset_x = 1
+theme_override_colors/font_theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 theme_override_fonts/font = ExtResource("6")
 theme_override_font_sizes/font_size = 36
@@ -69,8 +64,7 @@ script = ExtResource("5")
 
 [node name="TitleLabel" type="Label" parent="."]
 theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_colors/font_shadow_color = Color(0.501961, 0.501961, 0.501961, 0.5)
-theme_override_constants/shadow_offset_x = 1
+theme_override_colors/font_theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 46
 text = "Collezione"

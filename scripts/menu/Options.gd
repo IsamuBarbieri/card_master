@@ -225,56 +225,53 @@ func _style_slider(slider: HSlider) -> void:
 		slider.add_theme_icon_override("grabber_highlight", scaled_hl)
 
 func _style_lang_popup(lang_btn: OptionButton) -> void:
-	const RADIUS := 8
-	const BORDER_W := 2
+	const RADIUS := UIConstants.BTN_RADIUS
+	const BORDER_W := UIConstants.BTN_BORDER_WIDTH
 
 	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color(0.95, 0.91, 0.82, 0.98)
+	normal.bg_color = UIConstants.COLOR_DROPDOWN_BG_NORMAL
 	normal.border_width_left = BORDER_W
 	normal.border_width_right = BORDER_W
 	normal.border_width_top = BORDER_W
 	normal.border_width_bottom = BORDER_W
-	normal.border_color = Color(0.45, 0.32, 0.15, 1.0)
+	normal.border_color = UIConstants.COLOR_DROPDOWN_BORDER_NORMAL
 	normal.corner_radius_top_left = RADIUS
 	normal.corner_radius_top_right = RADIUS
 	normal.corner_radius_bottom_left = RADIUS
 	normal.corner_radius_bottom_right = RADIUS
-	normal.shadow_color = Color(0, 0, 0, 0.25)
-	normal.shadow_size = 4
-	normal.shadow_offset = Vector2(0, 2)
+	normal.shadow_size = 0
 	normal.content_margin_left = 14
 	normal.content_margin_right = 14
 	normal.anti_aliasing = true
 
 	var hover := StyleBoxFlat.new()
-	hover.bg_color = Color(0.99, 0.97, 0.91, 0.98)
+	hover.bg_color = UIConstants.COLOR_DROPDOWN_BG_HOVER
 	hover.border_width_left = BORDER_W
 	hover.border_width_right = BORDER_W
 	hover.border_width_top = BORDER_W
 	hover.border_width_bottom = BORDER_W
-	hover.border_color = Color(0.85, 0.65, 0.20, 1.0)
+	hover.border_color = UIConstants.COLOR_DROPDOWN_BORDER_HOVER
 	hover.corner_radius_top_left = RADIUS
 	hover.corner_radius_top_right = RADIUS
 	hover.corner_radius_bottom_left = RADIUS
 	hover.corner_radius_bottom_right = RADIUS
-	hover.shadow_color = Color(0.85, 0.65, 0.20, 0.35)
-	hover.shadow_size = 6
-	hover.shadow_offset = Vector2(0, 2)
+	hover.shadow_size = 0
 	hover.content_margin_left = 14
 	hover.content_margin_right = 14
 	hover.anti_aliasing = true
 
 	var pressed := StyleBoxFlat.new()
-	pressed.bg_color = Color(0.90, 0.86, 0.76, 0.98)
+	pressed.bg_color = UIConstants.COLOR_DROPDOWN_BG_PRESSED
 	pressed.border_width_left = BORDER_W
 	pressed.border_width_right = BORDER_W
 	pressed.border_width_top = BORDER_W
 	pressed.border_width_bottom = BORDER_W
-	pressed.border_color = Color(0.35, 0.24, 0.10, 1.0)
+	pressed.border_color = UIConstants.COLOR_DROPDOWN_BORDER_PRESSED
 	pressed.corner_radius_top_left = RADIUS
 	pressed.corner_radius_top_right = RADIUS
 	pressed.corner_radius_bottom_left = RADIUS
 	pressed.corner_radius_bottom_right = RADIUS
+	pressed.shadow_size = 0
 	pressed.content_margin_left = 14
 	pressed.content_margin_right = 14
 	pressed.anti_aliasing = true
@@ -284,30 +281,29 @@ func _style_lang_popup(lang_btn: OptionButton) -> void:
 	lang_btn.add_theme_stylebox_override("pressed", pressed)
 	lang_btn.add_theme_stylebox_override("focus", hover)
 
-	var text_color := Color(0.12, 0.08, 0.02)
+	var text_color := UIConstants.COLOR_DROPDOWN_TEXT
+	var text_hover := UIConstants.COLOR_DROPDOWN_TEXT_HOVER
 	lang_btn.add_theme_font_override("font", Game.font_stylish)
 	lang_btn.add_theme_font_size_override("font_size", 28)
 	lang_btn.add_theme_color_override("font_color", text_color)
-	lang_btn.add_theme_color_override("font_hover_color", text_color)
+	lang_btn.add_theme_color_override("font_hover_color", text_hover)
 	lang_btn.add_theme_color_override("font_pressed_color", text_color)
-	lang_btn.add_theme_color_override("font_focus_color", text_color)
+	lang_btn.add_theme_color_override("font_focus_color", text_hover)
 
 	# Style the PopupMenu
 	var popup: PopupMenu = lang_btn.get_popup()
 	var menu_panel := StyleBoxFlat.new()
-	menu_panel.bg_color = Color(0.96, 0.93, 0.85, 0.98)
-	menu_panel.border_width_left = 2
-	menu_panel.border_width_right = 2
-	menu_panel.border_width_top = 2
-	menu_panel.border_width_bottom = 2
-	menu_panel.border_color = Color(0.45, 0.32, 0.15, 1.0)
+	menu_panel.bg_color = UIConstants.COLOR_DROPDOWN_BG_NORMAL
+	menu_panel.border_width_left = BORDER_W
+	menu_panel.border_width_right = BORDER_W
+	menu_panel.border_width_top = BORDER_W
+	menu_panel.border_width_bottom = BORDER_W
+	menu_panel.border_color = UIConstants.COLOR_DROPDOWN_BORDER_NORMAL
 	menu_panel.corner_radius_top_left = 8
 	menu_panel.corner_radius_top_right = 8
 	menu_panel.corner_radius_bottom_left = 8
 	menu_panel.corner_radius_bottom_right = 8
-	menu_panel.shadow_color = Color(0, 0, 0, 0.35)
-	menu_panel.shadow_size = 6
-	menu_panel.shadow_offset = Vector2(0, 3)
+	menu_panel.shadow_size = 0
 	menu_panel.content_margin_left = 10
 	menu_panel.content_margin_right = 10
 	menu_panel.content_margin_top = 8
@@ -315,14 +311,12 @@ func _style_lang_popup(lang_btn: OptionButton) -> void:
 	menu_panel.anti_aliasing = true
 
 	var menu_hover := StyleBoxFlat.new()
-	menu_hover.bg_color = Color(0.88, 0.70, 0.25, 0.35)
-	menu_hover.border_width_left = 1
+	menu_hover.bg_color = Color(0.32, 0.22, 0.12, 1.0)
 	menu_hover.border_width_right = 1
 	menu_hover.border_width_top = 1
 	menu_hover.border_width_bottom = 1
-	menu_hover.border_color = Color(0.85, 0.65, 0.20, 0.8)
+	menu_hover.border_color = UIConstants.COLOR_DROPDOWN_BORDER_HOVER
 	menu_hover.corner_radius_top_left = 4
-	menu_hover.corner_radius_top_right = 4
 	menu_hover.corner_radius_bottom_left = 4
 	menu_hover.corner_radius_bottom_right = 4
 	menu_hover.anti_aliasing = true
@@ -331,8 +325,10 @@ func _style_lang_popup(lang_btn: OptionButton) -> void:
 	popup.add_theme_stylebox_override("hover", menu_hover)
 	popup.add_theme_font_override("font", Game.font_stylish)
 	popup.add_theme_font_size_override("font_size", 22)
-	popup.add_theme_color_override("font_color", Color(0.12, 0.08, 0.02))
-	popup.add_theme_color_override("font_hover_color", Color.BLACK)
+	popup.add_theme_color_override("font_color", UIConstants.COLOR_DROPDOWN_TEXT)
+	popup.add_theme_color_override("font_hover_color", UIConstants.COLOR_DROPDOWN_TEXT_HOVER)
+	popup.add_theme_color_override("font_accelerator_color", UIConstants.COLOR_DROPDOWN_TEXT)
+	popup.add_theme_color_override("font_disabled_color", UIConstants.COLOR_BTN_TEXT_DISABLED)
 
 func _setup_nav() -> void:
 	nav = FocusNav.new()

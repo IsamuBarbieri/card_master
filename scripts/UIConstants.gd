@@ -36,6 +36,30 @@ const COLOR_DANGER := Color(0.85, 0.1, 0.1)
 const COLOR_DANGER_HOVER := Color(1.0, 0.25, 0.25)
 const COLOR_DANGER_PRESSED := Color(0.6, 0.0, 0.0)
 
+## Button theme colors (Dark Grimoire: antique leather, bronze frame, radiant gold hover)
+const COLOR_BTN_FILL_NORMAL := Color(0.18, 0.13, 0.08, 1.0)
+const COLOR_BTN_BORDER_NORMAL := Color(0.52, 0.38, 0.16, 1.0)
+const COLOR_BTN_FILL_HOVER := Color(0.26, 0.19, 0.11, 1.0)
+const COLOR_BTN_BORDER_HOVER := Color(1.0, 0.82, 0.28, 1.0)
+const COLOR_BTN_GLOW_HOVER := Color(0.0, 0.0, 0.0, 0.0)
+const COLOR_BTN_FILL_PRESSED := Color(0.12, 0.08, 0.05, 1.0)
+const COLOR_BTN_BORDER_PRESSED := Color(0.38, 0.26, 0.10, 1.0)
+const COLOR_BTN_FILL_DISABLED := Color(0.14, 0.12, 0.10, 0.60)
+const COLOR_BTN_BORDER_DISABLED := Color(0.32, 0.28, 0.24, 0.40)
+const COLOR_BTN_TEXT := Color(0.96, 0.92, 0.82)
+const COLOR_BTN_TEXT_HOVER := Color.WHITE
+const COLOR_BTN_TEXT_DISABLED := Color(0.55, 0.50, 0.44, 0.55)
+const COLOR_BTN_PRIMARY_BORDER := Color(1.0, 0.82, 0.28, 1.0)
+const COLOR_BTN_DANGER_BORDER := Color(0.75, 0.18, 0.14, 0.90)
+const COLOR_BTN_DANGER_FILL_NORMAL := Color(0.24, 0.08, 0.08, 1.0)
+const COLOR_BTN_DANGER_FILL_HOVER := Color(0.35, 0.10, 0.10, 1.0)
+const COLOR_BTN_DANGER_BORDER_HOVER := Color(1.0, 0.30, 0.30, 1.0)
+const COLOR_BTN_DANGER_TEXT := Color(1.0, 0.85, 0.85)
+
+const BTN_RADIUS := 8
+const BTN_BORDER_WIDTH := 2
+const BTN_CONTENT_MARGIN := 6
+
 ## Status-message brown, reused by Online's and Leaderboard's status labels.
 const COLOR_STATUS_BROWN := Color(0.45, 0.18, 0.05)
 
@@ -144,11 +168,33 @@ const MAIN_MENU_CAT_POS := Vector2(850, 416)
 
 const OPTIONS_TITLE_FONT_SIZE := 46
 const OPTIONS_LANG_ARROW_FONT_SIZE := 30
+const COLOR_DROPDOWN_BG_NORMAL := Color(0.18, 0.13, 0.08, 1.0)
+const COLOR_DROPDOWN_BORDER_NORMAL := Color(0.52, 0.38, 0.16, 1.0)
+const COLOR_DROPDOWN_BG_HOVER := Color(0.26, 0.19, 0.11, 1.0)
+const COLOR_DROPDOWN_BORDER_HOVER := Color(1.0, 0.82, 0.28, 1.0)
+const COLOR_DROPDOWN_BG_PRESSED := Color(0.12, 0.08, 0.05, 1.0)
+const COLOR_DROPDOWN_BORDER_PRESSED := Color(0.38, 0.26, 0.10, 1.0)
+const COLOR_DROPDOWN_TEXT := Color(0.96, 0.92, 0.82)
+const COLOR_DROPDOWN_TEXT_HOVER := Color.WHITE
 
 # --------------------------------------------------------------- StartMenu
 
 const STARTMENU_SLOT_BORDER_COLOR := Color(0, 0, 0, 0.7)
 const STARTMENU_DELETE_BUTTON_FONT_SIZE := 34
+
+## Save-slot card colors (Dark Grimoire palette)
+## Normal slot fill: dark antique leather
+const COLOR_SLOT_FILL := Color(0.18, 0.13, 0.08, 1.0)
+## Normal slot frame: antique bronze
+const COLOR_SLOT_FRAME := Color(0.52, 0.38, 0.16, 1.0)
+## Hover/focus slot frame: radiant gold
+const COLOR_SLOT_FRAME_HOVER := Color(1.0, 0.82, 0.28, 1.0)
+## Inner decorative hairline: warm gold
+const COLOR_SLOT_INNER_LINE := Color(0.84, 0.68, 0.28, 0.65)
+## Slot label text: warm antique ivory
+const COLOR_SLOT_TEXT := Color(0.96, 0.92, 0.82)
+const SLOT_RADIUS := 14
+const SLOT_BORDER_WIDTH := 4
 
 # --------------------------------------------------------------- OnScreenKeyboard
 
@@ -169,6 +215,6 @@ const DECKSELECT_STAT_PANEL_POS := Vector2(361, 118)
 
 # --------------------------------------------------------------- UIPanel
 
-const COLOR_PANEL_FILL := Color(0.96, 0.93, 0.85, 0.94)
-const COLOR_PANEL_FRAME := Color(0.42, 0.30, 0.14)
-const COLOR_PANEL_INNER_LINE := Color(0.80, 0.66, 0.36, 0.75)
+const COLOR_PANEL_FILL := Color(0.18, 0.13, 0.08, 0.96)
+const COLOR_PANEL_FRAME := Color(0.52, 0.38, 0.16, 1.0)
+const COLOR_PANEL_INNER_LINE := Color(0.84, 0.68, 0.28, 0.65)

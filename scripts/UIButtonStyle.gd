@@ -14,67 +14,142 @@ extends RefCounted
 ## past its explicit composer size (e.g. a 56px-tall button ballooning past
 ## 90px). Pinned small here so buttons render at their real composer size.
 
-const MARGIN := 21
+const RADIUS := 8
+const BORDER_WIDTH := 2
 const CONTENT_MARGIN := 6
 const ASSETS := "res://assets/"
 
 ## Touch has no hover, but Godot's emulated-mouse-from-touch leaves a pointer
 ## parked wherever the finger last was. Change scene and whatever sits under
 ## that spot in the NEW screen lights up and stays lit, because no exit event
-## is ever coming - tap Options and its Credits button, which happens to cover
-## the same pixels, is highlighted until you touch somewhere else.
+## is ever coming.
 ##
 ## So on a touch platform the highlight simply isn't offered: `highlight` is
-## returned only where a pointer can really hover and leave again. Checked by
-## platform rather than by DisplayServer.has_feature(FEATURE_MOUSE), which is
-## also false in a headless desktop run and would take the highlight away on
-## PC too; a mouse plugged into a phone is a corner this deliberately ignores.
+## returned only where a pointer can really hover and leave again.
 static func hover_color(highlight: Color) -> Color:
 	return RESTING_TEXT_COLOR if OS.has_feature("mobile") else highlight
 
-## What every button in this game paints its label: the 9-patch skin is light,
-## and the pressed/no-hover states fall back to it.
-const RESTING_TEXT_COLOR := Color.BLACK
+## What every button in this game paints its label: warm ivory text on dark leather.
+const RESTING_TEXT_COLOR := Color(0.96, 0.92, 0.82)
+const HOVER_TEXT_COLOR := Color.WHITE
+
+static func _make_stylebox(bg: Color, border: Color, border_w: int = UIConstants.BTN_BORDER_WIDTH, radius: int = UIConstants.BTN_RADIUS) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.border_width_left = border_w
+	sb.border_width_right = border_w
+	sb.border_width_top = border_w
+	sb.border_width_bottom = border_w
+	sb.border_color = border
+	sb.corner_radius_top_left = radius
+	sb.corner_radius_top_right = radius
+	sb.corner_radius_bottom_left = radius
+	sb.corner_radius_bottom_right = radius
+	sb.shadow_size = 0
+	sb.content_margin_left = UIConstants.BTN_CONTENT_MARGIN
+	sb.content_margin_right = UIConstants.BTN_CONTENT_MARGIN
+	sb.content_margin_top = UIConstants.BTN_CONTENT_MARGIN
+	sb.content_margin_bottom = UIConstants.BTN_CONTENT_MARGIN
+	sb.anti_aliasing = true
+	return sb
 
 static func apply(btn: Button) -> void:
-	var normal := _make_stylebox("button_9patch_normal.png")
-	btn.add_theme_stylebox_override("normal", normal)
-	btn.add_theme_stylebox_override("hover", normal)
-	btn.add_theme_stylebox_override("pressed", _make_stylebox("button_9patch_press.png"))
-	btn.add_theme_stylebox_override("disabled", _make_stylebox("button_9patch_disable.png"))
-	# Controller focus: the hand cursor is the primary indicator, but a
-	# brightened pressed-skin underneath makes it unambiguous which button
-	# would fire. Not used by mouse input - FocusNav sets focus_mode = NONE
-	# on everything it registers, so nothing gets a focus ring by accident.
-	btn.add_theme_stylebox_override("focus", _make_stylebox("button_9patch_press.png"))
-	# Pointer feedback. Every screen overrides font_color (almost always to
-	# black) but none of them overrode the hover colour, so the label stayed
-	# exactly the same shade under the cursor and only MainMenu - whose buttons
-	# sit on their own icon art - read as responding. Set here rather than in
-	# each _make_text_button helper so every button in the game answers the
-	# mouse the same way; a caller wanting something else (MainMenu's Online
-	# circle wants gold) just overrides it after calling apply().
-	var hover := hover_color(Color.WHITE)
-	btn.add_theme_color_override("font_hover_color", hover)
-	btn.add_theme_color_override("font_hover_pressed_color", hover)
-	# Pressed goes back to the resting colour. Without this a plain Button
-	# falls through to Godot's own default pressed colour (a pale grey) while a
-	# FixedSizeButton falls back to its font_color - so the two behaved
-	# differently on the way down.
-	btn.add_theme_color_override("font_pressed_color", RESTING_TEXT_COLOR)
+	var normal := _make_stylebox(
+		UIConstants.COLOR_BTN_FILL_NORMAL,
+		UIConstants.COLOR_BTN_BORDER_NORMAL,
+		UIConstants.BTN_BORDER_WIDTH, UIConstants.BTN_RADIUS
+	)
+	var hover := _make_stylebox(
+		UIConstants.COLOR_BTN_FILL_HOVER,
+		UIConstants.COLOR_BTN_BORDER_HOVER,
+		UIConstants.BTN_BORDER_WIDTH, UIConstants.BTN_RADIUS
+	)
+	var pressed := _make_stylebox(
+		UIConstants.COLOR_BTN_FILL_PRESSED,
+		UIConstants.COLOR_BTN_BORDER_PRESSED,
+		UIConstants.BTN_BORDER_WIDTH, UIConstants.BTN_RADIUS
+	)
+	var disabled := _make_stylebox(
+		UIConstants.COLOR_BTN_FILL_DISABLED,
+		UIConstants.COLOR_BTN_BORDER_DISABLED,
+		1, UIConstants.BTN_RADIUS
+	)
 
-static func _make_stylebox(texture_name: String) -> StyleBoxTexture:
-	var sb := StyleBoxTexture.new()
-	sb.texture = load(ASSETS + texture_name)
-	sb.texture_margin_left = MARGIN
-	sb.texture_margin_right = MARGIN
-	sb.texture_margin_top = MARGIN
-	sb.texture_margin_bottom = MARGIN
-	sb.content_margin_left = CONTENT_MARGIN
-	sb.content_margin_right = CONTENT_MARGIN
-	sb.content_margin_top = CONTENT_MARGIN
-	sb.content_margin_bottom = CONTENT_MARGIN
-	return sb
+	btn.add_theme_stylebox_override("normal", normal)
+	btn.add_theme_stylebox_override("hover", hover)
+	btn.add_theme_stylebox_override("pressed", pressed)
+	btn.add_theme_stylebox_override("disabled", disabled)
+	# Controller focus: radiant gold border and warm glow
+	btn.add_theme_stylebox_override("focus", hover)
+
+	var h_color := hover_color(HOVER_TEXT_COLOR)
+	btn.add_theme_color_override("font_color", RESTING_TEXT_COLOR)
+	btn.add_theme_color_override("font_hover_color", h_color)
+	btn.add_theme_color_override("font_hover_pressed_color", h_color)
+	btn.add_theme_color_override("font_focus_color", h_color)
+	btn.add_theme_color_override("font_disabled_color", UIConstants.COLOR_BTN_TEXT_DISABLED)
+
+static func apply_danger(btn: Button) -> void:
+	apply(btn)
+	var normal_danger := _make_stylebox(
+		UIConstants.COLOR_BTN_DANGER_FILL_NORMAL,
+		UIConstants.COLOR_BTN_DANGER_BORDER,
+		UIConstants.BTN_BORDER_WIDTH, UIConstants.BTN_RADIUS
+	)
+	var hover_danger := _make_stylebox(
+		UIConstants.COLOR_BTN_DANGER_FILL_HOVER,
+		UIConstants.COLOR_BTN_DANGER_BORDER_HOVER,
+		UIConstants.BTN_BORDER_WIDTH, UIConstants.BTN_RADIUS
+	)
+	btn.add_theme_stylebox_override("normal", normal_danger)
+	btn.add_theme_stylebox_override("hover", hover_danger)
+	btn.add_theme_stylebox_override("focus", hover_danger)
+	btn.add_theme_color_override("font_color", UIConstants.COLOR_BTN_DANGER_TEXT)
+	btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	btn.add_theme_color_override("font_hover_pressed_color", Color.WHITE)
+	btn.add_theme_color_override("font_pressed_color", UIConstants.COLOR_DANGER_PRESSED)
+
+static func apply_compact(btn: Button, radius: int = 4, margin: int = 2) -> void:
+	var normal := _make_stylebox(
+		UIConstants.COLOR_BTN_FILL_NORMAL,
+		UIConstants.COLOR_BTN_BORDER_NORMAL,
+		1, radius
+	)
+	normal.content_margin_left = margin
+	normal.content_margin_right = margin
+	normal.content_margin_top = margin
+	normal.content_margin_bottom = margin
+
+	var hover := _make_stylebox(
+		UIConstants.COLOR_BTN_FILL_HOVER,
+		UIConstants.COLOR_BTN_BORDER_HOVER,
+		1, radius
+	)
+	hover.content_margin_left = margin
+	hover.content_margin_right = margin
+	hover.content_margin_top = margin
+	hover.content_margin_bottom = margin
+
+	var pressed := _make_stylebox(
+		UIConstants.COLOR_BTN_FILL_PRESSED,
+		UIConstants.COLOR_BTN_BORDER_PRESSED,
+		1, radius
+	)
+	pressed.content_margin_left = margin
+	pressed.content_margin_right = margin
+	pressed.content_margin_top = margin
+	pressed.content_margin_bottom = margin
+
+	btn.add_theme_stylebox_override("normal", normal)
+	btn.add_theme_stylebox_override("hover", hover)
+	btn.add_theme_stylebox_override("pressed", pressed)
+	btn.add_theme_stylebox_override("focus", hover)
+
+	var h_color := hover_color(HOVER_TEXT_COLOR)
+	btn.add_theme_color_override("font_color", RESTING_TEXT_COLOR)
+	btn.add_theme_color_override("font_hover_color", h_color)
+	btn.add_theme_color_override("font_pressed_color", RESTING_TEXT_COLOR)
+	btn.add_theme_color_override("font_focus_color", h_color)
 
 ## New QoL addition (not in the reference, which never localized past a
 ## fixed-width composer layout): shared text-fit helpers so translated

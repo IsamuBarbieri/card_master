@@ -129,42 +129,12 @@ func _style_close_button() -> void:
 	# scale reads crisp (the PNG was low-res and blurred/blocked when the
 	# canvas stretched to a real screen size), and colors as plain text
 	# theme overrides instead of needing a separately-authored asset.
+	UIButtonStyle.apply_danger(close_button)
 	close_button.text = "X"
 	close_button.add_theme_font_override("font", Game.font_stylish)
 	close_button.add_theme_font_size_override("font_size", UIConstants.HELP_CLOSE_BUTTON_FONT_SIZE)
-	close_button.add_theme_color_override("font_color", UIConstants.COLOR_DANGER)
-	close_button.add_theme_color_override("font_hover_color", UIConstants.COLOR_DANGER_HOVER)
-	close_button.add_theme_color_override("font_pressed_color", UIConstants.COLOR_DANGER_PRESSED)
 	close_button.add_theme_color_override("font_outline_color", Color.BLACK)
 	close_button.add_theme_constant_override("outline_size", 2)
-
-	var normal := StyleBoxTexture.new()
-	normal.texture = load(ASSETS + "button_9patch_normal.png")
-	normal.texture_margin_left = 21
-	normal.texture_margin_right = 21
-	normal.texture_margin_top = 21
-	normal.texture_margin_bottom = 21
-	# content_margin left at -1 (default) falls back to texture_margin, which
-	# on a 42x42 button eats the entire width/height (21+21=42) and leaves
-	# the glyph zero room to draw in - pin it small instead so the X shows.
-	normal.content_margin_left = 4
-	normal.content_margin_right = 4
-	normal.content_margin_top = 4
-	normal.content_margin_bottom = 4
-	close_button.add_theme_stylebox_override("normal", normal)
-
-	var pressed := StyleBoxTexture.new()
-	pressed.texture = load(ASSETS + "button_9patch_press.png")
-	pressed.texture_margin_left = 21
-	pressed.texture_margin_right = 21
-	pressed.texture_margin_top = 21
-	pressed.texture_margin_bottom = 21
-	pressed.content_margin_left = 4
-	pressed.content_margin_right = 4
-	pressed.content_margin_top = 4
-	pressed.content_margin_bottom = 4
-	close_button.add_theme_stylebox_override("pressed", pressed)
-	close_button.add_theme_stylebox_override("hover", normal)
 
 func _build_page_dots() -> void:
 	var total_w := PAGE_COUNT * DOT_SIZE + (PAGE_COUNT - 1) * DOT_GAP

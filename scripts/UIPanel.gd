@@ -56,9 +56,7 @@ static func make(size: Vector2) -> Panel:
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var outer := _style(FILL, FRAME, FRAME_WIDTH, RADIUS)
-	outer.shadow_color = UIConstants.COLOR_SHADOW_SOFT
-	outer.shadow_size = 5
-	outer.shadow_offset = Vector2(0, 3)
+	outer.shadow_size = 0
 	panel.add_theme_stylebox_override("panel", outer)
 
 	var inner := Panel.new()

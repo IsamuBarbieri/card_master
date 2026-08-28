@@ -25,9 +25,7 @@ texture = ExtResource("2")
 expand_mode = 1
 
 [node name="BattleButton" type="Button" parent="."]
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
-theme_override_constants/shadow_offset_x = 1
+theme_override_colors/font_theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 46
 text = "Battaglia"
@@ -48,9 +46,7 @@ texture = ExtResource("3")
 expand_mode = 1
 
 [node name="ShopButton" type="Button" parent="."]
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
-theme_override_constants/shadow_offset_x = 1
+theme_override_colors/font_theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 46
 text = "Negozio"
@@ -71,9 +67,7 @@ texture = ExtResource("4")
 expand_mode = 1
 
 [node name="CollectionButton" type="Button" parent="."]
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
-theme_override_constants/shadow_offset_x = 1
+theme_override_colors/font_theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 46
 text = "Collezione"
@@ -94,9 +88,7 @@ texture = ExtResource("5")
 expand_mode = 1
 
 [node name="OptionsButton" type="Button" parent="."]
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
-theme_override_constants/shadow_offset_x = 1
+theme_override_colors/font_theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 46
 text = "Opzioni"
@@ -127,7 +119,6 @@ texture = ExtResource("7")
 expand_mode = 1
 
 [node name="OnlineButton" type="Button" parent="."]
-theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_colors/font_focus_color = Color(0.93, 0.75, 0.32, 1)
 theme_override_colors/font_pressed_color = Color(0.93, 0.75, 0.32, 1)
 theme_override_colors/font_outline_color = Color(0.93, 0.75, 0.32, 1)
