@@ -1,10 +1,10 @@
-[gd_scene load_steps=6 format=3 uid="uid://bqk8n3wxr5t2p"]
+[gd_scene format=3 uid="uid://bqk8n3wxr5t2p"]
 
-[ext_resource type="Script" path="res://scripts/menu/Opponents.gd" id="1"]
-[ext_resource type="Texture2D" path="res://assets/common_bkg_clean.png" id="2"]
-[ext_resource type="Script" path="res://scripts/FixedSizeLabel.gd" id="3"]
-[ext_resource type="Script" path="res://scripts/FixedSizeButton.gd" id="4"]
-[ext_resource type="FontFile" path="res://assets/fonts/FiraSans-Regular.ttf" id="5"]
+[ext_resource type="Script" uid="uid://d3t36gqtiwo6t" path="res://scripts/menu/Opponents.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://ddx4f4ha8uafx" path="res://assets/common_bkg_clean.png" id="2"]
+[ext_resource type="Script" uid="uid://buevnq2d5uop2" path="res://scripts/FixedSizeLabel.gd" id="3"]
+[ext_resource type="Script" uid="uid://ddk6js2jyxnm2" path="res://scripts/FixedSizeButton.gd" id="4"]
+[ext_resource type="FontFile" uid="uid://coicfkyljgulh" path="res://assets/fonts/FiraSans-Regular.ttf" id="5"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_outer"]
 bg_color = Color(0.96, 0.93, 0.85, 0.94)
@@ -17,7 +17,6 @@ corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-anti_aliasing = true
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inner"]
 bg_color = Color(0, 0, 0, 0)
@@ -30,9 +29,8 @@ corner_radius_top_left = 7
 corner_radius_top_right = 7
 corner_radius_bottom_right = 7
 corner_radius_bottom_left = 7
-anti_aliasing = true
 
-[node name="Opponents" type="Control"]
+[node name="Opponents" type="Control" unique_id=411136966]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -41,14 +39,14 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
 
-[node name="Bg" type="TextureRect" parent="."]
+[node name="Bg" type="TextureRect" parent="." unique_id=108494429]
 layout_mode = 0
 offset_right = 960.0
 offset_bottom = 544.0
 texture = ExtResource("2")
 expand_mode = 1
 
-[node name="DescPanel" type="Panel" parent="."]
+[node name="DescPanel" type="Panel" parent="." unique_id=1711477315]
 layout_mode = 0
 offset_left = 207.0
 offset_top = 463.0
@@ -57,7 +55,7 @@ offset_bottom = 519.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_outer")
 
-[node name="Inner" type="Panel" parent="DescPanel"]
+[node name="Inner" type="Panel" parent="DescPanel" unique_id=1838885738]
 layout_mode = 0
 offset_left = 6.0
 offset_top = 6.0
@@ -66,63 +64,57 @@ offset_bottom = 50.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
 
-[node name="Title" type="Label" parent="."]
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_colors/font_theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
-theme_override_font_sizes/font_size = 36
-text = "Seleziona il Tuo Avversario"
+[node name="Title" type="Label" parent="." unique_id=1373268605]
 layout_mode = 0
 offset_left = 300.0
 offset_top = 2.0
 offset_right = 659.0
 offset_bottom = 48.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 36
+text = "Seleziona il Tuo Avversario"
 horizontal_alignment = 1
 vertical_alignment = 1
 script = ExtResource("3")
 
-[node name="LabelDesc" type="Label" parent="."]
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_colors/font_theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
-theme_override_fonts/font = ExtResource("5")
-theme_override_font_sizes/font_size = 36
-text = "Avversario: Slime"
+[node name="LabelDesc" type="Label" parent="." unique_id=877032592]
 layout_mode = 0
 offset_left = 231.0
 offset_top = 463.0
 offset_right = 729.0
 offset_bottom = 519.0
-vertical_alignment = 1
-script = ExtResource("3")
-
-[node name="BackButton" type="Button" parent="."]
-theme_override_colors/font_theme_override_constants/shadow_offset_x = 1
+theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_constants/shadow_offset_y = 1
 theme_override_fonts/font = ExtResource("5")
 theme_override_font_sizes/font_size = 36
-text = "Indietro"
+text = "Avversario: Slime"
+vertical_alignment = 1
+script = ExtResource("3")
+
+[node name="BackButton" type="Button" parent="." unique_id=1694795806]
 layout_mode = 0
 offset_left = 42.0
 offset_top = 463.0
 offset_right = 157.0
 offset_bottom = 519.0
-script = ExtResource("4")
-
-[node name="SelectButton" type="Button" parent="."]
-theme_override_colors/font_theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
 theme_override_fonts/font = ExtResource("5")
 theme_override_font_sizes/font_size = 36
-text = "Gioca"
+text = "Indietro"
+script = ExtResource("4")
+
+[node name="SelectButton" type="Button" parent="." unique_id=284970665]
 layout_mode = 0
 offset_left = 805.0
 offset_top = 463.0
 offset_right = 920.0
 offset_bottom = 519.0
+theme_override_fonts/font = ExtResource("5")
+theme_override_font_sizes/font_size = 36
+text = "Gioca"
 script = ExtResource("4")
 
-[node name="Scroll" type="ScrollContainer" parent="."]
+[node name="Scroll" type="ScrollContainer" parent="." unique_id=729602803]
 layout_mode = 0
 offset_left = 95.0
 offset_top = 50.0
