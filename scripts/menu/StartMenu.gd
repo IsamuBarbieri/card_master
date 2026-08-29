@@ -430,6 +430,8 @@ func _refresh_slots() -> void:
 
 		if occupied:
 			slot_name_labels[i].text = summary["name"]
+			slot_name_labels[i].add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_box(
+				summary["name"], Game.font_stylish, slot_name_labels[i].size, 30, 12))
 			slot_stat_labels[i].text = "%s: %d\n%s: %d" % [
 				StringTable.get_string(StringTable.ID_CARDS), summary["card_count"],
 				StringTable.get_string(StringTable.ID_WINS), summary["wins"],

@@ -640,8 +640,8 @@ func _build_ui() -> void:
 	turn_cursor.texture = load(ASSETS + "battle/battle_cursor.png")
 	turn_cursor.stretch_mode = TextureRect.STRETCH_SCALE
 	turn_cursor.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	turn_cursor.position = Vector2(CURSOR_X, cursor_row_y(0))
-	turn_cursor.size = Vector2(cursor_size(), cursor_size())
+	turn_cursor.position = Vector2(cursor_x(), cursor_row_y(0))
+	turn_cursor.size = cursor_size()
 	turn_cursor.visible = false
 	add_child(turn_cursor)
 
@@ -658,47 +658,48 @@ func _build_ui() -> void:
 
 ## Gap between the turn marker and the text it points at.
 const CURSOR_GAP := 6.0
-## The marker sits on the scroll's rolled left edge rather than inside the
-## writable field - it is art pointing at the block, not text that has to
-## respect the margins - which hands the whole of that margin to the name.
-const CURSOR_X := 0.0
-## The marker spans BOTH of a player's lines - name and score - because that
-## whole block is what it points at. Derived from the line height rather than
-## fixed in pixels, so it keeps its proportions if the art is rescaled again.
-const CURSOR_ROW_SHARE := 1.8
+## Horizontal shift for name, score and cursor to place them nicely on the pergamena.
+const SCOREBOARD_X_OFFSET := 5.0
+## The marker size relative to row height.
+const CURSOR_ROW_SHARE := 1.5
+## Aspect ratio matching battle_cursor.png (256x184), preserving correct un-stretched shape.
+const CURSOR_ASPECT := 256.0 / 184.0
 
-static func cursor_size() -> float:
-	return scoreboard_row_height() * CURSOR_ROW_SHARE
+static func cursor_size() -> Vector2:
+	var h: float = scoreboard_row_height() * CURSOR_ROW_SHARE
+	return Vector2(h * CURSOR_ASPECT, h)
+
 ## Names are player-entered (StartMenu caps the field at 20 characters), so
 ## fitting is done by shrinking the font rather than counting characters -
 ## twenty W's and twenty i's are nothing like the same width, and the same
 ## rule then holds for every language.
 const NAME_FONT_SIZE := 30
-const NAME_MIN_FONT_SIZE := 16
+const NAME_MIN_FONT_SIZE := 8
 ## The score is just the number, at the name's size, right-aligned across the
-## whole field. The "Score" caption beside it was competing for room with the
-## thing it labelled - and with one number under each name it was telling the
-## player something they could already see.
+## whole field.
 const SCORE_FONT_SIZE := NAME_FONT_SIZE
 
-## Left edge of the name, past the turn marker.
+## Left edge of the name, shifted 10px right from inner margin.
 static func scoreboard_text_x() -> float:
-	return CURSOR_X + cursor_size() + CURSOR_GAP
+	return pergamena_inner().position.x + SCOREBOARD_X_OFFSET
 
-## Runs from there to the writable field's right edge.
+## The turn marker sits on the scroll's right edge, pointing left.
+static func cursor_x() -> float:
+	return PERGAMENA_POS.x + PERGAMENA_WIDTH - cursor_size().x - 24.0
+
+## Runs across the field up to the turn marker on the right.
 static func scoreboard_text_width() -> float:
-	return pergamena_inner().end.x - scoreboard_text_x()
+	return cursor_x() - CURSOR_GAP - scoreboard_text_x()
 
 ## The score shares the name's box exactly - same left edge, same width - and
 ## is centred in it, so the number sits under the middle of the name.
 static func scoreboard_score_width() -> float:
 	return scoreboard_text_width()
 
-## Where the turn marker sits for a player: centred on their two lines taken
-## together, not on the name alone - at nearly two lines tall it would hang
-## into the other player's block otherwise.
+## Where the turn marker sits for a player: centred on their NAME line (row player * 2),
+## so the index finger points straight at the center of the player's name.
 static func cursor_row_y(player: int) -> float:
-	return scoreboard_row_y(player * 2) + (2.0 * scoreboard_row_height() - cursor_size()) / 2.0
+	return scoreboard_row_y(player * 2) + (scoreboard_row_height() - cursor_size().y) / 2.0
 
 func _build_player_panel(idx: int, row: int, color: Color) -> void:
 	var text_x := scoreboard_text_x()
@@ -709,8 +710,9 @@ func _build_player_panel(idx: int, row: int, color: Color) -> void:
 	name_label.position = Vector2(text_x, scoreboard_row_y(row))
 	name_label.size = Vector2(text_w, row_h)
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	name_label.clip_text = true
-	name_label.add_theme_font_override("font", font_stylish)
+	name_label.clip_text = false
+	name_label.z_index = 1
+	name_label.add_theme_font_override("font", Game.font_stylish)
 	name_label.add_theme_font_size_override("font_size", NAME_FONT_SIZE)
 	name_label.add_theme_color_override("font_color", color)
 	name_label.add_theme_color_override("font_shadow_color", UIConstants.BATTLE_NAME_SHADOW_COLOR)
@@ -727,7 +729,8 @@ func _build_player_panel(idx: int, row: int, color: Color) -> void:
 	score_value.size = Vector2(scoreboard_score_width(), row_h)
 	score_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	score_value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	score_value.add_theme_font_override("font", font_stylish)
+	score_value.z_index = 1
+	score_value.add_theme_font_override("font", Game.font_stylish)
 	score_value.add_theme_font_size_override("font_size", SCORE_FONT_SIZE)
 	score_value.add_theme_color_override("font_color", color)
 	score_value.add_theme_color_override("font_outline_color", Color.BLACK)
@@ -753,7 +756,7 @@ func _panel_name(idx: int) -> String:
 func _set_panel_name(label: Label, text: String) -> void:
 	label.text = text
 	label.add_theme_font_size_override("font_size", UIButtonStyle.fit_text_to_box(
-		text, font_stylish, Vector2(scoreboard_text_width(), scoreboard_row_height()),
+		text, Game.font_stylish, Vector2(scoreboard_text_width(), scoreboard_row_height()),
 		NAME_FONT_SIZE, NAME_MIN_FONT_SIZE))
 
 # Clear interior of the common_transp_box_a.png panel drawn at (14,282)

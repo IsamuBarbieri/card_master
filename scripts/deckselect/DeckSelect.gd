@@ -329,6 +329,7 @@ func _toggle_favourite() -> void:
 	var to_selector: DeckSelectorWheel = deck_selector_right if from_left else deck_selector_left
 	if from_selector.central_card_stats() == null:
 		return
+	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 	_cancel_current_interaction()
 	var cstats: Card = from_selector.remove_current_card()
 	cstats.is_favourite = not cstats.is_favourite
@@ -352,6 +353,7 @@ func _force_favourite_from_slot(index: int) -> void:
 	var cstats: Card = lower_deck.card_stats(index)
 	if cstats == null:
 		return
+	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 	_cancel_current_interaction()
 	lower_deck.remove_card(index)
 	deck_selector_right.add_card(cstats)
@@ -375,6 +377,7 @@ func _on_nav_activated(item: FocusNav.NavItem) -> void:
 		var free_index := lower_deck.get_unused_index()
 		if free_index == -1:
 			return
+		Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 		_cancel_current_interaction()
 		var cstats: Card = selector.remove_current_card()
 		lower_deck.add_card(free_index, cstats)
@@ -398,6 +401,7 @@ func _on_nav_activated(item: FocusNav.NavItem) -> void:
 		var cstats: Card = lower_deck.card_stats(index)
 		if cstats == null:
 			return
+		Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 		_cancel_current_interaction()
 		lower_deck.remove_card(index)
 		if cstats.is_favourite:
@@ -537,6 +541,7 @@ func _route_click(x: int, y: int) -> void:
 func _handle_double_click(x: int, y: int) -> bool:
 	var lower_index: int = lower_deck.get_valid_card_index_under_cursor(x, y)
 	if lower_index != -1:
+		Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 		_cancel_current_interaction()
 		var cstats: Card = lower_deck.remove_card(lower_index)
 		if cstats.is_favourite:
@@ -555,6 +560,7 @@ func _handle_double_click(x: int, y: int) -> bool:
 		var free_index := lower_deck.get_unused_index()
 		if free_index == -1:
 			return true  # deck already full, nothing to do
+		Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 		_cancel_current_interaction()
 		var cstats: Card = selector.remove_current_card()
 		lower_deck.add_card(free_index, cstats)
@@ -603,11 +609,13 @@ func _waiting_input_on_unclick(x: int, y: int) -> void:
 
 	var hi := selector.hit_test_h_box(x, y)
 	if hi != -1:
+		Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 		_snap_to_box(selector, hi, true)
 		return
 
 	var vi := selector.hit_test_v_box(x, y)
 	if vi != -1:
+		Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 		_snap_to_box(selector, vi, false)
 
 func _snap_to_box(selector: DeckSelectorWheel, array_index: int, horz: bool) -> void:
@@ -795,13 +803,15 @@ func _drag_card_on_unclick(x: int, y: int) -> void:
 			empty_slot = true
 			selector_to_lower = true
 		elif index == dc_deck_index:
-			pass  # same slot, no-op
+			Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 		elif dc_deck_index != -1:
+			Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 			lower_deck.swap_cards(index, dc_deck_index)
 		else:
 			selector_to_lower = true
 
 		if selector_to_lower:
+			Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 			var selector_card: Card = dc_selector.remove_current_card()
 
 			if empty_slot:
@@ -821,12 +831,14 @@ func _drag_card_on_unclick(x: int, y: int) -> void:
 
 	elif _hit_test(panel_left, x, y):
 		if dc_from_right:
+			Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 			var cstats: Card = deck_selector_right.remove_current_card()
 			deck_selector_left.add_card(cstats)
 			next_sel = 1
 			_drag_card_on_quit_restore()
 			_enter_waiting_input()
 		elif dc_from_deck:
+			Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 			var cstats: Card = lower_deck.remove_card(dc_deck_index)
 			deck_selector_left.add_card(cstats)
 			next_sel = 1
@@ -837,12 +849,14 @@ func _drag_card_on_unclick(x: int, y: int) -> void:
 
 	elif _hit_test(panel_right, x, y):
 		if dc_from_left:
+			Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 			var cstats: Card = deck_selector_left.remove_current_card()
 			deck_selector_right.add_card(cstats)
 			next_sel = 2
 			_drag_card_on_quit_restore()
 			_enter_waiting_input()
 		elif dc_from_deck:
+			Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 			var cstats: Card = lower_deck.remove_card(dc_deck_index)
 			deck_selector_right.add_card(cstats)
 			next_sel = 2
