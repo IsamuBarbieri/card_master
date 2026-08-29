@@ -71,8 +71,9 @@ func _setup_nav() -> void:
 	nav = FocusNav.new()
 	add_child(nav)
 	for i in opp_count:
-		var item := nav.add_control(item_buttons[i], i)
-		nav.set_scroll(item, scroll)
+		if Game.player.available_opponents[i]:
+			var item := nav.add_control(item_buttons[i], i)
+			nav.set_scroll(item, scroll)
 	# The cursor moving IS the preview now, so grid items don't route A into
 	# anything of their own - A always means "Confirm" instead
 	# (select_button.disabled still gates a locked opponent either way).
@@ -120,7 +121,11 @@ func _build_ui() -> void:
 		var item := Button.new()
 		item.custom_minimum_size = ITEM_SIZE
 		item.flat = true
-		item.pressed.connect(_on_item_pressed.bind(i))
+		if Game.player.available_opponents[i]:
+			item.pressed.connect(_on_item_pressed.bind(i))
+		else:
+			item.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			item.focus_mode = Control.FOCUS_NONE
 		grid.add_child(item)
 		item_buttons.append(item)
 		item_portraits.append(null)
@@ -191,8 +196,9 @@ func _refresh_item(index: int) -> void:
 	item_portraits[index] = portrait
 
 func _on_item_pressed(index: int) -> void:
-	if Game.player.available_opponents[index]:
-		Game.play_sfx(ASSETS + "sfx/button_sound.wav")
+	if not Game.player.available_opponents[index]:
+		return
+	Game.play_sfx(ASSETS + "sfx/button_sound.wav")
 	_select(index)
 
 func _select(index: int) -> void:

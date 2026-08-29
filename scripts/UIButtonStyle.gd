@@ -81,6 +81,8 @@ static func apply(btn: Button) -> void:
 	btn.add_theme_stylebox_override("disabled", disabled)
 	# Controller focus: radiant gold border and warm glow
 	btn.add_theme_stylebox_override("focus", hover)
+	btn.set_meta(&"style_normal", normal)
+	btn.set_meta(&"style_hover", hover)
 
 	var h_color := hover_color(HOVER_TEXT_COLOR)
 	btn.add_theme_color_override("font_color", RESTING_TEXT_COLOR)
@@ -104,6 +106,8 @@ static func apply_danger(btn: Button) -> void:
 	btn.add_theme_stylebox_override("normal", normal_danger)
 	btn.add_theme_stylebox_override("hover", hover_danger)
 	btn.add_theme_stylebox_override("focus", hover_danger)
+	btn.set_meta(&"style_normal", normal_danger)
+	btn.set_meta(&"style_hover", hover_danger)
 	btn.add_theme_color_override("font_color", UIConstants.COLOR_BTN_DANGER_TEXT)
 	btn.add_theme_color_override("font_hover_color", Color.WHITE)
 	btn.add_theme_color_override("font_hover_pressed_color", Color.WHITE)

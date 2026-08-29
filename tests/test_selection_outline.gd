@@ -13,44 +13,39 @@ extends SceneTree
 ## Run: godot --headless --quit-after 5 --script res://tests/test_selection_outline.gd
 
 ## What the patch actually covers on screen.
-func _footprint(patch: NinePatchRect) -> Vector2:
-	return patch.size * patch.scale
+func _footprint(node: Control) -> Vector2:
+	return node.size * node.scale
 
 func _init() -> void:
-	# 1. the generated glow texture loads, and is big enough for the corners
+	# 1. The high-res glow texture assets load
 	var tex: Texture2D = load("res://assets/cards/card_sel_glow_ring.png")
 	assert(tex != null, "failed to load the glow texture")
-	assert(SelectionOutline.PATCH_MARGIN * 2 <= tex.get_width(),
-		"the 9-patch corners (2 x %d) do not fit the %dpx texture" % [SelectionOutline.PATCH_MARGIN, tex.get_width()])
+	var tex_board: Texture2D = load("res://assets/cards/card_sel_glow.png")
+	assert(tex_board != null, "failed to load board hover glow texture")
 
 	var pad: float = SelectionOutline.GLOW_PAD
-	## Smallest rect the glow can cover before its own corners overlap: the
-	## corners are drawn at native size, shrunk by the node scale.
-	var min_side: float = 2.0 * SelectionOutline.PATCH_MARGIN * SelectionOutline.NODE_SCALE
+	var total_pad: float = SelectionOutline.GLOW_PAD + SelectionOutline.OUTLINE_EXPAND
 
-	# 2. explicit target rect -> glow covers the target grown by GLOW_PAD, tinted blue
+	# 2. Explicit target rect -> glow covers the target grown by total_pad (expand + pad)
 	var o := SelectionOutline.new()
 	o.set_target_rect(Rect2(3, 4, 44, 59))
-	var patch: NinePatchRect = o.get_child(0)
-	assert(patch.position.is_equal_approx(Vector2(3 - pad, 4 - pad)), "patch pos %s" % patch.position)
-	assert(_footprint(patch).is_equal_approx(Vector2(44 + 2 * pad, 59 + 2 * pad)),
-		"patch covers %s on screen (raw size %s at scale %s)" % [_footprint(patch), patch.size, patch.scale])
-	assert(not patch.modulate.is_equal_approx(Color.WHITE), "glow must be tinted, not left white")
-	assert(patch.modulate.is_equal_approx(SelectionOutline.GLOW_COLOR), "glow tint %s" % patch.modulate)
+	var rect_node: Control = o.get_child(0)
+	assert(rect_node.position.is_equal_approx(Vector2(3 - total_pad, 4 - total_pad)), "rect node pos %s" % rect_node.position)
+	assert(_footprint(rect_node).is_equal_approx(Vector2(44 + 2 * total_pad, 59 + 2 * total_pad)),
+		"glow covers %s on screen" % _footprint(rect_node))
+	assert(rect_node.material is ShaderMaterial, "selection glow must use procedural ShaderMaterial")
+	assert(SelectionOutline.GLOW_COLOR.is_equal_approx(UIConstants.COLOR_SELECTION_GLOW), "glow color mismatch")
 
-	# 9-patch corners must fit inside the smallest rect we ask for, or opposite
-	# corners overlap and the falloff doubles up along the short edge.
-	assert(_footprint(patch).x >= min_side, "card cell too narrow for the 9-patch corners")
-	assert(_footprint(patch).y >= min_side, "card cell too short for the 9-patch corners")
-
-	# 3. Collection's type-row usage: full 204x47 row rect, not just the label
+	# 3. Collection's type-row usage: full 204x47 row rect
 	var row_outline := SelectionOutline.new()
-	row_outline.set_target_rect(Rect2(pad, pad, 204 - pad * 2, 47 - pad * 2))
-	var row_patch: NinePatchRect = row_outline.get_child(0)
-	assert(row_patch.position.is_equal_approx(Vector2.ZERO), "row patch pos %s" % row_patch.position)
-	assert(_footprint(row_patch).is_equal_approx(Vector2(204, 47)),
-		"row glow covers %s on screen, expected 204x47" % _footprint(row_patch))
-	assert(_footprint(row_patch).y >= min_side, "list row too short for the 9-patch corners")
+	row_outline.set_target_rect(Rect2(total_pad, total_pad, 204 - total_pad * 2, 47 - total_pad * 2))
+	var row_node: Control = row_outline.get_child(0)
+	assert(row_node.position.is_equal_approx(Vector2.ZERO), "row glow pos %s" % row_node.position)
+	assert(_footprint(row_node).is_equal_approx(Vector2(204, 47)),
+		"row glow covers %s on screen, expected 204x47" % _footprint(row_node))
 
-	print("OK - all SelectionOutline + asset checks passed")
+	o.free()
+	row_outline.free()
+
+	print("OK - all SelectionOutline + procedural shader checks passed")
 	quit()

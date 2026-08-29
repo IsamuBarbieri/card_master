@@ -182,19 +182,17 @@ func _build_hand() -> void:
 	_hand.visible = false
 	_layer.add_child(_hand)
 
-## Snaps the hand so its fingertip (the texture's bottom-right corner) lands
-## exactly on `rect`'s own bottom-right corner, approaching it diagonally
-## from up-left. Because the project stretches with canvas_items/keep,
-## CanvasLayer coordinates are the same 960x544 design coordinates every
-## screen is laid out in - no scaling conversion is needed here. Clamped to
-## stay on-canvas for anything sitting right at an edge.
+const HAND_FINGERTIP_OFFSET := Vector2(8.0, 8.0)
+
+## Snaps the hand so its fingertip (the texture's top-left corner) lands
+## exactly on `rect`'s own bottom-right corner, pointing up-left toward it.
 func point_at(rect: Rect2) -> void:
 	if mode != MODE_GAMEPAD:
 		return
-	var anchor := rect.position + rect.size * HAND_ANCHOR_FRACTION
+	var anchor := rect.position + rect.size
 	var target := Vector2(
-		clampf(anchor.x - HAND_SIZE.x, 0.0, 960.0 - HAND_SIZE.x),
-		clampf(anchor.y - HAND_SIZE.y, 0.0, 544.0 - HAND_SIZE.y))
+		clampf(anchor.x - HAND_FINGERTIP_OFFSET.x, 0.0, 960.0 - HAND_SIZE.x),
+		clampf(anchor.y - HAND_FINGERTIP_OFFSET.y, 0.0, 544.0 - HAND_SIZE.y))
 	var first_show := not _hand.visible
 	_hand.visible = true
 	if target.is_equal_approx(_hand_target) and not first_show:
@@ -209,17 +207,12 @@ func point_at(rect: Rect2) -> void:
 		_hand.position = target
 		_start_bob()
 	else:
-		# Bob only starts once the hand actually arrives - starting it
-		# immediately raced position/position:x against this same move tween
-		# every time focus changed, each frame fighting over which tween's
-		# result won, which is what read as a jarring mechanical stutter.
 		_hand_tween = create_tween()
 		_hand_tween.tween_property(_hand, "position", target, HAND_TWEEN_TIME) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		_hand_tween.tween_callback(_start_bob)
 
-## A small looping diagonal nudge back along the up-left approach line -
-## without it the hand reads as a static decal once it has settled.
+## A small looping diagonal nudge along the down-right / up-left approach line.
 func _start_bob() -> void:
 	if _bob_tween != null and _bob_tween.is_valid():
 		_bob_tween.kill()

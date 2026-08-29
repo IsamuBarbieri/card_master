@@ -60,6 +60,12 @@ const BTN_RADIUS := 8
 const BTN_BORDER_WIDTH := 2
 const BTN_CONTENT_MARGIN := 6
 
+## Selection Glow theme colors (Celestial Sapphire / Arcane Blue & Luminous Core)
+const COLOR_SELECTION_GLOW := Color(0.25, 0.62, 1.0, 0.95)
+const COLOR_SELECTION_GLOW_CORE := Color(0.75, 0.90, 1.0, 1.0)
+const SELECTION_GLOW_PAD := 6.0
+const SELECTION_OUTLINE_EXPAND := 0.0
+
 ## Status-message brown, reused by Online's and Leaderboard's status labels.
 const COLOR_STATUS_BROWN := Color(0.45, 0.18, 0.05)
 

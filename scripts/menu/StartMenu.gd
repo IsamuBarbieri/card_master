@@ -353,6 +353,8 @@ func _style_slot_button(slot: FixedSizeButton) -> void:
 	slot.add_theme_stylebox_override("pressed", pressed)
 	slot.add_theme_stylebox_override("disabled", disabled)
 	slot.add_theme_stylebox_override("focus", hover)
+	slot.set_meta(&"style_normal", normal)
+	slot.set_meta(&"style_hover", hover)
 
 	slot.add_theme_color_override("font_color", UIConstants.COLOR_SLOT_TEXT)
 	slot.add_theme_color_override("font_hover_color", Color.WHITE)

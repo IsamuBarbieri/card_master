@@ -50,10 +50,27 @@ const _STATE_COLOR_KEYS := {
 
 var _hovered := false
 var _held := false
+var _gamepad_focused := false
 ## Extra labels a caller has parked inside this button (the save slots build
 ## their whole card out of them rather than using the button's own text), each
 ## with the resting colour to go back to. Registered through add_state_label.
 var _state_labels: Array = []
+
+func set_gamepad_focused(focused: bool) -> void:
+	if _gamepad_focused == focused:
+		return
+	_gamepad_focused = focused
+	_refresh_label_color()
+	if focused:
+		if has_meta(&"style_hover"):
+			add_theme_stylebox_override("normal", get_meta(&"style_hover"))
+		elif has_theme_stylebox_override("hover"):
+			add_theme_stylebox_override("normal", get_theme_stylebox("hover"))
+	else:
+		if has_meta(&"style_normal"):
+			add_theme_stylebox_override("normal", get_meta(&"style_normal"))
+		elif has_theme_stylebox_override("hover"):
+			remove_theme_stylebox_override("normal")
 
 func _init() -> void:
 	clip_contents = true
@@ -98,6 +115,16 @@ func _ready() -> void:
 		_label.text = get_text()
 		set_text("")
 	_sync_label_rect()
+	ControllerUI.mode_changed.connect(func(m: int) -> void:
+		if m == ControllerUI.MODE_GAMEPAD:
+			_hovered = false
+		elif m == ControllerUI.MODE_POINTER:
+			_gamepad_focused = false
+			if has_meta(&"style_normal"):
+				add_theme_stylebox_override("normal", get_meta(&"style_normal"))
+			elif has_theme_stylebox_override("hover"):
+				remove_theme_stylebox_override("normal")
+		_refresh_label_color())
 
 ## Which of the button's state colours the label should currently wear. Falls
 ## back to font_color whenever the state's own colour isn't defined, so a
@@ -105,12 +132,13 @@ func _ready() -> void:
 func _refresh_label_color() -> void:
 	if not is_instance_valid(_label):
 		return
+	var is_hover := (_hovered and ControllerUI.mode == ControllerUI.MODE_POINTER) or (_gamepad_focused and ControllerUI.mode == ControllerUI.MODE_GAMEPAD)
 	var key := "font_color"
 	if disabled:
 		key = _STATE_COLOR_KEYS["disabled"]
 	elif _held:
 		key = _STATE_COLOR_KEYS["pressed"]
-	elif _hovered:
+	elif is_hover:
 		key = _STATE_COLOR_KEYS["hover"]
 	elif has_focus():
 		key = _STATE_COLOR_KEYS["focus"]

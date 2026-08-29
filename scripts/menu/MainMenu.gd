@@ -84,11 +84,24 @@ func _setup_nav(buttons: Array) -> void:
 	add_child(nav)
 	for i in buttons.size():
 		var btn: Button = buttons[i]
-		nav.add_control(btn, i)
+		if btn == online_button:
+			# Round emblem target rect so the hand points directly to the lower-right curve of the circle
+			var item := nav.add_virtual(&"OnlineButton", func() -> Rect2:
+				return Rect2(418.0, 210.0, 124.0, 124.0), i, 0, Callable(), online_button)
+		else:
+			nav.add_control(btn, i)
 		btn.pressed.connect(_remember_focus.bind(i))
 	if cat_button != null:
 		nav.add_control(cat_button, buttons.size())
 		cat_button.pressed.connect(_remember_focus.bind(buttons.size()))
+	nav.focus_changed.connect(func(item: FocusNav.NavItem) -> void:
+		if item != null and item.meta == 4:
+			_set_online_outline(online_button, 0)
+			online_button.add_theme_color_override("font_color", ONLINE_TEXT_HOVER)
+		else:
+			_set_online_outline(online_button, ONLINE_OUTLINE_SIZE)
+			online_button.remove_theme_color_override("font_color")
+	)
 	nav.activated.connect(func(item: FocusNav.NavItem) -> void:
 		(item.control as Button).pressed.emit())
 	nav.focus_by_meta(_last_focus_meta)

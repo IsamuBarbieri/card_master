@@ -160,9 +160,45 @@ func focus_first() -> void:
 func set_focus(item: NavItem) -> void:
 	if item == null or item == current:
 		return
+	var prev := current
 	current = item
 	_scroll_into_view(item)
+	_update_control_highlight(prev, current)
 	focus_changed.emit(item)
+
+func _ready() -> void:
+	ControllerUI.mode_changed.connect(_on_mode_changed)
+
+func _on_mode_changed(new_mode: int) -> void:
+	for item in items:
+		if item != null and is_instance_valid(item.control):
+			_set_control_focused(item.control, false)
+	if new_mode == ControllerUI.MODE_GAMEPAD and current != null:
+		if is_instance_valid(current.control):
+			_set_control_focused(current.control, true)
+		ControllerUI.point_at(current.rect())
+
+func _update_control_highlight(prev: NavItem, next: NavItem) -> void:
+	if prev != null and is_instance_valid(prev.control):
+		_set_control_focused(prev.control, false)
+	if next != null and is_instance_valid(next.control):
+		_set_control_focused(next.control, true)
+
+func _set_control_focused(ctrl: Control, focused: bool) -> void:
+	var should_highlight := focused and ControllerUI.is_gamepad()
+	if ctrl is FixedSizeButton:
+		ctrl.set_gamepad_focused(should_highlight)
+	elif ctrl is Button:
+		if should_highlight:
+			if ctrl.has_meta(&"style_hover"):
+				ctrl.add_theme_stylebox_override("normal", ctrl.get_meta(&"style_hover"))
+			if ctrl.has_theme_color_override("font_hover_color"):
+				ctrl.add_theme_color_override("font_color", ctrl.get_theme_color("font_hover_color"))
+		else:
+			if ctrl.has_meta(&"style_normal"):
+				ctrl.add_theme_stylebox_override("normal", ctrl.get_meta(&"style_normal"))
+			if ctrl.has_theme_color_override("font_hover_color"):
+				ctrl.remove_theme_color_override("font_color")
 
 ## `id`, when given, disambiguates screens that reuse the same meta value
 ## across two different item groups (Collection's type index 0 and its
