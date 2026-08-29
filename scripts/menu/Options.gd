@@ -311,12 +311,14 @@ func _style_lang_popup(lang_btn: OptionButton) -> void:
 	menu_panel.anti_aliasing = true
 
 	var menu_hover := StyleBoxFlat.new()
-	menu_hover.bg_color = Color(0.32, 0.22, 0.12, 1.0)
+	menu_hover.bg_color = Color(0.85, 0.70, 0.35, 0.45)
+	menu_hover.border_width_left = 1
 	menu_hover.border_width_right = 1
 	menu_hover.border_width_top = 1
 	menu_hover.border_width_bottom = 1
 	menu_hover.border_color = UIConstants.COLOR_DROPDOWN_BORDER_HOVER
 	menu_hover.corner_radius_top_left = 4
+	menu_hover.corner_radius_top_right = 4
 	menu_hover.corner_radius_bottom_left = 4
 	menu_hover.corner_radius_bottom_right = 4
 	menu_hover.anti_aliasing = true

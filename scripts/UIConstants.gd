@@ -168,14 +168,14 @@ const MAIN_MENU_CAT_POS := Vector2(850, 416)
 
 const OPTIONS_TITLE_FONT_SIZE := 46
 const OPTIONS_LANG_ARROW_FONT_SIZE := 30
-const COLOR_DROPDOWN_BG_NORMAL := Color(0.18, 0.13, 0.08, 1.0)
-const COLOR_DROPDOWN_BORDER_NORMAL := Color(0.52, 0.38, 0.16, 1.0)
-const COLOR_DROPDOWN_BG_HOVER := Color(0.26, 0.19, 0.11, 1.0)
-const COLOR_DROPDOWN_BORDER_HOVER := Color(1.0, 0.82, 0.28, 1.0)
-const COLOR_DROPDOWN_BG_PRESSED := Color(0.12, 0.08, 0.05, 1.0)
-const COLOR_DROPDOWN_BORDER_PRESSED := Color(0.38, 0.26, 0.10, 1.0)
-const COLOR_DROPDOWN_TEXT := Color(0.96, 0.92, 0.82)
-const COLOR_DROPDOWN_TEXT_HOVER := Color.WHITE
+const COLOR_DROPDOWN_BG_NORMAL := Color(0.96, 0.93, 0.85, 1.0)
+const COLOR_DROPDOWN_BORDER_NORMAL := Color(0.42, 0.30, 0.14, 1.0)
+const COLOR_DROPDOWN_BG_HOVER := Color(0.99, 0.97, 0.91, 1.0)
+const COLOR_DROPDOWN_BORDER_HOVER := Color(0.85, 0.65, 0.20, 1.0)
+const COLOR_DROPDOWN_BG_PRESSED := Color(0.90, 0.86, 0.76, 1.0)
+const COLOR_DROPDOWN_BORDER_PRESSED := Color(0.35, 0.24, 0.10, 1.0)
+const COLOR_DROPDOWN_TEXT := Color(0.12, 0.08, 0.02)
+const COLOR_DROPDOWN_TEXT_HOVER := Color(0.12, 0.08, 0.02)
 
 # --------------------------------------------------------------- StartMenu
 

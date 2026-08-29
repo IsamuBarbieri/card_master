@@ -125,16 +125,10 @@ func _fill_page(page_name: String, labels: Dictionary) -> void:
 		UIButtonStyle.fit_paragraph_to_box(label, label.size)
 
 func _style_close_button() -> void:
-	# A font glyph instead of button_delete_save.png's raster X: same X at any
-	# scale reads crisp (the PNG was low-res and blurred/blocked when the
-	# canvas stretched to a real screen size), and colors as plain text
-	# theme overrides instead of needing a separately-authored asset.
-	UIButtonStyle.apply_danger(close_button)
+	UIButtonStyle.apply(close_button)
 	close_button.text = "X"
 	close_button.add_theme_font_override("font", Game.font_stylish)
 	close_button.add_theme_font_size_override("font_size", UIConstants.HELP_CLOSE_BUTTON_FONT_SIZE)
-	close_button.add_theme_color_override("font_outline_color", Color.BLACK)
-	close_button.add_theme_constant_override("outline_size", 2)
 
 func _build_page_dots() -> void:
 	var total_w := PAGE_COUNT * DOT_SIZE + (PAGE_COUNT - 1) * DOT_GAP
