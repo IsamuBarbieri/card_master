@@ -71,7 +71,7 @@ func _ready() -> void:
 	self_band.visible = false
 	add_child(self_band)
 
-	var header := _make_row(ROWS_TOP - ROW_HEIGHT - 2.0, HEADER_COLOR, 22, HEADER_OUTLINE)
+	var header := _make_row(ROWS_TOP - ROW_HEIGHT - 2.0, HEADER_COLOR, 26, HEADER_OUTLINE, Game.font_emphasis)
 	var header_text := [
 		StringTable.get_string(StringTable.ID_RANK),
 		"",
@@ -82,12 +82,12 @@ func _ready() -> void:
 	]
 	for i in header.size():
 		header[i].text = header_text[i]
-		# Headings are single words in English and compounds elsewhere; each
-		# shrinks into its own lane rather than clipping.
-		UIButtonStyle.fit_button_text(header[i])
+		if header_text[i] != "":
+			var fitted: int = UIButtonStyle.fit_text_to_width(header_text[i], Game.font_emphasis, COLUMNS[i][1], 26, 20)
+			header[i].add_theme_font_size_override("font_size", fitted)
 
 	for i in PAGE_SIZE:
-		rows.append(_make_row(ROWS_TOP + i * ROW_HEIGHT, ROW_COLOR, 24, 0))
+		rows.append(_make_row(ROWS_TOP + i * ROW_HEIGHT, ROW_COLOR, 24, 0, Game.font_stylish))
 
 	_setup_page_button(prev_button, "<", _on_prev_pressed)
 	_setup_page_button(next_button, ">", _on_next_pressed)
@@ -121,7 +121,7 @@ func _ready() -> void:
 	await _load()
 
 ## One row of Labels, one per column, filled later by _assign.
-func _make_row(y: float, color: Color, font_size: int, outline: int) -> Array:
+func _make_row(y: float, color: Color, font_size: int, outline: int, font: Font = null) -> Array:
 	var labels: Array = []
 	for col in COLUMNS:
 		var label := FixedSizeLabel.new()
@@ -131,7 +131,7 @@ func _make_row(y: float, color: Color, font_size: int, outline: int) -> Array:
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		label.clip_text = true
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		label.add_theme_font_override("font", Game.font_info)
+		label.add_theme_font_override("font", font if font != null else Game.font_stylish)
 		label.add_theme_font_size_override("font_size", font_size)
 		label.add_theme_color_override("font_color", color)
 		if outline > 0:
